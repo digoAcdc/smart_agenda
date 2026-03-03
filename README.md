@@ -31,11 +31,12 @@ Fluxo de dependência:
 
 ## Banco local (Drift)
 
-Schema versionado (`schemaVersion = 1`) com tabelas:
+Schema versionado (`schemaVersion = 2`) com tabelas:
 
 - `agenda_items`
 - `agenda_groups`
 - `attachments`
+- `class_schedule_slots`
 
 Campos de reminder/recorrência são persistidos como JSON em colunas text, facilitando compatibilidade futura de migrações.
 
@@ -73,4 +74,16 @@ Inclui testes unitários para:
 - Login e conta cloud
 - Exportação avançada e backup cloud
 - Remoção de ads
-# smart_agenda
+
+## Pronto para Play Store (Android)
+
+- Configuração de release/signing em `android/app/build.gradle.kts`.
+- Exemplo de keystore em `android/key.properties.example`.
+- Checklist de QA/publicação em `docs/store/qa_release_checklist.md`.
+- Materiais de privacidade e Data Safety em `docs/store/`.
+
+Preflight de release:
+
+```bash
+bash scripts/release_preflight.sh
+```
