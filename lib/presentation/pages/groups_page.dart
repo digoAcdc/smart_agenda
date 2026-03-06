@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 
+import '../../core/theme/design_tokens.dart';
 import '../controllers/groups_controller.dart';
 import '../widgets/empty_state_widget.dart';
 import '../widgets/section_header.dart';
@@ -14,32 +15,35 @@ class GroupsPage extends StatelessWidget {
     final controller = Get.find<GroupsController>();
     return Scaffold(
       appBar: AppBar(title: const Text('Gerenciar grupos')),
-      body: Obx(
-        () {
-          if (controller.groups.isEmpty) {
-            return EmptyStateWidget(
-              icon: Icons.category_outlined,
-              title: 'Sem grupos ainda',
-              message: 'Crie grupos para organizar melhor seus eventos.',
-              ctaLabel: 'Criar grupo',
-              onTapCta: () => _openCreateDialog(context, controller),
-            );
-          }
-          return Column(
-            children: [
-              const SectionHeader(
-                title: 'Seus grupos',
-                subtitle: 'Organize eventos por contexto ou projeto',
-              ),
-              Expanded(
-                child: ListView.builder(
-                  itemCount: controller.groups.length,
-                  itemBuilder: (context, index) {
-                    final group = controller.groups[index];
-                    final avatarColor =
-                        _resolveGroupColor(group.colorHex, index, context);
-                    return AppSurfaceCard(
-                      child: ListTile(
+      body: SafeArea(
+        top: false,
+        bottom: false,
+        child: Obx(
+          () {
+            if (controller.groups.isEmpty) {
+              return EmptyStateWidget(
+                icon: Icons.category_outlined,
+                title: 'Sem grupos ainda',
+                message: 'Crie grupos para organizar melhor seus eventos.',
+                ctaLabel: 'Criar grupo',
+                onTapCta: () => _openCreateDialog(context, controller),
+              );
+            }
+            return Column(
+              children: [
+                const SectionHeader(
+                  title: 'Seus grupos',
+                  subtitle: 'Organize eventos por contexto ou projeto',
+                ),
+                Expanded(
+                  child: ListView.builder(
+                    itemCount: controller.groups.length,
+                    itemBuilder: (context, index) {
+                      final group = controller.groups[index];
+                      final avatarColor =
+                          _resolveGroupColor(group.colorHex, index, context);
+                      return AppSurfaceCard(
+                        child: ListTile(
                         shape: RoundedRectangleBorder(
                             borderRadius: BorderRadius.circular(16)),
                         contentPadding: const EdgeInsets.symmetric(
@@ -92,14 +96,15 @@ class GroupsPage extends StatelessWidget {
                                 value: 'delete', child: Text('Excluir')),
                           ],
                         ),
-                      ),
-                    );
-                  },
+                        ),
+                      );
+                    },
+                  ),
                 ),
-              ),
-            ],
-          );
-        },
+              ],
+            );
+          },
+        ),
       ),
       bottomNavigationBar: SafeArea(
         top: false,
@@ -145,14 +150,6 @@ class GroupsPage extends StatelessWidget {
       if (value != null) return Color(value);
     }
 
-    const palette = <Color>[
-      Color(0xFF6B5CFF),
-      Color(0xFF4CAF50),
-      Color(0xFF03A9F4),
-      Color(0xFFFF9800),
-      Color(0xFFE91E63),
-      Color(0xFF009688),
-    ];
-    return palette[index % palette.length];
+    return DesignTokens.groupPalette[index % DesignTokens.groupPalette.length];
   }
 }

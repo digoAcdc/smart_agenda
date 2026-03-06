@@ -230,13 +230,18 @@ class _UpsertAgendaPageState extends State<UpsertAgendaPage> {
     final dateFmt = DateFormat('EEE, dd MMM', 'pt_BR');
     final timeFmt = DateFormat('HH:mm');
     final bottomInset = MediaQuery.of(context).padding.bottom;
-    final accentGreen = Theme.of(context).colorScheme.primary;
-    final surfaceSoft = context.palette.surfaceSoft;
+    const accentGreen = Color(0xFF9CD64A);
+    const inputNeutral = Color(0xFFF3F4F1);
     final bg = context.palette.appBackground;
-    final pageTheme = Theme.of(context).copyWith(
-      inputDecorationTheme: Theme.of(context).inputDecorationTheme.copyWith(
-            fillColor: Colors.white,
-            hintStyle: Theme.of(context).textTheme.bodyMedium?.copyWith(
+    final baseTheme = Theme.of(context);
+    final pageTheme = baseTheme.copyWith(
+      colorScheme: baseTheme.colorScheme.copyWith(
+        primary: accentGreen,
+        onPrimary: Colors.white,
+      ),
+      inputDecorationTheme: baseTheme.inputDecorationTheme.copyWith(
+            fillColor: inputNeutral,
+            hintStyle: baseTheme.textTheme.bodyMedium?.copyWith(
                   color: const Color(0xFF9BA39C),
                 ),
           ),
@@ -259,7 +264,7 @@ class _UpsertAgendaPageState extends State<UpsertAgendaPage> {
                   onPressed: () => Get.back(),
                   icon: const Icon(Icons.close_rounded),
                   style: IconButton.styleFrom(
-                    backgroundColor: Colors.white,
+                    backgroundColor: inputNeutral,
                   ),
                 ),
                 Expanded(
@@ -280,7 +285,9 @@ class _UpsertAgendaPageState extends State<UpsertAgendaPage> {
                       if (mounted) Get.back();
                     },
                     icon: const Icon(Icons.copy_rounded),
-                    style: IconButton.styleFrom(backgroundColor: Colors.white),
+                    style: IconButton.styleFrom(
+                      backgroundColor: inputNeutral,
+                    ),
                   )
                 else
                   const SizedBox(width: 48),
@@ -295,7 +302,7 @@ class _UpsertAgendaPageState extends State<UpsertAgendaPage> {
                   style: Theme.of(context).textTheme.labelSmall?.copyWith(
                         fontWeight: FontWeight.w700,
                         letterSpacing: .9,
-                        color: const Color(0xFF7D857C),
+                        color: Theme.of(context).colorScheme.onSurfaceVariant,
                       ),
                 ),
                 const SizedBox(height: 8),
@@ -315,7 +322,7 @@ class _UpsertAgendaPageState extends State<UpsertAgendaPage> {
                     const Icon(
                       Icons.event_note_rounded,
                       size: 16,
-                      color: Color(0xFF9CD64A),
+                      color: accentGreen,
                     ),
                     const SizedBox(width: 6),
                     Text(
@@ -345,7 +352,7 @@ class _UpsertAgendaPageState extends State<UpsertAgendaPage> {
                 Container(
                   padding: const EdgeInsets.all(12),
                   decoration: BoxDecoration(
-                    color: Colors.white.withValues(alpha: 0.68),
+                    color: inputNeutral,
                     borderRadius: BorderRadius.circular(14),
                     border: Border.all(
                       color: Theme.of(context).colorScheme.outlineVariant,
@@ -422,12 +429,12 @@ class _UpsertAgendaPageState extends State<UpsertAgendaPage> {
             _sectionCard(
               context,
               children: [
-                const Row(
+                Row(
                   children: [
                     Icon(
-                      Icons.auto_awesome_rounded,
+                      Icons.eco_outlined,
                       size: 16,
-                      color: Color(0xFF9CD64A),
+                      color: accentGreen,
                     ),
                     SizedBox(width: 6),
                   ],
@@ -449,7 +456,7 @@ class _UpsertAgendaPageState extends State<UpsertAgendaPage> {
                         title: 'Sem grupo',
                         selected: groupId == null,
                         onTap: () => setState(() => groupId = null),
-                        baseColor: const Color(0xFF6B5CFF),
+                        baseColor: const Color(0xFF5A8DEE),
                       ),
                       ...groupsController.groups.map(
                         (g) => _groupTile(
@@ -457,7 +464,10 @@ class _UpsertAgendaPageState extends State<UpsertAgendaPage> {
                           title: g.name,
                           selected: groupId == g.id,
                           onTap: () => setState(() => groupId = g.id),
-                          baseColor: _resolveGroupColor(g.colorHex),
+                          baseColor: _resolveGroupColor(
+                            g.colorHex,
+                            groupsController.groups.indexOf(g),
+                          ),
                         ),
                       ),
                       _groupTile(
@@ -480,7 +490,7 @@ class _UpsertAgendaPageState extends State<UpsertAgendaPage> {
                   'Descricao (opcional)',
                   style: Theme.of(context).textTheme.labelSmall?.copyWith(
                         fontWeight: FontWeight.w700,
-                        color: const Color(0xFF7D857C),
+                        color: Theme.of(context).colorScheme.onSurfaceVariant,
                       ),
                 ),
                 const SizedBox(height: 8),
@@ -540,8 +550,8 @@ class _UpsertAgendaPageState extends State<UpsertAgendaPage> {
                           (e) => ChoiceChip(
                             label: Text('$e min antes'),
                             selected: reminderMinutes == e,
-                            selectedColor: const Color(0xFFFFE2CC),
-                            backgroundColor: surfaceSoft,
+                            selectedColor: accentGreen.withValues(alpha: 0.2),
+                            backgroundColor: context.palette.scheduleCellEmpty,
                             onSelected: (_) =>
                                 setState(() => reminderMinutes = e),
                           ),
@@ -601,7 +611,7 @@ class _UpsertAgendaPageState extends State<UpsertAgendaPage> {
                   child: FilledButton.icon(
                     style: FilledButton.styleFrom(
                       backgroundColor: accentGreen,
-                      foregroundColor: Colors.white,
+                      foregroundColor: Theme.of(context).colorScheme.onPrimary,
                       minimumSize: const Size(double.infinity, 48),
                     ),
                     onPressed: _save,
@@ -622,15 +632,12 @@ class _UpsertAgendaPageState extends State<UpsertAgendaPage> {
   }
 
   Widget _sectionCard(BuildContext context, {required List<Widget> children}) {
-    const cardBg = Color(0xFFEFF2EE);
     return Container(
       width: double.infinity,
       padding: const EdgeInsets.all(16),
       margin: const EdgeInsets.only(bottom: 12),
       decoration: BoxDecoration(
-        color: Theme.of(context).brightness == Brightness.dark
-            ? Theme.of(context).colorScheme.surfaceContainerLow
-            : cardBg,
+        color: context.palette.surfaceSoft,
         borderRadius: BorderRadius.circular(22),
       ),
       child: Column(
@@ -649,7 +656,7 @@ class _UpsertAgendaPageState extends State<UpsertAgendaPage> {
               'ANEXOS',
               style: Theme.of(context).textTheme.labelSmall?.copyWith(
                     fontWeight: FontWeight.w700,
-                    color: const Color(0xFF7D857C),
+                    color: Theme.of(context).colorScheme.onSurfaceVariant,
                   ),
             ),
             const Spacer(),
@@ -658,6 +665,8 @@ class _UpsertAgendaPageState extends State<UpsertAgendaPage> {
               icon: const Icon(Icons.attach_file_rounded),
               label: const Text('Add Files'),
               style: FilledButton.styleFrom(
+                backgroundColor: const Color(0xFFF3F4F1),
+                foregroundColor: const Color(0xFF9CD64A),
                 minimumSize: const Size(0, 40),
                 tapTargetSize: MaterialTapTargetSize.shrinkWrap,
                 padding:
@@ -847,7 +856,7 @@ class _UpsertAgendaPageState extends State<UpsertAgendaPage> {
               Container(
                 padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
                 decoration: BoxDecoration(
-                  color: Colors.white,
+              color: Theme.of(context).colorScheme.surface,
                   borderRadius: BorderRadius.circular(10),
                 ),
                 child: Text(
@@ -891,11 +900,13 @@ class _UpsertAgendaPageState extends State<UpsertAgendaPage> {
       child: ChoiceChip(
         label: Text(label),
         selected: selected,
-        selectedColor: const Color(0xFF9CD64A),
-        backgroundColor: Colors.white.withValues(alpha: 0.68),
+        selectedColor: Theme.of(context).colorScheme.primary,
+        backgroundColor: Theme.of(context).colorScheme.surface,
         onSelected: (_) => onTap(),
         labelStyle: Theme.of(context).textTheme.labelSmall?.copyWith(
-              color: selected ? Colors.white : null,
+              color: selected
+                  ? Theme.of(context).colorScheme.onPrimary
+                  : Theme.of(context).colorScheme.onSurface,
               fontWeight: FontWeight.w700,
             ),
       ),
@@ -921,7 +932,7 @@ class _UpsertAgendaPageState extends State<UpsertAgendaPage> {
         decoration: BoxDecoration(
           color: selected
               ? baseColor.withValues(alpha: 0.18)
-              : Colors.white.withValues(alpha: 0.88),
+              : Theme.of(context).colorScheme.surface,
           borderRadius: BorderRadius.circular(14),
           border: Border.all(
             color: selected
@@ -954,7 +965,7 @@ class _UpsertAgendaPageState extends State<UpsertAgendaPage> {
     );
   }
 
-  Color _resolveGroupColor(String? colorHex) {
+  Color _resolveGroupColor(String? colorHex, int fallbackIndex) {
     if (colorHex != null && colorHex.isNotEmpty) {
       final sanitized = colorHex.replaceAll('#', '');
       final normalized =
@@ -962,7 +973,7 @@ class _UpsertAgendaPageState extends State<UpsertAgendaPage> {
       final value = int.tryParse(normalized, radix: 16);
       if (value != null) return Color(value);
     }
-    return const Color(0xFF6B5CFF);
+    return DesignTokens.groupPalette[fallbackIndex % DesignTokens.groupPalette.length];
   }
 
   String _suggestedTime(DateTime date, int addMinutes) {

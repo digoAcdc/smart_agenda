@@ -21,46 +21,49 @@ class _ConfigPageState extends State<ConfigPage> {
       {'title': 'Sobre', 'icon': Icons.info_outline},
     ];
 
-    return ListView(
-      children: [
-        const SectionHeader(
-          title: 'Configuracoes',
-          subtitle: 'Ajustes do app e recursos futuros',
-        ),
-        AppSurfaceCard(
-          child: Padding(
-            padding: const EdgeInsets.fromLTRB(6, 10, 6, 6),
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text('Aparencia',
-                    style: Theme.of(context).textTheme.titleMedium),
-                const SizedBox(height: 12),
-                ListTile(
-                  contentPadding: const EdgeInsets.symmetric(horizontal: 6),
-                  leading: const Icon(Icons.light_mode_outlined),
-                  title: const Text('Tema claro'),
-                  subtitle: const Text('Padrao fixo do aplicativo'),
-                  trailing: Icon(
-                    Icons.check_circle_rounded,
-                    color: Theme.of(context).colorScheme.primary,
+    return SafeArea(
+      bottom: false,
+      child: ListView(
+        children: [
+          const SectionHeader(
+            title: 'Configuracoes',
+            subtitle: 'Ajustes do app e recursos futuros',
+          ),
+          AppSurfaceCard(
+            child: Padding(
+              padding: const EdgeInsets.fromLTRB(6, 10, 6, 6),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text('Aparencia',
+                      style: Theme.of(context).textTheme.titleMedium),
+                  const SizedBox(height: 12),
+                  ListTile(
+                    contentPadding: const EdgeInsets.symmetric(horizontal: 6),
+                    leading: const Icon(Icons.light_mode_outlined),
+                    title: const Text('Tema claro'),
+                    subtitle: const Text('Padrao fixo do aplicativo'),
+                    trailing: Icon(
+                      Icons.check_circle_rounded,
+                      color: Theme.of(context).colorScheme.primary,
+                    ),
                   ),
-                ),
-              ],
+                ],
+              ),
             ),
           ),
-        ),
-        ...items.map(
-          (item) => AppSurfaceCard(
-            child: ListTile(
-              leading: Icon(item['icon'] as IconData),
-              title: Text(item['title'] as String),
-              trailing: const Icon(Icons.chevron_right_rounded),
-              onTap: () {},
+          ...items.map(
+            (item) => AppSurfaceCard(
+              child: ListTile(
+                leading: Icon(item['icon'] as IconData),
+                title: Text(item['title'] as String),
+                trailing: const Icon(Icons.chevron_right_rounded),
+                onTap: () {},
+              ),
             ),
           ),
-        ),
-      ],
+        ],
+      ),
     );
   }
 }

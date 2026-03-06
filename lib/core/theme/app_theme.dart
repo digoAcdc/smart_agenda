@@ -3,8 +3,11 @@ import 'package:flutter/material.dart';
 import 'design_tokens.dart';
 
 class AppTheme {
+  static const Color _brandPrimary = Color(0xFF8FCF45);
+  static const Color _brandPrimaryContainer = Color(0xFFE7F4D2);
+
   static ThemeData light() {
-    const seed = Color(0xFF4F46E5);
+    const seed = _brandPrimary;
     final scheme = ColorScheme.fromSeed(
       seedColor: seed,
       brightness: Brightness.light,
@@ -13,7 +16,7 @@ class AppTheme {
   }
 
   static ThemeData dark() {
-    const seed = Color(0xFF7C7CFF);
+    const seed = _brandPrimary;
     final scheme = ColorScheme.fromSeed(
       seedColor: seed,
       brightness: Brightness.dark,
@@ -24,7 +27,11 @@ class AppTheme {
   static ThemeData _base(ColorScheme scheme) {
     final base = ThemeData(
       useMaterial3: true,
-      colorScheme: scheme,
+      colorScheme: scheme.copyWith(
+        primary: _brandPrimary,
+        onPrimary: Colors.white,
+        primaryContainer: _brandPrimaryContainer,
+      ),
       extensions: <ThemeExtension<dynamic>>[
         const AppPaletteColors(
           appBackground: Color(0xFFF4F6F3),
@@ -32,17 +39,18 @@ class AppTheme {
           scheduleHeader: Color(0xFFE9EFE6),
           scheduleTimeColumn: Color(0xFFE4ECE2),
           scheduleCellEmpty: Color(0xFFF2F5F1),
-          scheduleCellFilled: Color(0xFFDDEBFF),
+          scheduleCellFilled: Color(0xFFE7F4D8),
         ),
         AppSemanticColors(
           success: const Color(0xFF34C759),
           warning: const Color(0xFFFFA726),
           danger: const Color(0xFFFF5C5C),
-          info: scheme.primary,
-          pending: const Color(0xFF7E57C2),
+          info: _brandPrimary,
+          pending: const Color(0xFF7DBA3C),
         ),
       ],
     );
+    final activeScheme = base.colorScheme;
 
     return base.copyWith(
       scaffoldBackgroundColor: const Color(0xFFF4F6F3),
@@ -50,8 +58,8 @@ class AppTheme {
         centerTitle: false,
         elevation: 0,
         scrolledUnderElevation: 0,
-        backgroundColor: scheme.surface,
-        foregroundColor: scheme.onSurface,
+        backgroundColor: activeScheme.surface,
+        foregroundColor: activeScheme.onSurface,
         titleTextStyle: base.textTheme.titleLarge?.copyWith(
           fontWeight: FontWeight.w700,
           letterSpacing: -0.2,
@@ -67,11 +75,11 @@ class AppTheme {
         ),
         bodyLarge: base.textTheme.bodyLarge?.copyWith(height: 1.35),
         bodySmall: base.textTheme.bodySmall?.copyWith(
-          color: scheme.onSurfaceVariant,
+          color: activeScheme.onSurfaceVariant,
         ),
       ),
       cardTheme: CardThemeData(
-        color: scheme.surfaceContainerLow,
+        color: activeScheme.surfaceContainerLow,
         elevation: 0,
         margin: EdgeInsets.zero,
         shape: RoundedRectangleBorder(
@@ -97,7 +105,7 @@ class AppTheme {
       ),
       inputDecorationTheme: InputDecorationTheme(
         filled: true,
-        fillColor: scheme.surfaceContainerLow,
+        fillColor: activeScheme.surfaceContainerLow,
         contentPadding: const EdgeInsets.symmetric(
           horizontal: DesignTokens.spaceSm + 2,
           vertical: DesignTokens.spaceSm + 2,
@@ -112,7 +120,7 @@ class AppTheme {
         ),
         focusedBorder: OutlineInputBorder(
           borderRadius: BorderRadius.circular(DesignTokens.radiusMd + 2),
-          borderSide: BorderSide(color: scheme.primary, width: 1.4),
+          borderSide: BorderSide(color: activeScheme.primary, width: 1.4),
         ),
       ),
       filledButtonTheme: FilledButtonThemeData(
@@ -129,7 +137,7 @@ class AppTheme {
       outlinedButtonTheme: OutlinedButtonThemeData(
         style: OutlinedButton.styleFrom(
           minimumSize: const Size.fromHeight(DesignTokens.buttonHeight),
-          side: BorderSide(color: scheme.outlineVariant),
+          side: BorderSide(color: activeScheme.outlineVariant),
           shape: RoundedRectangleBorder(
             borderRadius: BorderRadius.circular(DesignTokens.radiusMd),
           ),
@@ -139,7 +147,7 @@ class AppTheme {
         style: ButtonStyle(
           visualDensity: VisualDensity.compact,
           side: WidgetStatePropertyAll(
-            BorderSide(color: scheme.outlineVariant),
+            BorderSide(color: activeScheme.outlineVariant),
           ),
         ),
       ),

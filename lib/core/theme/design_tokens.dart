@@ -32,6 +32,15 @@ class DesignTokens {
 
   static const Curve curveStandard = Curves.easeOut;
   static const Curve curveEmphasized = Curves.fastOutSlowIn;
+
+  static const List<Color> groupPalette = <Color>[
+    Color(0xFF6B5CFF),
+    Color(0xFF5A8DEE),
+    Color(0xFF34C759),
+    Color(0xFFFFA726),
+    Color(0xFFE57373),
+    Color(0xFF26A69A),
+  ];
 }
 
 @immutable

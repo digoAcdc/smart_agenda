@@ -22,7 +22,11 @@ class EventDetailPage extends StatelessWidget {
     if (arg is! AgendaItem) {
       return Scaffold(
         appBar: AppBar(title: const Text('Detalhe do evento')),
-        body: const Center(child: Text('Evento invalido.')),
+        body: const SafeArea(
+          top: false,
+          bottom: false,
+          child: Center(child: Text('Evento invalido.')),
+        ),
       );
     }
     final agendaController = Get.find<AgendaController>();
@@ -52,9 +56,12 @@ class EventDetailPage extends StatelessWidget {
           ),
         ],
       ),
-      body: ListView(
-        padding: const EdgeInsets.fromLTRB(0, 10, 0, 120),
-        children: [
+      body: SafeArea(
+        top: false,
+        bottom: false,
+        child: ListView(
+          padding: const EdgeInsets.fromLTRB(0, 10, 0, 120),
+          children: [
           AppSurfaceCard(
             child: Row(
               children: [
@@ -197,7 +204,8 @@ class EventDetailPage extends StatelessWidget {
               ],
             ),
           ),
-        ],
+          ],
+        ),
       ),
     );
   }

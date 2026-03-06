@@ -79,22 +79,24 @@ class _TodayPageState extends State<TodayPage> {
     final groupsController = Get.find<GroupsController>();
     final classScheduleController = Get.find<ClassScheduleController>();
 
-    return Obx(
-      () {
-        final subtitle = DateFormat('EEEE, dd MMMM').format(selectedDate);
-        if (landingView == HomeLandingView.dashboard) {
-          return _buildDashboardView(
-            context: context,
-            agendaController: agendaController,
-            groupsController: groupsController,
-            classScheduleController: classScheduleController,
-          );
-        }
-        return Container(
-          color: isAgendaTabMode ? context.palette.appBackground : null,
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
+    return SafeArea(
+      bottom: false,
+      child: Obx(
+        () {
+          final subtitle = DateFormat('EEEE, dd MMMM').format(selectedDate);
+          if (landingView == HomeLandingView.dashboard) {
+            return _buildDashboardView(
+              context: context,
+              agendaController: agendaController,
+              groupsController: groupsController,
+              classScheduleController: classScheduleController,
+            );
+          }
+          return Container(
+            color: isAgendaTabMode ? context.palette.appBackground : null,
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
             const SizedBox(height: 6),
             SectionHeader(
               title: isAgendaTabMode ? 'Agenda' : 'Smart Agenda',
@@ -253,10 +255,11 @@ class _TodayPageState extends State<TodayPage> {
                       ),
               ),
             ),
-            ],
-          ),
-        );
-      },
+              ],
+            ),
+          );
+        },
+      ),
     );
   }
 
@@ -269,7 +272,7 @@ class _TodayPageState extends State<TodayPage> {
     if (agendaController.loading.value) {
       return const LoadingPlaceholderList();
     }
-    const accentGreen = Color(0xFF9CD64A);
+    final accentGreen = Theme.of(context).colorScheme.primary;
     final softBg = context.palette.appBackground;
 
     final todayEvents = [...agendaController.todayItems]
@@ -314,7 +317,7 @@ class _TodayPageState extends State<TodayPage> {
                 Container(
                   padding: const EdgeInsets.all(12),
                   decoration: BoxDecoration(
-                    color: Colors.white,
+                    color: Theme.of(context).colorScheme.surface,
                     borderRadius: BorderRadius.circular(20),
                   ),
                   child: Row(
@@ -373,7 +376,7 @@ class _TodayPageState extends State<TodayPage> {
                         context,
                         item: item,
                         groupName: groupNameById[item.groupId] ?? 'Sem grupo',
-                        accentColor: const Color(0xFF5A8DEE),
+                        accentColor: Theme.of(context).colorScheme.primary,
                       ),
                     ),
                   ),
@@ -382,9 +385,11 @@ class _TodayPageState extends State<TodayPage> {
                   Container(
                     padding: const EdgeInsets.all(12),
                     decoration: BoxDecoration(
-                      color: const Color(0xFFFFFBFB),
+                      color: Theme.of(context).colorScheme.surface,
                       borderRadius: BorderRadius.circular(18),
-                      border: Border.all(color: const Color(0xFFFFD7D7)),
+                      border: Border.all(
+                        color: context.semanticColors.danger.withValues(alpha: 0.2),
+                      ),
                     ),
                     child: Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
@@ -393,7 +398,7 @@ class _TodayPageState extends State<TodayPage> {
                           'ATENCAO NECESSARIA',
                           style:
                               Theme.of(context).textTheme.labelSmall?.copyWith(
-                                    color: const Color(0xFFE05353),
+                                    color: context.semanticColors.danger,
                                     fontWeight: FontWeight.w700,
                                     letterSpacing: 0.8,
                                   ),
@@ -403,7 +408,7 @@ class _TodayPageState extends State<TodayPage> {
                           context,
                           item: overdue.first,
                           groupName: groupNameById[overdue.first.groupId] ?? 'Sem grupo',
-                          accentColor: const Color(0xFFE65B5B),
+                          accentColor: context.semanticColors.danger,
                         ),
                       ],
                     ),
@@ -480,7 +485,9 @@ class _TodayPageState extends State<TodayPage> {
                               style: Theme.of(context)
                                   .textTheme
                                   .bodySmall
-                                  ?.copyWith(color: Colors.white),
+                                  ?.copyWith(
+                                    color: Theme.of(context).colorScheme.onPrimary,
+                                  ),
                             ),
                             const SizedBox(height: 4),
                             Text(
@@ -489,7 +496,7 @@ class _TodayPageState extends State<TodayPage> {
                                   .textTheme
                                   .headlineSmall
                                   ?.copyWith(
-                                    color: Colors.white,
+                                    color: Theme.of(context).colorScheme.onPrimary,
                                     fontWeight: FontWeight.w800,
                                   ),
                             ),
@@ -501,7 +508,9 @@ class _TodayPageState extends State<TodayPage> {
                         style: Theme.of(context)
                             .textTheme
                             .bodySmall
-                            ?.copyWith(color: Colors.white),
+                            ?.copyWith(
+                              color: Theme.of(context).colorScheme.onPrimary,
+                            ),
                       ),
                     ],
                   ),
@@ -538,7 +547,7 @@ class _TodayPageState extends State<TodayPage> {
               width: 50,
               padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 6),
               decoration: BoxDecoration(
-                color: selected ? accentGreen : Colors.white,
+                color: selected ? accentGreen : Theme.of(context).colorScheme.surface,
                 borderRadius: BorderRadius.circular(12),
               ),
               child: Column(
@@ -548,7 +557,7 @@ class _TodayPageState extends State<TodayPage> {
                     DateFormat('E').format(day),
                     style: Theme.of(context).textTheme.labelSmall?.copyWith(
                           color: selected
-                              ? Colors.white
+                              ? Theme.of(context).colorScheme.onPrimary
                               : Theme.of(context).colorScheme.onSurfaceVariant,
                         ),
                   ),
@@ -557,7 +566,7 @@ class _TodayPageState extends State<TodayPage> {
                     '${day.day}',
                     style: Theme.of(context).textTheme.titleMedium?.copyWith(
                           color: selected
-                              ? Colors.white
+                              ? Theme.of(context).colorScheme.onPrimary
                               : Theme.of(context).colorScheme.onSurface,
                           fontWeight: FontWeight.w700,
                         ),
@@ -585,7 +594,7 @@ class _TodayPageState extends State<TodayPage> {
           Text(
             trailing,
             style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                  color: const Color(0xFF7DBA3C),
+                  color: Theme.of(context).colorScheme.primary,
                   fontWeight: FontWeight.w600,
                 ),
           ),
@@ -607,14 +616,16 @@ class _TodayPageState extends State<TodayPage> {
         child: Container(
           padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
           decoration: BoxDecoration(
-            color: selected ? Colors.black : Colors.white,
+            color: selected
+                ? Theme.of(context).colorScheme.primary
+                : Theme.of(context).colorScheme.surface,
             borderRadius: BorderRadius.circular(999),
           ),
           child: Text(
             label,
             style: Theme.of(context).textTheme.labelSmall?.copyWith(
                   color: selected
-                      ? Colors.white
+                      ? Theme.of(context).colorScheme.onPrimary
                       : Theme.of(context).colorScheme.onSurfaceVariant,
                   fontWeight: FontWeight.w600,
                 ),
@@ -636,7 +647,7 @@ class _TodayPageState extends State<TodayPage> {
       child: Container(
         padding: const EdgeInsets.all(12),
         decoration: BoxDecoration(
-          color: Colors.white,
+          color: Theme.of(context).colorScheme.surface,
           borderRadius: BorderRadius.circular(14),
         ),
         child: Row(
@@ -695,7 +706,7 @@ class _TodayPageState extends State<TodayPage> {
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
       decoration: BoxDecoration(
-        color: Colors.white,
+        color: Theme.of(context).colorScheme.surface,
         borderRadius: BorderRadius.circular(16),
       ),
       child: Row(
@@ -771,7 +782,7 @@ class _TodayPageState extends State<TodayPage> {
             child: Container(
               padding: const EdgeInsets.all(12),
               decoration: BoxDecoration(
-                color: Colors.white,
+                color: Theme.of(context).colorScheme.surface,
                 borderRadius: BorderRadius.circular(16),
               ),
               child: Column(
@@ -780,7 +791,7 @@ class _TodayPageState extends State<TodayPage> {
                   Text(
                     groupName.toUpperCase(),
                     style: Theme.of(context).textTheme.labelSmall?.copyWith(
-                          color: const Color(0xFF5A8DEE),
+                          color: Theme.of(context).colorScheme.primary,
                           fontWeight: FontWeight.w700,
                         ),
                   ),
@@ -817,7 +828,7 @@ class _TodayPageState extends State<TodayPage> {
     return Container(
       padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
-        color: Colors.white,
+        color: Theme.of(context).colorScheme.surface,
         borderRadius: BorderRadius.circular(16),
       ),
       child: Row(
@@ -951,18 +962,18 @@ class _TodayPageState extends State<TodayPage> {
     required ValueChanged<AgendaStatus> onToggleStatus,
   }) {
     final statusColor = item.status == AgendaStatus.done
-        ? const Color(0xFF34C759)
+        ? context.semanticColors.success
         : item.status == AgendaStatus.canceled
-            ? const Color(0xFFFFA726)
-            : const Color(0xFF6B5CFF);
+            ? context.semanticColors.warning
+            : context.semanticColors.pending;
     return Container(
       margin: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
       decoration: BoxDecoration(
-        color: Colors.white,
+        color: Theme.of(context).colorScheme.surface,
         borderRadius: BorderRadius.circular(16),
         boxShadow: [
           BoxShadow(
-            color: Colors.black.withValues(alpha: 0.04),
+            color: Colors.black.withValues(alpha: 0.03),
             blurRadius: 8,
             offset: const Offset(0, 3),
           ),
@@ -1250,9 +1261,9 @@ class _TodayPageState extends State<TodayPage> {
   ) {
     final height = MediaQuery.of(context).size.height;
     final isCompact = height < 760;
-    const accentGreen = Color(0xFF9CD64A);
+    final accentGreen = Theme.of(context).colorScheme.primary;
     final cardBg = isAgendaTabMode
-        ? Colors.white
+        ? Theme.of(context).colorScheme.surface
         : Theme.of(context).colorScheme.surfaceContainerLow;
 
     return Padding(
@@ -1310,15 +1321,11 @@ class _TodayPageState extends State<TodayPage> {
             headerPadding: EdgeInsets.symmetric(vertical: isCompact ? 4 : 8),
             leftChevronIcon: Icon(
               Icons.chevron_left_rounded,
-              color: isAgendaTabMode
-                  ? const Color(0xFF2E3137)
-                  : Theme.of(context).colorScheme.onSurface,
+              color: Theme.of(context).colorScheme.onSurface,
             ),
             rightChevronIcon: Icon(
               Icons.chevron_right_rounded,
-              color: isAgendaTabMode
-                  ? const Color(0xFF2E3137)
-                  : Theme.of(context).colorScheme.onSurface,
+              color: Theme.of(context).colorScheme.onSurface,
             ),
             titleTextStyle: Theme.of(context).textTheme.titleMedium!,
           ),
@@ -1338,7 +1345,7 @@ class _TodayPageState extends State<TodayPage> {
             ),
             markerDecoration: BoxDecoration(
               color: isAgendaTabMode
-                  ? const Color(0xFFE65B5B)
+                  ? context.semanticColors.danger
                   : Theme.of(context).colorScheme.secondary,
               shape: BoxShape.circle,
             ),

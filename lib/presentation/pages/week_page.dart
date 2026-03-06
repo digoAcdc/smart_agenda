@@ -27,30 +27,34 @@ class _WeekPageState extends State<WeekPage> {
   Widget build(BuildContext context) {
     final controller = Get.find<AgendaController>();
     return Scaffold(
-      body: Obx(() {
-        final grouped = <String, List<dynamic>>{};
-        for (final item in controller.weekItems) {
-          final key = DateFormat('EEE dd/MM').format(item.startAt);
-          grouped.putIfAbsent(key, () => []).add(item);
-        }
-        return ListView(
-          children: grouped.entries.map((entry) {
-            return ExpansionTile(
-              title: Text('${entry.key} (${entry.value.length})'),
-              initiallyExpanded: true,
-              children: entry.value
-                  .map<Widget>(
-                    (item) => AgendaItemTile(
-                      item: item,
-                      onTap: () =>
-                          Get.toNamed(AppRoutes.eventDetail, arguments: item),
-                    ),
-                  )
-                  .toList(),
-            );
-          }).toList(),
-        );
-      }),
+      body: SafeArea(
+        top: false,
+        bottom: false,
+        child: Obx(() {
+          final grouped = <String, List<dynamic>>{};
+          for (final item in controller.weekItems) {
+            final key = DateFormat('EEE dd/MM').format(item.startAt);
+            grouped.putIfAbsent(key, () => []).add(item);
+          }
+          return ListView(
+            children: grouped.entries.map((entry) {
+              return ExpansionTile(
+                title: Text('${entry.key} (${entry.value.length})'),
+                initiallyExpanded: true,
+                children: entry.value
+                    .map<Widget>(
+                      (item) => AgendaItemTile(
+                        item: item,
+                        onTap: () =>
+                            Get.toNamed(AppRoutes.eventDetail, arguments: item),
+                      ),
+                    )
+                    .toList(),
+              );
+            }).toList(),
+          );
+        }),
+      ),
       floatingActionButton: FloatingActionButton(
         onPressed: () => Get.toNamed(AppRoutes.upsertAgenda),
         child: const Icon(Icons.add),
