@@ -47,6 +47,8 @@ dependencies:
   equatable: ^2.0.7
   animated_bottom_navigation_bar: ^1.4.0
   permission_handler: ^12.0.1
+  share_plus: ^12.0.1
+  file_picker: ^10.3.2
 
 dev_dependencies:
   flutter_test:
