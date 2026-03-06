@@ -107,9 +107,13 @@ class AgendaController extends GetxController {
 
   Future<bool> createItem(AgendaItem item) async {
     loading.value = true;
+    errorMessage.value = null;
     final result = await createAgendaItem(item);
     if (result.isSuccess) {
-      await notificationService.scheduleForItem(item);
+      final notifyResult = await notificationService.scheduleForItem(item);
+      if (!notifyResult.isSuccess) {
+        errorMessage.value = notifyResult.errorMessage;
+      }
       await refreshCurrentData();
       loading.value = false;
       return true;
@@ -121,11 +125,15 @@ class AgendaController extends GetxController {
 
   Future<bool> updateItem(AgendaItem item) async {
     loading.value = true;
+    errorMessage.value = null;
     await notificationService.cancelForItem(item);
     final result =
         await updateAgendaItem(item.copyWith(updatedAt: DateTime.now()));
     if (result.isSuccess) {
-      await notificationService.scheduleForItem(item);
+      final notifyResult = await notificationService.scheduleForItem(item);
+      if (!notifyResult.isSuccess) {
+        errorMessage.value = notifyResult.errorMessage;
+      }
       await refreshCurrentData();
       loading.value = false;
       return true;

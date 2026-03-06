@@ -120,21 +120,38 @@ class NotificationServiceImpl implements INotificationService {
         return Result.success(null);
       }
 
-      await _notificationsPlugin.zonedSchedule(
-        reminder.notificationId,
-        item.title,
-        item.description ?? 'Evento em breve',
-        tz.TZDateTime.from(scheduledAt, tz.local),
-        const NotificationDetails(
-          android: AndroidNotificationDetails(
-            AppConstants.notificationChannelId,
-            AppConstants.notificationChannelName,
-            importance: Importance.high,
-            priority: Priority.high,
-          ),
+      final scheduleDate = tz.TZDateTime.from(scheduledAt, tz.local);
+      final details = const NotificationDetails(
+        android: AndroidNotificationDetails(
+          AppConstants.notificationChannelId,
+          AppConstants.notificationChannelName,
+          importance: Importance.high,
+          priority: Priority.high,
         ),
-        androidScheduleMode: AndroidScheduleMode.exactAllowWhileIdle,
       );
+
+      // On some Android devices/versions exact alarms are restricted.
+      // Try exact first and fallback to inexact to keep reminders working.
+      try {
+        await _notificationsPlugin.zonedSchedule(
+          reminder.notificationId,
+          item.title,
+          item.description ?? 'Evento em breve',
+          scheduleDate,
+          details,
+          androidScheduleMode: AndroidScheduleMode.exactAllowWhileIdle,
+        );
+      } catch (_) {
+        await _notificationsPlugin.zonedSchedule(
+          reminder.notificationId,
+          item.title,
+          item.description ?? 'Evento em breve',
+          scheduleDate,
+          details,
+          androidScheduleMode: AndroidScheduleMode.inexactAllowWhileIdle,
+        );
+      }
+
       return Result.success(null);
     } catch (e) {
       return Result.failure('Erro ao agendar notificacao: $e');

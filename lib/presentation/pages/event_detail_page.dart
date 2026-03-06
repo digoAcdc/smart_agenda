@@ -166,37 +166,50 @@ class EventDetailPage extends StatelessWidget {
                 else
                   Column(
                     children: arg.attachments.map((a) {
-                      return Container(
-                        margin: const EdgeInsets.only(bottom: DesignTokens.spaceXs),
-                        padding: const EdgeInsets.all(10),
-                        decoration: BoxDecoration(
-                          color: Theme.of(context).colorScheme.surface,
-                          borderRadius:
-                              BorderRadius.circular(DesignTokens.radiusMd),
-                        ),
-                        child: Row(
-                          children: [
-                            if (a.localPath != null && File(a.localPath!).existsSync())
-                              ClipRRect(
-                                borderRadius: BorderRadius.circular(10),
-                                child: Image.file(
-                                  File(a.localPath!),
-                                  width: 42,
-                                  height: 42,
-                                  fit: BoxFit.cover,
+                      final hasFile =
+                          a.localPath != null && File(a.localPath!).existsSync();
+                      return InkWell(
+                        borderRadius: BorderRadius.circular(DesignTokens.radiusMd),
+                        onTap: () => _openAttachmentPreview(context, a.localPath),
+                        child: Container(
+                          margin: const EdgeInsets.only(bottom: DesignTokens.spaceXs),
+                          padding: const EdgeInsets.all(10),
+                          decoration: BoxDecoration(
+                            color: Theme.of(context).colorScheme.surface,
+                            borderRadius:
+                                BorderRadius.circular(DesignTokens.radiusMd),
+                          ),
+                          child: Row(
+                            children: [
+                              if (hasFile)
+                                ClipRRect(
+                                  borderRadius: BorderRadius.circular(10),
+                                  child: Image.file(
+                                    File(a.localPath!),
+                                    width: 42,
+                                    height: 42,
+                                    fit: BoxFit.cover,
+                                  ),
+                                )
+                              else
+                                const Icon(Icons.attachment_outlined),
+                              const SizedBox(width: DesignTokens.spaceXs),
+                              Expanded(
+                                child: Text(
+                                  a.title ?? 'Anexo',
+                                  maxLines: 1,
+                                  overflow: TextOverflow.ellipsis,
                                 ),
-                              )
-                            else
-                              const Icon(Icons.attachment_outlined),
-                            const SizedBox(width: DesignTokens.spaceXs),
-                            Expanded(
-                              child: Text(
-                                a.title ?? 'Anexo',
-                                maxLines: 1,
-                                overflow: TextOverflow.ellipsis,
                               ),
-                            ),
-                          ],
+                              Icon(
+                                hasFile
+                                    ? Icons.open_in_full_rounded
+                                    : Icons.error_outline_rounded,
+                                size: 18,
+                                color: Theme.of(context).colorScheme.onSurfaceVariant,
+                              ),
+                            ],
+                          ),
                         ),
                       );
                     }).toList(),
@@ -217,5 +230,53 @@ class EventDetailPage extends StatelessWidget {
     final value = int.tryParse(normalized, radix: 16);
     if (value == null) return null;
     return Color(value);
+  }
+
+  Future<void> _openAttachmentPreview(
+    BuildContext context,
+    String? localPath,
+  ) async {
+    if (localPath == null || !File(localPath).existsSync()) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Arquivo do anexo nao encontrado.')),
+      );
+      return;
+    }
+
+    await showDialog<void>(
+      context: context,
+      builder: (dialogContext) {
+        return Dialog(
+          insetPadding: const EdgeInsets.all(14),
+          child: ClipRRect(
+            borderRadius: BorderRadius.circular(DesignTokens.radiusLg),
+            child: Stack(
+              children: [
+                SizedBox(
+                  width: double.infinity,
+                  height: MediaQuery.of(dialogContext).size.height * 0.72,
+                  child: InteractiveViewer(
+                    minScale: 0.8,
+                    maxScale: 4,
+                    child: Image.file(
+                      File(localPath),
+                      fit: BoxFit.contain,
+                    ),
+                  ),
+                ),
+                Positioned(
+                  top: 8,
+                  right: 8,
+                  child: IconButton.filledTonal(
+                    onPressed: () => Navigator.of(dialogContext).pop(),
+                    icon: const Icon(Icons.close_rounded),
+                  ),
+                ),
+              ],
+            ),
+          ),
+        );
+      },
+    );
   }
 }

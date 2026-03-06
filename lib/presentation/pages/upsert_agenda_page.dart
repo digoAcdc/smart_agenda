@@ -11,7 +11,6 @@ import '../../core/theme/design_tokens.dart';
 import '../../domain/entities/agenda_enums.dart';
 import '../../domain/entities/agenda_item.dart';
 import '../../domain/entities/attachment_ref.dart';
-import '../../domain/entities/recurrence_rule.dart';
 import '../../domain/entities/reminder_config.dart';
 import '../../domain/repositories/i_file_storage_service.dart';
 import '../../domain/repositories/i_notification_service.dart';
@@ -37,7 +36,6 @@ class _UpsertAgendaPageState extends State<UpsertAgendaPage> {
   String? groupId;
   bool reminderEnabled = false;
   int? reminderMinutes = 10;
-  RecurrenceType recurrenceType = RecurrenceType.none;
   List<AttachmentRef> attachments = [];
   AgendaItem? editingItem;
 
@@ -56,7 +54,6 @@ class _UpsertAgendaPageState extends State<UpsertAgendaPage> {
       groupId = arg.groupId;
       reminderEnabled = arg.reminder?.enabled ?? false;
       reminderMinutes = arg.reminder?.minutesBefore;
-      recurrenceType = arg.recurrence?.type ?? RecurrenceType.none;
       attachments = [...arg.attachments];
     }
   }
@@ -180,10 +177,8 @@ class _UpsertAgendaPageState extends State<UpsertAgendaPage> {
                 DateTime.now().millisecondsSinceEpoch.remainder(1000000),
           );
 
-    final recurrence = RecurrenceRule(type: recurrenceType);
-
     if (editingItem == null) {
-      final item = controller.buildNewItem(
+      final newItem = controller.buildNewItem(
         title: titleController.text.trim(),
         description: descriptionController.text.trim(),
         startAt: startAt,
@@ -192,12 +187,24 @@ class _UpsertAgendaPageState extends State<UpsertAgendaPage> {
         groupId: groupId,
         status: status,
         reminder: reminder,
-        recurrence: recurrenceType == RecurrenceType.none ? null : recurrence,
-        attachments: attachments,
+        recurrence: null,
+        attachments: const [],
+      );
+      final item = newItem.copyWith(
+        attachments: attachments
+            .map((a) => a.copyWith(itemId: newItem.id))
+            .toList(),
       );
       final ok = await controller.createItem(item);
       if (ok) {
-        _showSaved('Evento criado com sucesso');
+        if (controller.errorMessage.value != null &&
+            controller.errorMessage.value!.isNotEmpty) {
+          _showSaved(
+            'Evento criado, mas o lembrete falhou: ${controller.errorMessage.value}',
+          );
+        } else {
+          _showSaved('Evento criado com sucesso');
+        }
         Get.back();
       }
       return;
@@ -212,14 +219,21 @@ class _UpsertAgendaPageState extends State<UpsertAgendaPage> {
       groupId: groupId,
       status: status,
       reminder: reminder,
-      recurrence: recurrenceType == RecurrenceType.none ? null : recurrence,
+      recurrence: null,
       attachments:
           attachments.map((a) => a.copyWith(itemId: editingItem!.id)).toList(),
       updatedAt: DateTime.now(),
     );
     final ok = await controller.updateItem(updated);
     if (ok) {
-      _showSaved('Evento atualizado');
+      if (controller.errorMessage.value != null &&
+          controller.errorMessage.value!.isNotEmpty) {
+        _showSaved(
+          'Evento atualizado, mas o lembrete falhou: ${controller.errorMessage.value}',
+        );
+      } else {
+        _showSaved('Evento atualizado');
+      }
       Get.back();
     }
   }
@@ -456,7 +470,6 @@ class _UpsertAgendaPageState extends State<UpsertAgendaPage> {
                         title: 'Sem grupo',
                         selected: groupId == null,
                         onTap: () => setState(() => groupId = null),
-                        baseColor: const Color(0xFF5A8DEE),
                       ),
                       ...groupsController.groups.map(
                         (g) => _groupTile(
@@ -464,10 +477,6 @@ class _UpsertAgendaPageState extends State<UpsertAgendaPage> {
                           title: g.name,
                           selected: groupId == g.id,
                           onTap: () => setState(() => groupId = g.id),
-                          baseColor: _resolveGroupColor(
-                            g.colorHex,
-                            groupsController.groups.indexOf(g),
-                          ),
                         ),
                       ),
                       _groupTile(
@@ -476,7 +485,6 @@ class _UpsertAgendaPageState extends State<UpsertAgendaPage> {
                         selected: false,
                         outlined: true,
                         onTap: () => Get.toNamed(AppRoutes.groups),
-                        baseColor: Theme.of(context).colorScheme.outline,
                       ),
                     ],
                   ),
@@ -514,21 +522,33 @@ class _UpsertAgendaPageState extends State<UpsertAgendaPage> {
               children: [
                 Row(
                   children: [
-                    Text(
-                      'Lembretes',
-                      style: Theme.of(context).textTheme.titleSmall?.copyWith(
-                            fontWeight: FontWeight.w700,
+                    Expanded(
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        mainAxisSize: MainAxisSize.min,
+                        children: [
+                          Text(
+                            'Lembretes',
+                            style: Theme.of(context).textTheme.titleSmall?.copyWith(
+                                  fontWeight: FontWeight.w700,
+                                ),
                           ),
-                    ),
-                    const SizedBox(width: 6),
-                    Text(
-                      'Get notified before the event',
-                      style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                            color: Theme.of(context).colorScheme.onSurfaceVariant,
-                            fontSize: 11,
+                          const SizedBox(height: 2),
+                          Text(
+                            'Receba alertas antes do evento',
+                            maxLines: 2,
+                            overflow: TextOverflow.ellipsis,
+                            style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                                  color: Theme.of(context)
+                                      .colorScheme
+                                      .onSurfaceVariant,
+                                  fontSize: 11,
+                                ),
                           ),
+                        ],
+                      ),
                     ),
-                    const Spacer(),
+                    const SizedBox(width: 8),
                     Transform.scale(
                       scale: .86,
                       child: Switch(
@@ -559,6 +579,17 @@ class _UpsertAgendaPageState extends State<UpsertAgendaPage> {
                         .toList(),
                   ),
                 ],
+              ],
+            ),
+            _sectionCard(
+              context,
+              children: [
+                Text(
+                  'Status',
+                  style: Theme.of(context).textTheme.titleSmall?.copyWith(
+                        fontWeight: FontWeight.w700,
+                      ),
+                ),
                 const SizedBox(height: 8),
                 DropdownButtonFormField<AgendaStatus>(
                   initialValue: status,
@@ -579,17 +610,6 @@ class _UpsertAgendaPageState extends State<UpsertAgendaPage> {
                       .toList(),
                   onChanged: (value) {
                     if (value != null) setState(() => status = value);
-                  },
-                ),
-                const SizedBox(height: 8),
-                DropdownButtonFormField<RecurrenceType>(
-                  initialValue: recurrenceType,
-                  decoration: const InputDecoration(labelText: 'Recorrencia'),
-                  items: RecurrenceType.values
-                      .map((e) => DropdownMenuItem(value: e, child: Text(e.name)))
-                      .toList(),
-                  onChanged: (value) {
-                    if (value != null) setState(() => recurrenceType = value);
                   },
                 ),
               ],
@@ -918,9 +938,9 @@ class _UpsertAgendaPageState extends State<UpsertAgendaPage> {
     required String title,
     required bool selected,
     required VoidCallback onTap,
-    required Color baseColor,
     bool outlined = false,
   }) {
+    final selectedColor = Theme.of(context).colorScheme.primary;
     final width = (MediaQuery.of(context).size.width - 70) / 2;
     return InkWell(
       onTap: onTap,
@@ -931,12 +951,12 @@ class _UpsertAgendaPageState extends State<UpsertAgendaPage> {
         padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 12),
         decoration: BoxDecoration(
           color: selected
-              ? baseColor.withValues(alpha: 0.18)
+              ? selectedColor.withValues(alpha: 0.18)
               : Theme.of(context).colorScheme.surface,
           borderRadius: BorderRadius.circular(14),
           border: Border.all(
             color: selected
-                ? baseColor.withValues(alpha: 0.46)
+                ? selectedColor.withValues(alpha: 0.46)
                 : outlined
                     ? Theme.of(context).colorScheme.outlineVariant
                     : Colors.transparent,
@@ -949,7 +969,7 @@ class _UpsertAgendaPageState extends State<UpsertAgendaPage> {
               title == 'Novo' ? Icons.add_rounded : Icons.folder_copy_outlined,
               size: 16,
               color: selected
-                  ? baseColor
+                  ? selectedColor
                   : Theme.of(context).colorScheme.onSurfaceVariant,
             ),
             const SizedBox(height: 5),
@@ -963,17 +983,6 @@ class _UpsertAgendaPageState extends State<UpsertAgendaPage> {
         ),
       ),
     );
-  }
-
-  Color _resolveGroupColor(String? colorHex, int fallbackIndex) {
-    if (colorHex != null && colorHex.isNotEmpty) {
-      final sanitized = colorHex.replaceAll('#', '');
-      final normalized =
-          sanitized.length == 6 ? 'FF$sanitized' : sanitized.padLeft(8, 'F');
-      final value = int.tryParse(normalized, radix: 16);
-      if (value != null) return Color(value);
-    }
-    return DesignTokens.groupPalette[fallbackIndex % DesignTokens.groupPalette.length];
   }
 
   String _suggestedTime(DateTime date, int addMinutes) {
