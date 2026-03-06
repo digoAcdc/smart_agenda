@@ -7,16 +7,16 @@ import 'package:intl/intl.dart';
 import 'package:uuid/uuid.dart';
 
 import '../../core/routes/app_routes.dart';
+import '../../core/theme/design_tokens.dart';
 import '../../domain/entities/agenda_enums.dart';
 import '../../domain/entities/agenda_item.dart';
 import '../../domain/entities/attachment_ref.dart';
 import '../../domain/entities/recurrence_rule.dart';
 import '../../domain/entities/reminder_config.dart';
 import '../../domain/repositories/i_file_storage_service.dart';
+import '../../domain/repositories/i_notification_service.dart';
 import '../controllers/agenda_controller.dart';
 import '../controllers/groups_controller.dart';
-import '../widgets/primary_button.dart';
-import '../widgets/section_header.dart';
 
 class UpsertAgendaPage extends StatefulWidget {
   const UpsertAgendaPage({super.key});
@@ -131,6 +131,37 @@ class _UpsertAgendaPageState extends State<UpsertAgendaPage> {
     });
   }
 
+  Future<void> _handleReminderToggle(bool value) async {
+    if (!value) {
+      setState(() => reminderEnabled = false);
+      return;
+    }
+
+    final notificationService = Get.find<INotificationService>();
+    final permissionResult = await notificationService.ensurePermissions();
+    if (!mounted) return;
+
+    if (!permissionResult.isSuccess) {
+      _showSaved(
+        permissionResult.errorMessage ??
+            'Nao foi possivel solicitar permissao de notificacoes.',
+      );
+      setState(() => reminderEnabled = false);
+      return;
+    }
+
+    final granted = permissionResult.data ?? false;
+    if (!granted) {
+      _showSaved(
+        'Permissao de notificacao negada. Ative nas configuracoes do sistema.',
+      );
+      setState(() => reminderEnabled = false);
+      return;
+    }
+
+    setState(() => reminderEnabled = true);
+  }
+
   Future<void> _save() async {
     final controller = Get.find<AgendaController>();
     if (titleController.text.trim().isEmpty) return;
@@ -196,141 +227,356 @@ class _UpsertAgendaPageState extends State<UpsertAgendaPage> {
   @override
   Widget build(BuildContext context) {
     final groupsController = Get.find<GroupsController>();
-    final dateFmt = DateFormat('dd/MM/yyyy HH:mm');
+    final dateFmt = DateFormat('EEE, dd MMM', 'pt_BR');
+    final timeFmt = DateFormat('HH:mm');
     final bottomInset = MediaQuery.of(context).padding.bottom;
+    final accentGreen = Theme.of(context).colorScheme.primary;
+    final surfaceSoft = context.palette.surfaceSoft;
+    final bg = context.palette.appBackground;
+    final pageTheme = Theme.of(context).copyWith(
+      inputDecorationTheme: Theme.of(context).inputDecorationTheme.copyWith(
+            fillColor: Colors.white,
+            hintStyle: Theme.of(context).textTheme.bodyMedium?.copyWith(
+                  color: const Color(0xFF9BA39C),
+                ),
+          ),
+    );
+
     return Scaffold(
-      appBar: AppBar(
-        title: Text(editingItem == null ? 'Novo evento' : 'Editar evento'),
-        actions: [
-          if (editingItem != null)
-            IconButton(
-              onPressed: () async {
-                await Get.find<AgendaController>()
-                    .duplicateItem(editingItem!.id);
-                if (mounted) Get.back();
-              },
-              icon: const Icon(Icons.copy),
-              tooltip: 'Duplicar',
-            ),
-        ],
-      ),
-      body: SingleChildScrollView(
-        padding: EdgeInsets.fromLTRB(16, 8, 16, 20 + bottomInset),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            const SectionHeader(
-              title: 'Detalhes do evento',
-              subtitle: 'Defina titulo, horario e regras',
-            ),
-            _sectionCard(
-              context,
+      backgroundColor: bg,
+      body: Theme(
+        data: pageTheme,
+        child: SafeArea(
+          bottom: false,
+          child: SingleChildScrollView(
+            padding: EdgeInsets.fromLTRB(14, 10, 14, 20 + bottomInset),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                TextField(
-                  controller: titleController,
-                  decoration: const InputDecoration(labelText: 'Titulo *'),
+            Row(
+              children: [
+                IconButton(
+                  onPressed: () => Get.back(),
+                  icon: const Icon(Icons.close_rounded),
+                  style: IconButton.styleFrom(
+                    backgroundColor: Colors.white,
+                  ),
                 ),
-                const SizedBox(height: 12),
-                TextField(
-                  controller: descriptionController,
-                  decoration: const InputDecoration(labelText: 'Descricao'),
-                  minLines: 2,
-                  maxLines: 3,
-                ),
-                const SizedBox(height: 16),
-                Row(
-                  children: [
-                    Expanded(
-                      child: OutlinedButton.icon(
-                        onPressed: _pickStartDateTime,
-                        icon: const Icon(Icons.schedule),
-                        label: Text('Inicio\n${dateFmt.format(startAt)}'),
-                      ),
+                Expanded(
+                  child: Center(
+                    child: Text(
+                      editingItem == null ? 'Novo evento' : 'Editar evento',
+                      style: Theme.of(context).textTheme.titleMedium?.copyWith(
+                            fontWeight: FontWeight.w700,
+                          ),
                     ),
-                    const SizedBox(width: 12),
-                    Expanded(
-                      child: OutlinedButton.icon(
-                        onPressed: _pickEndDateTime,
-                        icon: const Icon(Icons.event_available_outlined),
-                        label: Text(
-                          endAt == null
-                              ? 'Definir fim'
-                              : 'Fim\n${dateFmt.format(endAt!)}',
-                        ),
-                      ),
-                    ),
-                  ],
+                  ),
                 ),
-                const SizedBox(height: 8),
-                SwitchListTile(
-                  contentPadding: EdgeInsets.zero,
-                  title: const Text('Dia inteiro'),
-                  value: allDay,
-                  onChanged: (value) => setState(() => allDay = value),
-                ),
-                DropdownButtonFormField<AgendaStatus>(
-                  initialValue: status,
-                  decoration: const InputDecoration(labelText: 'Status'),
-                  items: AgendaStatus.values
-                      .map((e) =>
-                          DropdownMenuItem(value: e, child: Text(e.name)))
-                      .toList(),
-                  onChanged: (value) {
-                    if (value != null) setState(() => status = value);
-                  },
-                ),
+                if (editingItem != null)
+                  IconButton(
+                    onPressed: () async {
+                      await Get.find<AgendaController>()
+                          .duplicateItem(editingItem!.id);
+                      if (mounted) Get.back();
+                    },
+                    icon: const Icon(Icons.copy_rounded),
+                    style: IconButton.styleFrom(backgroundColor: Colors.white),
+                  )
+                else
+                  const SizedBox(width: 48),
               ],
             ),
             const SizedBox(height: 12),
             _sectionCard(
               context,
               children: [
-                Obx(
-                  () => DropdownButtonFormField<String?>(
-                    initialValue: groupId,
-                    decoration: const InputDecoration(labelText: 'Grupo'),
-                    items: [
-                      const DropdownMenuItem(
-                          value: null, child: Text('Sem grupo')),
-                      ...groupsController.groups.map((g) =>
-                          DropdownMenuItem(value: g.id, child: Text(g.name))),
+                Text(
+                  'TITULO DO EVENTO *',
+                  style: Theme.of(context).textTheme.labelSmall?.copyWith(
+                        fontWeight: FontWeight.w700,
+                        letterSpacing: .9,
+                        color: const Color(0xFF7D857C),
+                      ),
+                ),
+                const SizedBox(height: 8),
+                TextField(
+                  controller: titleController,
+                  decoration: const InputDecoration(
+                    hintText: 'O que voce esta planejando?',
+                  ),
+                ),
+              ],
+            ),
+            _sectionCard(
+              context,
+              children: [
+                Row(
+                  children: [
+                    const Icon(
+                      Icons.event_note_rounded,
+                      size: 16,
+                      color: Color(0xFF9CD64A),
+                    ),
+                    const SizedBox(width: 6),
+                    Text(
+                      'Date & Time',
+                      style: Theme.of(context).textTheme.titleSmall?.copyWith(
+                            fontWeight: FontWeight.w700,
+                          ),
+                    ),
+                    const Spacer(),
+                    Text(
+                      'Dia todo',
+                      style: Theme.of(context).textTheme.bodySmall,
+                    ),
+                    const SizedBox(width: 8),
+                    Transform.scale(
+                      scale: .86,
+                      child: Switch(
+                        value: allDay,
+                        activeThumbColor: Colors.white,
+                        activeTrackColor: accentGreen,
+                        onChanged: (value) => setState(() => allDay = value),
+                      ),
+                    ),
+                  ],
+                ),
+                const SizedBox(height: 10),
+                Container(
+                  padding: const EdgeInsets.all(12),
+                  decoration: BoxDecoration(
+                    color: Colors.white.withValues(alpha: 0.68),
+                    borderRadius: BorderRadius.circular(14),
+                    border: Border.all(
+                      color: Theme.of(context).colorScheme.outlineVariant,
+                    ),
+                  ),
+                  child: Column(
+                    children: [
+                      _dateLine(
+                        context,
+                        label: 'INICIO',
+                        date: dateFmt.format(startAt),
+                        time: timeFmt.format(startAt),
+                        onTap: _pickStartDateTime,
+                      ),
+                      Divider(
+                        height: 14,
+                        color: Theme.of(context).colorScheme.outlineVariant,
+                      ),
+                      const SizedBox(height: 8),
+                      _dateLine(
+                        context,
+                        label: 'FIM',
+                        date: endAt == null
+                            ? 'Definir'
+                            : dateFmt.format(endAt!),
+                        time: endAt == null ? '--:--' : timeFmt.format(endAt!),
+                        onTap: _pickEndDateTime,
+                        onClear: endAt == null
+                            ? null
+                            : () => setState(() => endAt = null),
+                      ),
                     ],
-                    onChanged: (value) => setState(() => groupId = value),
                   ),
                 ),
-                Align(
-                  alignment: Alignment.centerLeft,
-                  child: TextButton.icon(
-                    onPressed: () => Get.toNamed(AppRoutes.groups),
-                    icon: const Icon(Icons.group_work_outlined),
-                    label: const Text('Gerenciar grupos'),
+                const SizedBox(height: 10),
+                Wrap(
+                  spacing: 2,
+                  runSpacing: 6,
+                  crossAxisAlignment: WrapCrossAlignment.center,
+                  children: [
+                    Padding(
+                      padding: const EdgeInsets.only(right: 6),
+                      child: Text(
+                        'Sugestoes',
+                        style: Theme.of(context).textTheme.labelSmall,
+                      ),
+                    ),
+                    _timeSuggestionChip(context, _suggestedTime(startAt, 0),
+                        onTap: () {
+                      setState(() => endAt = startAt.add(const Duration(minutes: 30)));
+                    }, selected: endAt != null &&
+                        endAt!.difference(startAt).inMinutes == 30),
+                    _timeSuggestionChip(context, _suggestedTime(startAt, 30),
+                        onTap: () {
+                      setState(() => endAt = startAt.add(const Duration(hours: 1)));
+                    }, selected: endAt != null &&
+                        endAt!.difference(startAt).inMinutes == 60),
+                    _timeSuggestionChip(context, _suggestedTime(startAt, 60),
+                        onTap: () {
+                      setState(() => endAt = startAt.add(const Duration(hours: 2)));
+                    }, selected: endAt != null &&
+                        endAt!.difference(startAt).inMinutes == 120),
+                    _timeSuggestionChip(context, _suggestedTime(startAt, 90),
+                        onTap: () {
+                      setState(() {
+                        endAt = startAt.add(const Duration(hours: 2, minutes: 30));
+                      });
+                    }, selected: endAt != null &&
+                        endAt!.difference(startAt).inMinutes == 150),
+                  ],
+                ),
+              ],
+            ),
+            _sectionCard(
+              context,
+              children: [
+                const Row(
+                  children: [
+                    Icon(
+                      Icons.auto_awesome_rounded,
+                      size: 16,
+                      color: Color(0xFF9CD64A),
+                    ),
+                    SizedBox(width: 6),
+                  ],
+                ),
+                Text(
+                  'Grupo',
+                  style: Theme.of(context).textTheme.titleSmall?.copyWith(
+                        fontWeight: FontWeight.w700,
+                      ),
+                ),
+                const SizedBox(height: 10),
+                Obx(
+                  () => Wrap(
+                    spacing: 10,
+                    runSpacing: 10,
+                    children: [
+                      _groupTile(
+                        context,
+                        title: 'Sem grupo',
+                        selected: groupId == null,
+                        onTap: () => setState(() => groupId = null),
+                        baseColor: const Color(0xFF6B5CFF),
+                      ),
+                      ...groupsController.groups.map(
+                        (g) => _groupTile(
+                          context,
+                          title: g.name,
+                          selected: groupId == g.id,
+                          onTap: () => setState(() => groupId = g.id),
+                          baseColor: _resolveGroupColor(g.colorHex),
+                        ),
+                      ),
+                      _groupTile(
+                        context,
+                        title: 'Novo',
+                        selected: false,
+                        outlined: true,
+                        onTap: () => Get.toNamed(AppRoutes.groups),
+                        baseColor: Theme.of(context).colorScheme.outline,
+                      ),
+                    ],
                   ),
                 ),
-                SwitchListTile(
-                  contentPadding: EdgeInsets.zero,
-                  title: const Text('Lembrete'),
-                  value: reminderEnabled,
-                  onChanged: (value) => setState(() => reminderEnabled = value),
+              ],
+            ),
+            _sectionCard(
+              context,
+              children: [
+                Text(
+                  'Descricao (opcional)',
+                  style: Theme.of(context).textTheme.labelSmall?.copyWith(
+                        fontWeight: FontWeight.w700,
+                        color: const Color(0xFF7D857C),
+                      ),
                 ),
-                if (reminderEnabled)
-                  DropdownButtonFormField<int>(
-                    initialValue: reminderMinutes,
-                    decoration:
-                        const InputDecoration(labelText: 'Minutos antes'),
-                    items: const [5, 10, 30, 60]
-                        .map((e) =>
-                            DropdownMenuItem(value: e, child: Text('$e min')))
+                const SizedBox(height: 8),
+                TextField(
+                  controller: descriptionController,
+                  decoration:
+                      const InputDecoration(hintText: 'Adicione notas do evento'),
+                  minLines: 2,
+                  maxLines: 3,
+                ),
+              ],
+            ),
+            _sectionCard(
+              context,
+              children: [
+                _buildAttachmentsSection(context),
+              ],
+            ),
+            _sectionCard(
+              context,
+              children: [
+                Row(
+                  children: [
+                    Text(
+                      'Lembretes',
+                      style: Theme.of(context).textTheme.titleSmall?.copyWith(
+                            fontWeight: FontWeight.w700,
+                          ),
+                    ),
+                    const SizedBox(width: 6),
+                    Text(
+                      'Get notified before the event',
+                      style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                            color: Theme.of(context).colorScheme.onSurfaceVariant,
+                            fontSize: 11,
+                          ),
+                    ),
+                    const Spacer(),
+                    Transform.scale(
+                      scale: .86,
+                      child: Switch(
+                        value: reminderEnabled,
+                        activeThumbColor: Colors.white,
+                        activeTrackColor: accentGreen,
+                        onChanged: _handleReminderToggle,
+                      ),
+                    ),
+                  ],
+                ),
+                if (reminderEnabled) ...[
+                  const SizedBox(height: 8),
+                  Wrap(
+                    spacing: 8,
+                    runSpacing: 8,
+                    children: [5, 10, 15, 30, 60]
+                        .map(
+                          (e) => ChoiceChip(
+                            label: Text('$e min antes'),
+                            selected: reminderMinutes == e,
+                            selectedColor: const Color(0xFFFFE2CC),
+                            backgroundColor: surfaceSoft,
+                            onSelected: (_) =>
+                                setState(() => reminderMinutes = e),
+                          ),
+                        )
                         .toList(),
-                    onChanged: (value) =>
-                        setState(() => reminderMinutes = value),
                   ),
+                ],
+                const SizedBox(height: 8),
+                DropdownButtonFormField<AgendaStatus>(
+                  initialValue: status,
+                  decoration: const InputDecoration(labelText: 'Status'),
+                  items: AgendaStatus.values
+                      .map(
+                        (e) => DropdownMenuItem(
+                          value: e,
+                          child: Text(
+                            e == AgendaStatus.pending
+                                ? 'Pendente'
+                                : e == AgendaStatus.done
+                                    ? 'Concluido'
+                                    : 'Cancelado',
+                          ),
+                        ),
+                      )
+                      .toList(),
+                  onChanged: (value) {
+                    if (value != null) setState(() => status = value);
+                  },
+                ),
                 const SizedBox(height: 8),
                 DropdownButtonFormField<RecurrenceType>(
                   initialValue: recurrenceType,
                   decoration: const InputDecoration(labelText: 'Recorrencia'),
                   items: RecurrenceType.values
-                      .map((e) =>
-                          DropdownMenuItem(value: e, child: Text(e.name)))
+                      .map((e) => DropdownMenuItem(value: e, child: Text(e.name)))
                       .toList(),
                   onChanged: (value) {
                     if (value != null) setState(() => recurrenceType = value);
@@ -338,30 +584,54 @@ class _UpsertAgendaPageState extends State<UpsertAgendaPage> {
                 ),
               ],
             ),
-            const SizedBox(height: 12),
-            _sectionCard(
-              context,
-              children: [_buildAttachmentsSection(context)],
+              const SizedBox(height: 12),
+              Row(
+              children: [
+                Expanded(
+                  child: OutlinedButton(
+                    style: OutlinedButton.styleFrom(
+                      minimumSize: const Size(double.infinity, 48),
+                    ),
+                    onPressed: () => Get.back(),
+                    child: const Text('Cancelar'),
+                  ),
+                ),
+                const SizedBox(width: DesignTokens.spaceSm),
+                Expanded(
+                  child: FilledButton.icon(
+                    style: FilledButton.styleFrom(
+                      backgroundColor: accentGreen,
+                      foregroundColor: Colors.white,
+                      minimumSize: const Size(double.infinity, 48),
+                    ),
+                    onPressed: _save,
+                    icon: const Icon(Icons.check_rounded),
+                    label: Text(
+                      editingItem == null ? 'Salvar evento' : 'Salvar alteracoes',
+                    ),
+                  ),
+                ),
+              ],
+              ),
+              ],
             ),
-            const SizedBox(height: 20),
-            PrimaryButton(
-              label: 'Salvar evento',
-              icon: Icons.save_outlined,
-              onPressed: _save,
-            ),
-          ],
+          ),
         ),
       ),
     );
   }
 
   Widget _sectionCard(BuildContext context, {required List<Widget> children}) {
+    const cardBg = Color(0xFFEFF2EE);
     return Container(
       width: double.infinity,
       padding: const EdgeInsets.all(16),
+      margin: const EdgeInsets.only(bottom: 12),
       decoration: BoxDecoration(
-        color: Theme.of(context).colorScheme.surfaceContainerLowest,
-        borderRadius: BorderRadius.circular(20),
+        color: Theme.of(context).brightness == Brightness.dark
+            ? Theme.of(context).colorScheme.surfaceContainerLow
+            : cardBg,
+        borderRadius: BorderRadius.circular(22),
       ),
       child: Column(
           crossAxisAlignment: CrossAxisAlignment.start, children: children),
@@ -375,12 +645,18 @@ class _UpsertAgendaPageState extends State<UpsertAgendaPage> {
       children: [
         Row(
           children: [
-            Text('Anexos', style: Theme.of(context).textTheme.titleMedium),
+            Text(
+              'ANEXOS',
+              style: Theme.of(context).textTheme.labelSmall?.copyWith(
+                    fontWeight: FontWeight.w700,
+                    color: const Color(0xFF7D857C),
+                  ),
+            ),
             const Spacer(),
             FilledButton.tonalIcon(
               onPressed: _addImageAttachment,
-              icon: const Icon(Icons.add_photo_alternate_outlined),
-              label: const Text('Adicionar'),
+              icon: const Icon(Icons.attach_file_rounded),
+              label: const Text('Add Files'),
               style: FilledButton.styleFrom(
                 minimumSize: const Size(0, 40),
                 tapTargetSize: MaterialTapTargetSize.shrinkWrap,
@@ -416,18 +692,44 @@ class _UpsertAgendaPageState extends State<UpsertAgendaPage> {
           )
         else
           SizedBox(
-            height: 132,
+            height: 118,
             child: ListView.separated(
               scrollDirection: Axis.horizontal,
-              itemCount: attachments.length,
+              itemCount: attachments.length + 1,
               separatorBuilder: (_, separatorIndex) =>
                   const SizedBox(width: 10),
               itemBuilder: (context, index) {
+                if (index == attachments.length) {
+                  return InkWell(
+                    onTap: _addImageAttachment,
+                    borderRadius: BorderRadius.circular(14),
+                    child: Container(
+                      width: 104,
+                      decoration: BoxDecoration(
+                        color: scheme.surfaceContainerLow,
+                        borderRadius: BorderRadius.circular(14),
+                        border: Border.all(color: scheme.outlineVariant),
+                      ),
+                      child: Column(
+                        mainAxisAlignment: MainAxisAlignment.center,
+                        children: [
+                          Icon(Icons.cloud_upload_outlined,
+                              color: scheme.onSurfaceVariant),
+                          const SizedBox(height: 6),
+                          Text(
+                            'Upload',
+                            style: Theme.of(context).textTheme.bodySmall,
+                          ),
+                        ],
+                      ),
+                    ),
+                  );
+                }
                 final attachment = attachments[index];
                 final path = attachment.localPath;
                 final hasFile = path != null && File(path).existsSync();
                 return Container(
-                  width: 118,
+                  width: 104,
                   decoration: BoxDecoration(
                     color: scheme.surfaceContainerLow,
                     borderRadius: BorderRadius.circular(14),
@@ -504,5 +806,166 @@ class _UpsertAgendaPageState extends State<UpsertAgendaPage> {
         content: Text(message),
       ),
     );
+  }
+
+  Widget _dateLine(
+    BuildContext context, {
+    required String label,
+    required String date,
+    required String time,
+    required VoidCallback onTap,
+    VoidCallback? onClear,
+  }) {
+    return InkWell(
+      onTap: onTap,
+      borderRadius: BorderRadius.circular(12),
+      child: Row(
+        children: [
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  label,
+                  style: Theme.of(context).textTheme.labelSmall?.copyWith(
+                        color: Theme.of(context).colorScheme.onSurfaceVariant,
+                      ),
+                ),
+                const SizedBox(height: 3),
+                Text(
+                  date,
+                  style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+                        fontWeight: FontWeight.w600,
+                      ),
+                ),
+              ],
+            ),
+          ),
+          Row(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Container(
+                padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+                decoration: BoxDecoration(
+                  color: Colors.white,
+                  borderRadius: BorderRadius.circular(10),
+                ),
+                child: Text(
+                  time,
+                  style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+                        fontWeight: FontWeight.w700,
+                      ),
+                ),
+              ),
+              if (onClear != null) ...[
+                const SizedBox(width: 6),
+                InkWell(
+                  onTap: onClear,
+                  borderRadius: BorderRadius.circular(999),
+                  child: Container(
+                    width: 28,
+                    height: 28,
+                    decoration: BoxDecoration(
+                      color: Theme.of(context).colorScheme.surfaceContainerHighest,
+                      shape: BoxShape.circle,
+                    ),
+                    child: const Icon(Icons.close_rounded, size: 16),
+                  ),
+                ),
+              ],
+            ],
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _timeSuggestionChip(
+    BuildContext context,
+    String label, {
+    required VoidCallback onTap,
+    required bool selected,
+  }) {
+    return Padding(
+      padding: const EdgeInsets.only(right: 6),
+      child: ChoiceChip(
+        label: Text(label),
+        selected: selected,
+        selectedColor: const Color(0xFF9CD64A),
+        backgroundColor: Colors.white.withValues(alpha: 0.68),
+        onSelected: (_) => onTap(),
+        labelStyle: Theme.of(context).textTheme.labelSmall?.copyWith(
+              color: selected ? Colors.white : null,
+              fontWeight: FontWeight.w700,
+            ),
+      ),
+    );
+  }
+
+  Widget _groupTile(
+    BuildContext context, {
+    required String title,
+    required bool selected,
+    required VoidCallback onTap,
+    required Color baseColor,
+    bool outlined = false,
+  }) {
+    final width = (MediaQuery.of(context).size.width - 70) / 2;
+    return InkWell(
+      onTap: onTap,
+      borderRadius: BorderRadius.circular(14),
+      child: Container(
+        width: width,
+        height: 76,
+        padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 12),
+        decoration: BoxDecoration(
+          color: selected
+              ? baseColor.withValues(alpha: 0.18)
+              : Colors.white.withValues(alpha: 0.88),
+          borderRadius: BorderRadius.circular(14),
+          border: Border.all(
+            color: selected
+                ? baseColor.withValues(alpha: 0.46)
+                : outlined
+                    ? Theme.of(context).colorScheme.outlineVariant
+                    : Colors.transparent,
+            style: selected || outlined ? BorderStyle.solid : BorderStyle.none,
+          ),
+        ),
+        child: Column(
+          children: [
+            Icon(
+              title == 'Novo' ? Icons.add_rounded : Icons.folder_copy_outlined,
+              size: 16,
+              color: selected
+                  ? baseColor
+                  : Theme.of(context).colorScheme.onSurfaceVariant,
+            ),
+            const SizedBox(height: 5),
+            Text(
+              title,
+              style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                    fontWeight: FontWeight.w600,
+                  ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Color _resolveGroupColor(String? colorHex) {
+    if (colorHex != null && colorHex.isNotEmpty) {
+      final sanitized = colorHex.replaceAll('#', '');
+      final normalized =
+          sanitized.length == 6 ? 'FF$sanitized' : sanitized.padLeft(8, 'F');
+      final value = int.tryParse(normalized, radix: 16);
+      if (value != null) return Color(value);
+    }
+    return const Color(0xFF6B5CFF);
+  }
+
+  String _suggestedTime(DateTime date, int addMinutes) {
+    return DateFormat('HH:mm').format(date.add(Duration(minutes: addMinutes)));
   }
 }

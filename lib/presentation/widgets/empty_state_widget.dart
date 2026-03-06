@@ -1,5 +1,7 @@
 import 'package:flutter/material.dart';
 
+import '../../core/theme/design_tokens.dart';
+
 class EmptyStateWidget extends StatelessWidget {
   const EmptyStateWidget({
     super.key,
@@ -8,6 +10,7 @@ class EmptyStateWidget extends StatelessWidget {
     required this.message,
     this.ctaLabel,
     this.onTapCta,
+    this.compact = false,
   });
 
   final IconData icon;
@@ -15,6 +18,7 @@ class EmptyStateWidget extends StatelessWidget {
   final String message;
   final String? ctaLabel;
   final VoidCallback? onTapCta;
+  final bool compact;
 
   @override
   Widget build(BuildContext context) {
@@ -26,17 +30,21 @@ class EmptyStateWidget extends StatelessWidget {
           mainAxisSize: MainAxisSize.min,
           children: [
             Container(
-              width: 72,
-              height: 72,
+              width: compact ? 56 : 72,
+              height: compact ? 56 : 72,
               decoration: BoxDecoration(
                 color: theme.colorScheme.surfaceContainerHighest,
-                borderRadius: BorderRadius.circular(20),
+                borderRadius: BorderRadius.circular(DesignTokens.radiusLg),
               ),
-              child: Icon(icon, size: 32, color: theme.colorScheme.primary),
+              child: Icon(
+                icon,
+                size: compact ? 26 : 32,
+                color: theme.colorScheme.primary,
+              ),
             ),
-            const SizedBox(height: 16),
+            const SizedBox(height: DesignTokens.spaceMd),
             Text(title, style: theme.textTheme.titleMedium),
-            const SizedBox(height: 8),
+            const SizedBox(height: DesignTokens.spaceXs),
             Text(
               message,
               style: theme.textTheme.bodyMedium?.copyWith(
@@ -45,7 +53,7 @@ class EmptyStateWidget extends StatelessWidget {
               textAlign: TextAlign.center,
             ),
             if (ctaLabel != null && onTapCta != null) ...[
-              const SizedBox(height: 16),
+              const SizedBox(height: DesignTokens.spaceMd),
               FilledButton(onPressed: onTapCta, child: Text(ctaLabel!)),
             ],
           ],

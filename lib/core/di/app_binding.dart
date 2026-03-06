@@ -27,7 +27,6 @@ import '../../presentation/controllers/agenda_controller.dart';
 import '../../presentation/controllers/class_schedule_controller.dart';
 import '../../presentation/controllers/groups_controller.dart';
 import '../../presentation/controllers/home_controller.dart';
-import '../../presentation/controllers/search_controller.dart';
 
 class AppBinding extends Bindings {
   @override
@@ -88,10 +87,6 @@ class AppBinding extends Bindings {
         searchAgendaItems: Get.find(),
         notificationService: Get.find(),
       ),
-      permanent: true,
-    );
-    Get.put(
-      SearchController(Get.find()),
       permanent: true,
     );
     Get.put(

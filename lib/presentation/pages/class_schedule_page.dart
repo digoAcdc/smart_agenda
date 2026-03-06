@@ -23,74 +23,79 @@ class ClassSchedulePage extends GetView<ClassScheduleController> {
 
   @override
   Widget build(BuildContext context) {
-    return Column(
-      children: [
-        SectionHeader(
-          title: 'Grade horaria',
-          subtitle: 'Monte sua semana de aulas por horario',
-          trailing: IconButton(
-            onPressed: () => _openAddTimeRangeDialog(context),
-            icon: const Icon(Icons.add),
-            tooltip: 'Adicionar horario',
+    final palette = context.palette;
+    return Container(
+      color: palette.appBackground,
+      child: Column(
+        children: [
+          SectionHeader(
+            title: 'Grade horaria',
+            subtitle: 'Monte sua semana de aulas por horario',
+            trailing: IconButton(
+              onPressed: () => _openAddTimeRangeDialog(context),
+              icon: const Icon(Icons.add),
+              tooltip: 'Adicionar horario',
+            ),
           ),
-        ),
-        Expanded(
-          child: Obx(() {
-            if (controller.loading.value) {
-              return const LoadingPlaceholderList();
-            }
-            final ranges = controller.timeRanges;
-            if (ranges.isEmpty) {
-              return EmptyStateWidget(
-                icon: Icons.view_week_outlined,
-                title: 'Sem grade ainda',
-                message:
-                    'Adicione horarios e depois toque nas celulas para inserir materias.',
-                ctaLabel: 'Adicionar horario',
-                onTapCta: () => _openAddTimeRangeDialog(context),
-              );
-            }
+          Expanded(
+            child: Obx(() {
+              if (controller.loading.value) {
+                return const LoadingPlaceholderList();
+              }
+              final ranges = controller.timeRanges;
+              if (ranges.isEmpty) {
+                return EmptyStateWidget(
+                  icon: Icons.view_week_outlined,
+                  title: 'Sem grade ainda',
+                  message:
+                      'Adicione horarios e depois toque nas celulas para inserir materias.',
+                  ctaLabel: 'Adicionar horario',
+                  onTapCta: () => _openAddTimeRangeDialog(context),
+                );
+              }
 
-            return LayoutBuilder(
-              builder: (context, constraints) {
-                final compact = constraints.maxWidth < 420;
-                final minContentWidth = compact
-                    ? (_timeColWidth +
-                        (_dayColWidth *
-                            ClassScheduleController.weekdays.length))
-                    : constraints.maxWidth;
-                return SingleChildScrollView(
-                  padding: const EdgeInsets.fromLTRB(12, 6, 12, 120),
-                  child: SingleChildScrollView(
-                    scrollDirection: Axis.horizontal,
-                    child: ConstrainedBox(
-                      constraints: BoxConstraints(minWidth: minContentWidth),
-                      child: Column(
-                        children: [
-                          _buildHeaderRow(context),
-                          const SizedBox(height: 8),
-                          ...ranges.map((range) {
-                            final start = range.start;
-                            final end = range.end;
-                            return _buildTimeRangeRow(context, start, end);
-                          }),
-                        ],
+              return LayoutBuilder(
+                builder: (context, constraints) {
+                  final compact = constraints.maxWidth < 420;
+                  final minContentWidth = compact
+                      ? (_timeColWidth +
+                          (_dayColWidth *
+                              ClassScheduleController.weekdays.length))
+                      : constraints.maxWidth;
+                  return SingleChildScrollView(
+                    padding: const EdgeInsets.fromLTRB(12, 6, 12, 120),
+                    child: SingleChildScrollView(
+                      scrollDirection: Axis.horizontal,
+                      child: ConstrainedBox(
+                        constraints: BoxConstraints(minWidth: minContentWidth),
+                        child: Column(
+                          children: [
+                            _buildHeaderRow(context),
+                            const SizedBox(height: 8),
+                            ...ranges.map((range) {
+                              final start = range.start;
+                              final end = range.end;
+                              return _buildTimeRangeRow(context, start, end);
+                            }),
+                          ],
+                        ),
                       ),
                     ),
-                  ),
-                );
-              },
-            );
-          }),
-        ),
-      ],
+                  );
+                },
+              );
+            }),
+          ),
+        ],
+      ),
     );
   }
 
   Widget _buildHeaderRow(BuildContext context) {
+    final palette = context.palette;
     return Container(
       decoration: BoxDecoration(
-        color: Theme.of(context).colorScheme.surfaceContainerHigh,
+        color: palette.scheduleHeader,
         borderRadius: BorderRadius.circular(DesignTokens.radiusMd),
       ),
       padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 10),
@@ -119,11 +124,12 @@ class ClassSchedulePage extends GetView<ClassScheduleController> {
   }
 
   Widget _buildTimeRangeRow(BuildContext context, int start, int end) {
+    final palette = context.palette;
     return Container(
       margin: const EdgeInsets.only(bottom: 8),
       constraints: const BoxConstraints(minHeight: 86),
       decoration: BoxDecoration(
-        color: Theme.of(context).colorScheme.surfaceContainerLow,
+        color: palette.surfaceSoft,
         borderRadius: BorderRadius.circular(DesignTokens.radiusMd),
       ),
       child: Row(
@@ -133,7 +139,7 @@ class ClassSchedulePage extends GetView<ClassScheduleController> {
             width: _timeColWidth,
             padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 10),
             decoration: BoxDecoration(
-              color: Theme.of(context).colorScheme.surfaceContainer,
+              color: palette.scheduleTimeColumn,
               borderRadius: const BorderRadius.horizontal(
                 left: Radius.circular(14),
               ),
@@ -177,6 +183,7 @@ class ClassSchedulePage extends GetView<ClassScheduleController> {
   }
 
   Widget _buildEditableCell(BuildContext context, int day, int start, int end) {
+    final palette = context.palette;
     final cell = controller.getCell(day, start, end);
     final subject = cell?.subject;
     return InkWell(
@@ -190,8 +197,8 @@ class ClassSchedulePage extends GetView<ClassScheduleController> {
         decoration: BoxDecoration(
           borderRadius: BorderRadius.circular(10),
           color: subject == null || subject.isEmpty
-              ? Theme.of(context).colorScheme.surfaceContainerLow
-              : Theme.of(context).colorScheme.primary.withValues(alpha: 0.12),
+              ? palette.scheduleCellEmpty
+              : palette.scheduleCellFilled,
         ),
         child: Text(
           subject?.isNotEmpty == true ? subject! : '+ adicionar',

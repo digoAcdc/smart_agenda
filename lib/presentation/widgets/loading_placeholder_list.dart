@@ -1,5 +1,7 @@
 import 'package:flutter/material.dart';
 
+import '../../core/theme/design_tokens.dart';
+
 class LoadingPlaceholderList extends StatelessWidget {
   const LoadingPlaceholderList({super.key, this.itemCount = 4});
 
@@ -8,15 +10,19 @@ class LoadingPlaceholderList extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return ListView.separated(
-      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+      padding: const EdgeInsets.symmetric(
+        horizontal: DesignTokens.spaceMd,
+        vertical: DesignTokens.spaceXs,
+      ),
       itemCount: itemCount,
-      separatorBuilder: (_, separatorIndex) => const SizedBox(height: 12),
+      separatorBuilder: (_, separatorIndex) =>
+          const SizedBox(height: DesignTokens.spaceSm),
       itemBuilder: (context, index) {
         return Container(
-          height: 84,
+          height: DesignTokens.cardMinHeight,
           decoration: BoxDecoration(
             color: Theme.of(context).colorScheme.surfaceContainerHighest,
-            borderRadius: BorderRadius.circular(18),
+            borderRadius: BorderRadius.circular(DesignTokens.radiusLg),
           ),
         );
       },

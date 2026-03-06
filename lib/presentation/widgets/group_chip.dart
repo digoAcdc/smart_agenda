@@ -1,5 +1,7 @@
 import 'package:flutter/material.dart';
 
+import '../../core/theme/design_tokens.dart';
+
 class GroupChip extends StatelessWidget {
   const GroupChip({
     super.key,
@@ -13,14 +15,18 @@ class GroupChip extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final chipColor = color ?? Theme.of(context).colorScheme.primary;
-    return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 5),
-      decoration: BoxDecoration(
-        color: chipColor.withValues(alpha: 0.12),
-        borderRadius: BorderRadius.circular(999),
+    return Chip(
+      materialTapTargetSize: MaterialTapTargetSize.shrinkWrap,
+      visualDensity: VisualDensity.compact,
+      labelPadding: const EdgeInsets.symmetric(
+        horizontal: DesignTokens.space6,
       ),
-      child: Text(
+      side: BorderSide.none,
+      backgroundColor: chipColor.withValues(alpha: DesignTokens.opacityPressed),
+      label: Text(
         label,
+        maxLines: 1,
+        overflow: TextOverflow.ellipsis,
         style: Theme.of(context).textTheme.bodySmall?.copyWith(
               color: chipColor,
               fontWeight: FontWeight.w600,

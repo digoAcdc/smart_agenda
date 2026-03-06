@@ -1,9 +1,12 @@
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
 
+import '../../core/theme/design_tokens.dart';
 import '../../domain/entities/agenda_enums.dart';
 import '../../domain/entities/agenda_item.dart';
 import 'group_chip.dart';
+
+enum AgendaCardVariant { regular, timeline }
 
 class AgendaCard extends StatelessWidget {
   const AgendaCard({
@@ -14,6 +17,7 @@ class AgendaCard extends StatelessWidget {
     this.onTap,
     this.onToggleStatus,
     this.onDelete,
+    this.variant = AgendaCardVariant.regular,
   });
 
   final AgendaItem item;
@@ -22,27 +26,36 @@ class AgendaCard extends StatelessWidget {
   final VoidCallback? onTap;
   final ValueChanged<AgendaStatus>? onToggleStatus;
   final Future<bool?> Function()? onDelete;
+  final AgendaCardVariant variant;
 
   @override
   Widget build(BuildContext context) {
     final isDone = item.status == AgendaStatus.done;
     final timeLabel =
         item.allDay ? 'Dia inteiro' : DateFormat('HH:mm').format(item.startAt);
-    final metaLabel = item.allDay
-        ? DateFormat('dd MMM').format(item.startAt)
-        : DateFormat('dd MMM').format(item.startAt);
+    final metaLabel = DateFormat('dd MMM').format(item.startAt);
     Color statusColor;
     switch (item.status) {
       case AgendaStatus.done:
-        statusColor = Colors.green;
+        statusColor = context.semanticColors.success;
         break;
       case AgendaStatus.canceled:
-        statusColor = Colors.orange;
+        statusColor = context.semanticColors.warning;
         break;
       case AgendaStatus.pending:
-        statusColor = Theme.of(context).colorScheme.primary;
+        statusColor = context.semanticColors.pending;
         break;
     }
+    final padding = variant == AgendaCardVariant.timeline
+        ? const EdgeInsets.all(12)
+        : const EdgeInsets.all(14);
+    final margin = variant == AgendaCardVariant.timeline
+        ? const EdgeInsets.symmetric(horizontal: 12, vertical: 4)
+        : const EdgeInsets.symmetric(horizontal: 16, vertical: 6);
+    final radius = variant == AgendaCardVariant.timeline
+        ? DesignTokens.radiusMd
+        : DesignTokens.radiusLg;
+    final railHeight = variant == AgendaCardVariant.timeline ? 48.0 : 56.0;
 
     return Dismissible(
       key: ValueKey(item.id),
@@ -50,15 +63,19 @@ class AgendaCard extends StatelessWidget {
         context,
         icon: Icons.check_circle,
         label: 'Concluir',
-        color: Colors.green,
+        color: context.semanticColors.success,
         alignLeft: true,
+        margin: margin,
+        radius: radius,
       ),
       secondaryBackground: _swipeBackground(
         context,
         icon: Icons.delete_outline,
         label: 'Excluir',
-        color: Colors.red,
+        color: context.semanticColors.danger,
         alignLeft: false,
+        margin: margin,
+        radius: radius,
       ),
       confirmDismiss: (direction) async {
         if (direction == DismissDirection.startToEnd) {
@@ -71,32 +88,32 @@ class AgendaCard extends StatelessWidget {
         return false;
       },
       child: AnimatedContainer(
-        duration: const Duration(milliseconds: 250),
-        curve: Curves.easeOut,
-        margin: const EdgeInsets.symmetric(horizontal: 16, vertical: 6),
+        duration: DesignTokens.motionStandard,
+        curve: DesignTokens.curveStandard,
+        margin: margin,
         decoration: BoxDecoration(
           color: Theme.of(context).colorScheme.surface,
-          borderRadius: BorderRadius.circular(18),
+          borderRadius: BorderRadius.circular(radius),
           boxShadow: [
             BoxShadow(
-              color: Colors.black.withValues(alpha: 0.04),
-              blurRadius: 14,
-              offset: const Offset(0, 4),
+              color: Colors.black.withValues(alpha: 0.035),
+              blurRadius: 10,
+              offset: const Offset(0, 3),
             ),
           ],
         ),
         child: InkWell(
-          borderRadius: BorderRadius.circular(18),
+          borderRadius: BorderRadius.circular(radius),
           onTap: onTap,
           child: Opacity(
             opacity: isDone ? 0.7 : 1,
             child: Padding(
-              padding: const EdgeInsets.all(14),
+              padding: padding,
               child: Row(
                 children: [
                   Container(
                     width: 4,
-                    height: 56,
+                    height: railHeight,
                     decoration: BoxDecoration(
                       color: groupColor ?? statusColor,
                       borderRadius: BorderRadius.circular(6),
@@ -137,7 +154,7 @@ class AgendaCard extends StatelessWidget {
                           maxLines: 1,
                           overflow: TextOverflow.ellipsis,
                         ),
-                        const SizedBox(height: 4),
+                        const SizedBox(height: DesignTokens.space4),
                         Text(
                           '$metaLabel • ${item.status.name}',
                           style:
@@ -180,13 +197,15 @@ class AgendaCard extends StatelessWidget {
     required String label,
     required Color color,
     required bool alignLeft,
+    required EdgeInsets margin,
+    required double radius,
   }) {
     return Container(
-      margin: const EdgeInsets.symmetric(horizontal: 16, vertical: 6),
+      margin: margin,
       padding: const EdgeInsets.symmetric(horizontal: 20),
       decoration: BoxDecoration(
-        color: color.withValues(alpha: 0.12),
-        borderRadius: BorderRadius.circular(18),
+        color: color.withValues(alpha: DesignTokens.opacityPressed),
+        borderRadius: BorderRadius.circular(radius),
       ),
       child: Row(
         mainAxisAlignment:

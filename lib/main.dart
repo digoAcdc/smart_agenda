@@ -38,7 +38,7 @@ class SmartAgendaApp extends StatelessWidget {
       localizationsDelegates: GlobalMaterialLocalizations.delegates,
       theme: AppTheme.light(),
       darkTheme: AppTheme.dark(),
-      themeMode: ThemeMode.system,
+      themeMode: ThemeMode.light,
       builder: (context, child) {
         if (child == null) return const SizedBox.shrink();
         return MediaQuery(

@@ -63,7 +63,7 @@ class _MonthPageState extends State<MonthPage> {
                   return AgendaItemTile(
                     item: item,
                     onTap: () =>
-                        Get.toNamed(AppRoutes.upsertAgenda, arguments: item),
+                        Get.toNamed(AppRoutes.eventDetail, arguments: item),
                   );
                 },
               ),

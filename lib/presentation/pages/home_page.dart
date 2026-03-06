@@ -1,6 +1,7 @@
 import 'package:animated_bottom_navigation_bar/animated_bottom_navigation_bar.dart';
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
+import 'package:table_calendar/table_calendar.dart';
 
 import '../../core/routes/app_routes.dart';
 import '../../core/theme/design_tokens.dart';
@@ -8,7 +9,6 @@ import '../controllers/home_controller.dart';
 import 'class_schedule_page.dart';
 import 'config_page.dart';
 import 'groups_page.dart';
-import 'search_page.dart';
 import 'today_page.dart';
 
 class HomePage extends StatelessWidget {
@@ -23,23 +23,29 @@ class HomePage extends StatelessWidget {
     final navHeight = isCompactNav ? 62.0 : 70.0;
     final barStackHeight = navHeight + 16;
     const pages = [
-      TodayPage(),
+      TodayPage(
+        initialLandingView: HomeLandingView.dashboard,
+        allowLandingSwitch: false,
+      ),
+      TodayPage(
+        initialLandingView: HomeLandingView.calendar,
+        allowLandingSwitch: false,
+        initialCalendarFormat: CalendarFormat.month,
+      ),
       ClassSchedulePage(),
-      SearchPage(),
       GroupsPage(),
       ConfigPage(),
     ];
     const iconList = [
-      Icons.calendar_today_rounded,
-      Icons.table_chart_rounded,
-      Icons.search_rounded,
+      Icons.home_rounded,
+      Icons.calendar_month_rounded,
+      Icons.menu_book_rounded,
       Icons.group_work_rounded,
       Icons.settings_rounded,
     ];
 
     return Obx(
       () => Scaffold(
-        appBar: AppBar(title: const Text('Smart Agenda')),
         body: AnimatedSwitcher(
           duration: DesignTokens.motionStandard,
           switchInCurve: Curves.easeOut,
@@ -87,9 +93,9 @@ class HomePage extends StatelessWidget {
                           ? Theme.of(context).colorScheme.primary
                           : Theme.of(context).colorScheme.onSurfaceVariant;
                       final labels = [
+                        'Home',
                         'Agenda',
-                        'Grade',
-                        'Buscar',
+                        'Aulas',
                         'Grupos',
                         'Config'
                       ];

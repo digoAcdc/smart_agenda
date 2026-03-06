@@ -25,10 +25,27 @@ class AppTheme {
     final base = ThemeData(
       useMaterial3: true,
       colorScheme: scheme,
+      extensions: <ThemeExtension<dynamic>>[
+        const AppPaletteColors(
+          appBackground: Color(0xFFF4F6F3),
+          surfaceSoft: Color(0xFFEFF2EE),
+          scheduleHeader: Color(0xFFE9EFE6),
+          scheduleTimeColumn: Color(0xFFE4ECE2),
+          scheduleCellEmpty: Color(0xFFF2F5F1),
+          scheduleCellFilled: Color(0xFFDDEBFF),
+        ),
+        AppSemanticColors(
+          success: const Color(0xFF34C759),
+          warning: const Color(0xFFFFA726),
+          danger: const Color(0xFFFF5C5C),
+          info: scheme.primary,
+          pending: const Color(0xFF7E57C2),
+        ),
+      ],
     );
 
     return base.copyWith(
-      scaffoldBackgroundColor: scheme.surface,
+      scaffoldBackgroundColor: const Color(0xFFF4F6F3),
       appBarTheme: AppBarTheme(
         centerTitle: false,
         elevation: 0,
@@ -61,6 +78,23 @@ class AppTheme {
           borderRadius: BorderRadius.circular(DesignTokens.radiusLg),
         ),
       ),
+      chipTheme: base.chipTheme.copyWith(
+        shape: RoundedRectangleBorder(
+          borderRadius: BorderRadius.circular(999),
+        ),
+        side: BorderSide.none,
+        labelStyle: base.textTheme.bodySmall?.copyWith(
+          fontWeight: FontWeight.w600,
+        ),
+      ),
+      iconButtonTheme: IconButtonThemeData(
+        style: IconButton.styleFrom(
+          minimumSize: const Size(48, 48),
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(12),
+          ),
+        ),
+      ),
       inputDecorationTheme: InputDecorationTheme(
         filled: true,
         fillColor: scheme.surfaceContainerLow,
@@ -83,14 +117,35 @@ class AppTheme {
       ),
       filledButtonTheme: FilledButtonThemeData(
         style: FilledButton.styleFrom(
-          minimumSize: const Size.fromHeight(50),
+          minimumSize: const Size.fromHeight(DesignTokens.buttonHeight),
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(DesignTokens.radiusMd),
+          ),
+          textStyle: base.textTheme.titleSmall?.copyWith(
+            fontWeight: FontWeight.w700,
+          ),
+        ),
+      ),
+      outlinedButtonTheme: OutlinedButtonThemeData(
+        style: OutlinedButton.styleFrom(
+          minimumSize: const Size.fromHeight(DesignTokens.buttonHeight),
+          side: BorderSide(color: scheme.outlineVariant),
           shape: RoundedRectangleBorder(
             borderRadius: BorderRadius.circular(DesignTokens.radiusMd),
           ),
         ),
       ),
+      segmentedButtonTheme: SegmentedButtonThemeData(
+        style: ButtonStyle(
+          visualDensity: VisualDensity.compact,
+          side: WidgetStatePropertyAll(
+            BorderSide(color: scheme.outlineVariant),
+          ),
+        ),
+      ),
       snackBarTheme: SnackBarThemeData(
         behavior: SnackBarBehavior.floating,
+        showCloseIcon: true,
         shape: RoundedRectangleBorder(
           borderRadius: BorderRadius.circular(DesignTokens.radiusMd),
         ),

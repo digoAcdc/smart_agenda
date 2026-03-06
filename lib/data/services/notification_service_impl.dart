@@ -39,8 +39,74 @@ class NotificationServiceImpl implements INotificationService {
   }
 
   @override
+  Future<Result<bool>> ensurePermissions() async {
+    try {
+      bool granted = true;
+      var handledRuntimePermission = false;
+
+      final androidImplementation =
+          _notificationsPlugin.resolvePlatformSpecificImplementation<
+              AndroidFlutterLocalNotificationsPlugin>();
+      if (androidImplementation != null) {
+        handledRuntimePermission = true;
+        final enabled =
+            await androidImplementation.areNotificationsEnabled() ?? true;
+        if (enabled) {
+          granted = true;
+        } else {
+          granted =
+              await androidImplementation.requestNotificationsPermission() ??
+                  false;
+        }
+      }
+
+      final iosImplementation =
+          _notificationsPlugin.resolvePlatformSpecificImplementation<
+              IOSFlutterLocalNotificationsPlugin>();
+      if (iosImplementation != null) {
+        handledRuntimePermission = true;
+        final iosGranted = await iosImplementation.requestPermissions(
+          alert: true,
+          badge: true,
+          sound: true,
+        );
+        granted = granted && (iosGranted ?? false);
+      }
+
+      final macImplementation =
+          _notificationsPlugin.resolvePlatformSpecificImplementation<
+              MacOSFlutterLocalNotificationsPlugin>();
+      if (macImplementation != null) {
+        handledRuntimePermission = true;
+        final macGranted = await macImplementation.requestPermissions(
+          alert: true,
+          badge: true,
+          sound: true,
+        );
+        granted = granted && (macGranted ?? false);
+      }
+
+      if (!handledRuntimePermission) {
+        return Result.success(true);
+      }
+
+      return Result.success(granted);
+    } catch (e) {
+      return Result.failure('Falha ao solicitar permissao de notificacoes: $e');
+    }
+  }
+
+  @override
   Future<Result<void>> scheduleForItem(AgendaItem item) async {
     try {
+      final permission = await ensurePermissions();
+      if (!permission.isSuccess) {
+        return Result.failure(permission.errorMessage ?? 'Permissao negada');
+      }
+      if (!(permission.data ?? false)) {
+        return Result.failure('Permissao de notificacao nao concedida');
+      }
+
       final reminder = item.reminder;
       if (reminder == null ||
           !reminder.enabled ||

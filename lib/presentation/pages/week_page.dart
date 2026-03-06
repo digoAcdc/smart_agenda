@@ -43,7 +43,7 @@ class _WeekPageState extends State<WeekPage> {
                     (item) => AgendaItemTile(
                       item: item,
                       onTap: () =>
-                          Get.toNamed(AppRoutes.upsertAgenda, arguments: item),
+                          Get.toNamed(AppRoutes.eventDetail, arguments: item),
                     ),
                   )
                   .toList(),

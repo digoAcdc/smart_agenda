@@ -4,6 +4,7 @@ import 'package:get/get.dart';
 import '../controllers/groups_controller.dart';
 import '../widgets/empty_state_widget.dart';
 import '../widgets/section_header.dart';
+import '../widgets/ui_primitives.dart';
 
 class GroupsPage extends StatelessWidget {
   const GroupsPage({super.key});
@@ -35,22 +36,26 @@ class GroupsPage extends StatelessWidget {
                   itemCount: controller.groups.length,
                   itemBuilder: (context, index) {
                     final group = controller.groups[index];
-                    return Card(
-                      margin: const EdgeInsets.symmetric(
-                          horizontal: 16, vertical: 6),
-                      shape: RoundedRectangleBorder(
-                          borderRadius: BorderRadius.circular(16)),
+                    final avatarColor =
+                        _resolveGroupColor(group.colorHex, index, context);
+                    return AppSurfaceCard(
                       child: ListTile(
+                        shape: RoundedRectangleBorder(
+                            borderRadius: BorderRadius.circular(16)),
                         contentPadding: const EdgeInsets.symmetric(
                             horizontal: 16, vertical: 8),
                         leading: CircleAvatar(
-                          backgroundColor:
-                              Theme.of(context).colorScheme.primaryContainer,
+                          backgroundColor: avatarColor.withValues(alpha: 0.22),
                           child:
-                              Text(group.name.characters.first.toUpperCase()),
+                              Text(
+                            group.name.characters.first.toUpperCase(),
+                            style: TextStyle(
+                              color: avatarColor,
+                              fontWeight: FontWeight.w700,
+                            ),
+                          ),
                         ),
                         title: Text(group.name),
-                        subtitle: Text(group.colorHex ?? 'Cor padrao'),
                         trailing: PopupMenuButton<String>(
                           onSelected: (value) async {
                             if (value == 'delete') {
@@ -96,9 +101,16 @@ class GroupsPage extends StatelessWidget {
           );
         },
       ),
-      floatingActionButton: FloatingActionButton(
-        onPressed: () => _openCreateDialog(context, controller),
-        child: const Icon(Icons.add),
+      bottomNavigationBar: SafeArea(
+        top: false,
+        child: Padding(
+          padding: const EdgeInsets.fromLTRB(16, 8, 16, 14),
+          child: FilledButton.icon(
+            onPressed: () => _openCreateDialog(context, controller),
+            icon: const Icon(Icons.add),
+            label: const Text('Novo grupo'),
+          ),
+        ),
       ),
     );
   }
@@ -122,5 +134,25 @@ class GroupsPage extends StatelessWidget {
         ],
       ),
     );
+  }
+
+  Color _resolveGroupColor(String? colorHex, int index, BuildContext context) {
+    if (colorHex != null && colorHex.isNotEmpty) {
+      final sanitized = colorHex.replaceAll('#', '');
+      final normalized =
+          sanitized.length == 6 ? 'FF$sanitized' : sanitized.padLeft(8, 'F');
+      final value = int.tryParse(normalized, radix: 16);
+      if (value != null) return Color(value);
+    }
+
+    const palette = <Color>[
+      Color(0xFF6B5CFF),
+      Color(0xFF4CAF50),
+      Color(0xFF03A9F4),
+      Color(0xFFFF9800),
+      Color(0xFFE91E63),
+      Color(0xFF009688),
+    ];
+    return palette[index % palette.length];
   }
 }
