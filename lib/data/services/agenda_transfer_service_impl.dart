@@ -1,10 +1,12 @@
 import 'dart:convert';
 import 'dart:io';
 
+import 'package:drift/drift.dart';
 import 'package:path_provider/path_provider.dart';
 
 import '../../core/constants/app_constants.dart';
 import '../../core/result/result.dart';
+import '../../data/local/app_database.dart';
 import '../../domain/entities/agenda_item.dart';
 import '../../domain/entities/agenda_transfer_bundle.dart';
 import '../../domain/entities/attachment_ref.dart';
@@ -17,13 +19,16 @@ import '../../domain/value_objects/search_filters.dart';
 
 class AgendaTransferServiceImpl implements IAgendaTransferService {
   const AgendaTransferServiceImpl({
+    required AppDatabase database,
     required IAgendaRepository agendaRepository,
     required IGroupsRepository groupsRepository,
     required INotificationService notificationService,
-  })  : _agendaRepository = agendaRepository,
+  })  : _database = database,
+        _agendaRepository = agendaRepository,
         _groupsRepository = groupsRepository,
         _notificationService = notificationService;
 
+  final AppDatabase _database;
   final IAgendaRepository _agendaRepository;
   final IGroupsRepository _groupsRepository;
   final INotificationService _notificationService;
@@ -54,6 +59,7 @@ class AgendaTransferServiceImpl implements IAgendaTransferService {
         appName: AppConstants.appName,
         groups: groupsResult.data!,
         items: allItemsResult.data!,
+        classScheduleSlots: await _readClassScheduleSlots(),
       );
 
       final docDir = await getApplicationDocumentsDirectory();
@@ -69,6 +75,7 @@ class AgendaTransferServiceImpl implements IAgendaTransferService {
           filePath: file.path,
           groupCount: bundle.groups.length,
           itemCount: bundle.items.length,
+          classSlotCount: bundle.classScheduleSlots.length,
         ),
       );
     } catch (e) {
@@ -105,6 +112,9 @@ class AgendaTransferServiceImpl implements IAgendaTransferService {
       var updatedItems = 0;
       var skippedItems = 0;
       var reScheduledReminders = 0;
+      var createdClassSlots = 0;
+      var updatedClassSlots = 0;
+      var skippedClassSlots = 0;
 
       final existingGroupsResult = await _groupsRepository.getGroups();
       if (!existingGroupsResult.isSuccess || existingGroupsResult.data == null) {
@@ -205,6 +215,52 @@ class AgendaTransferServiceImpl implements IAgendaTransferService {
         }
       }
 
+      final existingClassSlots = await (_database
+            .select(_database.classScheduleSlotsTable)
+          ..orderBy([(t) => OrderingTerm(expression: t.updatedAt)]))
+          .get();
+      final classSlotsById = {
+        for (final slot in existingClassSlots) slot.id: slot,
+      };
+      for (final incoming in bundle.classScheduleSlots) {
+        if (incoming.id.trim().isEmpty) {
+          skippedClassSlots++;
+          continue;
+        }
+        final existing = classSlotsById[incoming.id];
+        if (existing == null) {
+          await _database.into(_database.classScheduleSlotsTable).insert(
+                ClassScheduleSlotsTableCompanion.insert(
+                  id: incoming.id,
+                  dayOfWeek: incoming.dayOfWeek,
+                  startMinutes: incoming.startMinutes,
+                  endMinutes: incoming.endMinutes,
+                  createdAt: incoming.createdAt,
+                  updatedAt: incoming.updatedAt,
+                  subject: Value(incoming.subject),
+                ),
+              );
+          createdClassSlots++;
+          continue;
+        }
+        if (incoming.updatedAt.isAfter(existing.updatedAt)) {
+          await (_database.update(_database.classScheduleSlotsTable)
+                ..where((t) => t.id.equals(incoming.id)))
+              .write(
+            ClassScheduleSlotsTableCompanion(
+              dayOfWeek: Value(incoming.dayOfWeek),
+              startMinutes: Value(incoming.startMinutes),
+              endMinutes: Value(incoming.endMinutes),
+              subject: Value(incoming.subject),
+              updatedAt: Value(incoming.updatedAt),
+            ),
+          );
+          updatedClassSlots++;
+        } else {
+          skippedClassSlots++;
+        }
+      }
+
       return Result.success(
         AgendaTransferImportReport(
           createdGroups: createdGroups,
@@ -214,6 +270,9 @@ class AgendaTransferServiceImpl implements IAgendaTransferService {
           updatedItems: updatedItems,
           skippedItems: skippedItems,
           reScheduledReminders: reScheduledReminders,
+          createdClassSlots: createdClassSlots,
+          updatedClassSlots: updatedClassSlots,
+          skippedClassSlots: skippedClassSlots,
         ),
       );
     } catch (e) {
@@ -271,5 +330,27 @@ class AgendaTransferServiceImpl implements IAgendaTransferService {
       minutesBefore: reminder.minutesBefore ?? 10,
       notificationId: notificationId,
     );
+  }
+
+  Future<List<ClassScheduleTransferSlot>> _readClassScheduleSlots() async {
+    final slots = await (_database.select(_database.classScheduleSlotsTable)
+          ..orderBy([
+            (t) => OrderingTerm(expression: t.dayOfWeek),
+            (t) => OrderingTerm(expression: t.startMinutes),
+          ]))
+        .get();
+    return slots
+        .map(
+          (slot) => ClassScheduleTransferSlot(
+            id: slot.id,
+            dayOfWeek: slot.dayOfWeek,
+            startMinutes: slot.startMinutes,
+            endMinutes: slot.endMinutes,
+            subject: slot.subject,
+            createdAt: slot.createdAt,
+            updatedAt: slot.updatedAt,
+          ),
+        )
+        .toList();
   }
 }

@@ -14,15 +14,17 @@ class AgendaTransferBundle extends Equatable {
     required this.appName,
     required this.groups,
     required this.items,
+    this.classScheduleSlots = const [],
   });
 
-  static const int currentSchemaVersion = 1;
+  static const int currentSchemaVersion = 2;
 
   final int schemaVersion;
   final DateTime exportedAt;
   final String appName;
   final List<AgendaGroup> groups;
   final List<AgendaItem> items;
+  final List<ClassScheduleTransferSlot> classScheduleSlots;
 
   String? validate() {
     if (schemaVersion <= 0) return 'Versao do schema invalida.';
@@ -39,6 +41,14 @@ class AgendaTransferBundle extends Equatable {
         return 'Evento referencia grupo inexistente.';
       }
     }
+    for (final slot in classScheduleSlots) {
+      if (slot.dayOfWeek < 1 || slot.dayOfWeek > 7) {
+        return 'Slot da grade horaria com dia da semana invalido.';
+      }
+      if (slot.endMinutes <= slot.startMinutes) {
+        return 'Slot da grade horaria com horario invalido.';
+      }
+    }
     return null;
   }
 
@@ -49,6 +59,8 @@ class AgendaTransferBundle extends Equatable {
       'appName': appName,
       'groups': groups.map(AgendaTransferCodec.groupToJson).toList(),
       'items': items.map(AgendaTransferCodec.itemToJson).toList(),
+      'classScheduleSlots':
+          classScheduleSlots.map(AgendaTransferCodec.classSlotToJson).toList(),
     };
   }
 
@@ -56,6 +68,8 @@ class AgendaTransferBundle extends Equatable {
     final rawGroups = (json['groups'] as List<dynamic>? ?? const [])
         .whereType<Map<String, dynamic>>();
     final rawItems = (json['items'] as List<dynamic>? ?? const [])
+        .whereType<Map<String, dynamic>>();
+    final rawClassSlots = (json['classScheduleSlots'] as List<dynamic>? ?? const [])
         .whereType<Map<String, dynamic>>();
 
     return AgendaTransferBundle(
@@ -65,11 +79,51 @@ class AgendaTransferBundle extends Equatable {
       appName: json['appName'] as String? ?? 'smart_agenda',
       groups: rawGroups.map(AgendaTransferCodec.groupFromJson).toList(),
       items: rawItems.map(AgendaTransferCodec.itemFromJson).toList(),
+      classScheduleSlots:
+          rawClassSlots.map(AgendaTransferCodec.classSlotFromJson).toList(),
     );
   }
 
   @override
-  List<Object?> get props => [schemaVersion, exportedAt, appName, groups, items];
+  List<Object?> get props => [
+        schemaVersion,
+        exportedAt,
+        appName,
+        groups,
+        items,
+        classScheduleSlots,
+      ];
+}
+
+class ClassScheduleTransferSlot extends Equatable {
+  const ClassScheduleTransferSlot({
+    required this.id,
+    required this.dayOfWeek,
+    required this.startMinutes,
+    required this.endMinutes,
+    this.subject,
+    required this.createdAt,
+    required this.updatedAt,
+  });
+
+  final String id;
+  final int dayOfWeek;
+  final int startMinutes;
+  final int endMinutes;
+  final String? subject;
+  final DateTime createdAt;
+  final DateTime updatedAt;
+
+  @override
+  List<Object?> get props => [
+        id,
+        dayOfWeek,
+        startMinutes,
+        endMinutes,
+        subject,
+        createdAt,
+        updatedAt,
+      ];
 }
 
 class AgendaTransferImportReport extends Equatable {
@@ -81,6 +135,9 @@ class AgendaTransferImportReport extends Equatable {
     required this.updatedItems,
     required this.skippedItems,
     required this.reScheduledReminders,
+    required this.createdClassSlots,
+    required this.updatedClassSlots,
+    required this.skippedClassSlots,
   });
 
   final int createdGroups;
@@ -90,6 +147,9 @@ class AgendaTransferImportReport extends Equatable {
   final int updatedItems;
   final int skippedItems;
   final int reScheduledReminders;
+  final int createdClassSlots;
+  final int updatedClassSlots;
+  final int skippedClassSlots;
 
   @override
   List<Object?> get props => [
@@ -100,6 +160,9 @@ class AgendaTransferImportReport extends Equatable {
         updatedItems,
         skippedItems,
         reScheduledReminders,
+        createdClassSlots,
+        updatedClassSlots,
+        skippedClassSlots,
       ];
 }
 
@@ -108,14 +171,16 @@ class AgendaTransferExportData extends Equatable {
     required this.filePath,
     required this.itemCount,
     required this.groupCount,
+    required this.classSlotCount,
   });
 
   final String filePath;
   final int itemCount;
   final int groupCount;
+  final int classSlotCount;
 
   @override
-  List<Object?> get props => [filePath, itemCount, groupCount];
+  List<Object?> get props => [filePath, itemCount, groupCount, classSlotCount];
 }
 
 class AgendaTransferCodec {
@@ -246,6 +311,32 @@ class AgendaTransferCodec {
       mimeType: json['mimeType'] as String?,
       sizeBytes: json['sizeBytes'] as int?,
       createdAt: DateTime.tryParse(json['createdAt'] as String? ?? '') ??
+          DateTime.now(),
+    );
+  }
+
+  static Map<String, dynamic> classSlotToJson(ClassScheduleTransferSlot slot) {
+    return <String, dynamic>{
+      'id': slot.id,
+      'dayOfWeek': slot.dayOfWeek,
+      'startMinutes': slot.startMinutes,
+      'endMinutes': slot.endMinutes,
+      'subject': slot.subject,
+      'createdAt': slot.createdAt.toIso8601String(),
+      'updatedAt': slot.updatedAt.toIso8601String(),
+    };
+  }
+
+  static ClassScheduleTransferSlot classSlotFromJson(Map<String, dynamic> json) {
+    return ClassScheduleTransferSlot(
+      id: json['id'] as String? ?? '',
+      dayOfWeek: json['dayOfWeek'] as int? ?? 1,
+      startMinutes: json['startMinutes'] as int? ?? 0,
+      endMinutes: json['endMinutes'] as int? ?? 0,
+      subject: json['subject'] as String?,
+      createdAt: DateTime.tryParse(json['createdAt'] as String? ?? '') ??
+          DateTime.now(),
+      updatedAt: DateTime.tryParse(json['updatedAt'] as String? ?? '') ??
           DateTime.now(),
     );
   }

@@ -104,6 +104,8 @@ class _ConfigPageState extends State<ConfigPage> {
             '${report.updatedGroups} atualizados, ${report.skippedGroups} ignorados.\n'
             'Eventos: +${report.createdItems} novos, '
             '${report.updatedItems} atualizados, ${report.skippedItems} ignorados.\n'
+            'Grade horaria: +${report.createdClassSlots} novos, '
+            '${report.updatedClassSlots} atualizados, ${report.skippedClassSlots} ignorados.\n'
             'Lembretes reagendados: ${report.reScheduledReminders}.',
           ),
           actions: [

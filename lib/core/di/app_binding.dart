@@ -60,6 +60,7 @@ class AppBinding extends Bindings {
     );
     Get.lazyPut<IAgendaTransferService>(
       () => AgendaTransferServiceImpl(
+        database: Get.find(),
         agendaRepository: Get.find(),
         groupsRepository: Get.find(),
         notificationService: Get.find(),

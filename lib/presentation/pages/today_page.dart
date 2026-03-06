@@ -92,14 +92,21 @@ class _TodayPageState extends State<TodayPage> {
               classScheduleController: classScheduleController,
             );
           }
+          if (isAgendaTabMode) {
+            return _buildAgendaTabModeView(
+              context: context,
+              agendaController: agendaController,
+              groupsController: groupsController,
+            );
+          }
           return Container(
-            color: isAgendaTabMode ? context.palette.appBackground : null,
+            color: null,
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
             const SizedBox(height: 6),
             SectionHeader(
-              title: isAgendaTabMode ? 'Agenda' : 'Smart Agenda',
+              title: 'Smart Agenda',
               subtitle: DateFormat('dd/MM/yyyy').format(DateTime.now()),
               trailing: widget.allowLandingSwitch
                   ? IconButton(
@@ -146,24 +153,23 @@ class _TodayPageState extends State<TodayPage> {
               trailing: Row(
                 mainAxisSize: MainAxisSize.min,
                 children: [
-                  if (!isAgendaTabMode)
-                    IconButton(
-                      onPressed: () {
-                        setState(() {
-                          calendarFormat = calendarFormat == CalendarFormat.week
-                              ? CalendarFormat.month
-                              : CalendarFormat.week;
-                        });
-                      },
-                      tooltip: calendarFormat == CalendarFormat.week
-                          ? 'Expandir para mes'
-                          : 'Ver somente semana',
-                      icon: Icon(
-                        calendarFormat == CalendarFormat.week
-                            ? Icons.open_in_full_rounded
-                            : Icons.close_fullscreen_rounded,
-                      ),
+                  IconButton(
+                    onPressed: () {
+                      setState(() {
+                        calendarFormat = calendarFormat == CalendarFormat.week
+                            ? CalendarFormat.month
+                            : CalendarFormat.week;
+                      });
+                    },
+                    tooltip: calendarFormat == CalendarFormat.week
+                        ? 'Expandir para mes'
+                        : 'Ver somente semana',
+                    icon: Icon(
+                      calendarFormat == CalendarFormat.week
+                          ? Icons.open_in_full_rounded
+                          : Icons.close_fullscreen_rounded,
                     ),
+                  ),
                   if (!isAgendaTabMode)
                     IconButton(
                       onPressed: () => setState(
@@ -180,10 +186,7 @@ class _TodayPageState extends State<TodayPage> {
                 ],
               ),
             ),
-            if (isAgendaTabMode)
-              _buildCalendarCard(context, agendaController)
-            else
-              AnimatedCrossFade(
+            AnimatedCrossFade(
                 duration: DesignTokens.motionStandard,
                 crossFadeState: isCalendarExpanded
                     ? CrossFadeState.showFirst
@@ -244,21 +247,80 @@ class _TodayPageState extends State<TodayPage> {
               child: AnimatedSwitcher(
                 duration: DesignTokens.motionStandard,
                 switchInCurve: Curves.easeOut,
-                child: isAgendaTabMode
-                    ? _buildSelectedDayTimeline(
-                        agendaController: agendaController,
-                        groupsController: groupsController,
-                      )
-                    : _buildBodyByMode(
-                        agendaController: agendaController,
-                        groupsController: groupsController,
-                      ),
+                child: _buildBodyByMode(
+                  agendaController: agendaController,
+                  groupsController: groupsController,
+                ),
               ),
             ),
               ],
             ),
           );
         },
+      ),
+    );
+  }
+
+  Widget _buildAgendaTabModeView({
+    required BuildContext context,
+    required AgendaController agendaController,
+    required GroupsController groupsController,
+  }) {
+    return Container(
+      color: context.palette.appBackground,
+      child: Column(
+        children: [
+          Padding(
+            padding: const EdgeInsets.fromLTRB(16, 12, 16, 8),
+            child: SizedBox(
+              height: 40,
+              child: Center(
+                child: Text(
+                  'Agenda',
+                  style: Theme.of(context).textTheme.titleLarge?.copyWith(
+                        fontWeight: FontWeight.w700,
+                      ),
+                ),
+              ),
+            ),
+          ),
+          const Divider(height: 1),
+          Expanded(
+            child: ListView(
+              padding: const EdgeInsets.fromLTRB(0, 8, 0, 120),
+              children: [
+                SectionHeader(
+                  title: 'Calendario completo',
+                  subtitle: DateFormat('EEEE, dd MMMM').format(selectedDate),
+                  trailing: IconButton(
+                    onPressed: () {
+                      setState(() {
+                        calendarFormat = calendarFormat == CalendarFormat.week
+                            ? CalendarFormat.month
+                            : CalendarFormat.week;
+                      });
+                    },
+                    tooltip: calendarFormat == CalendarFormat.week
+                        ? 'Calendario maior'
+                        : 'Calendario menor',
+                    icon: Icon(
+                      calendarFormat == CalendarFormat.week
+                          ? Icons.open_in_full_rounded
+                          : Icons.close_fullscreen_rounded,
+                    ),
+                  ),
+                ),
+                _buildCalendarCard(context, agendaController),
+                const SizedBox(height: 6),
+                _buildSelectedDayTimeline(
+                  agendaController: agendaController,
+                  groupsController: groupsController,
+                  asSection: true,
+                ),
+              ],
+            ),
+          ),
+        ],
       ),
     );
   }
@@ -884,13 +946,41 @@ class _TodayPageState extends State<TodayPage> {
   Widget _buildSelectedDayTimeline({
     required AgendaController agendaController,
     required GroupsController groupsController,
+    bool asSection = false,
   }) {
     if (agendaController.loading.value) {
+      if (asSection) {
+        return const Padding(
+          padding: EdgeInsets.symmetric(vertical: 24),
+          child: Center(child: CircularProgressIndicator()),
+        );
+      }
       return const LoadingPlaceholderList();
     }
     final items = [...agendaController.selectedDayItems]
       ..sort((a, b) => a.startAt.compareTo(b.startAt));
     if (items.isEmpty) {
+      if (asSection) {
+        return Column(
+          children: [
+            const SectionHeader(
+              title: 'Timeline',
+              subtitle: 'Eventos do dia selecionado',
+              compact: true,
+            ),
+            Padding(
+              padding: const EdgeInsets.symmetric(horizontal: 12),
+              child: EmptyStateWidget(
+                icon: Icons.event_busy_outlined,
+                title: 'Sem eventos neste dia',
+                message: 'Selecione outra data ou crie um novo evento.',
+                ctaLabel: 'Criar evento',
+                onTapCta: () => Get.toNamed(AppRoutes.upsertAgenda),
+              ),
+            ),
+          ],
+        );
+      }
       return _buildResponsiveEmpty(
         EmptyStateWidget(
           icon: Icons.event_busy_outlined,
@@ -908,48 +998,54 @@ class _TodayPageState extends State<TodayPage> {
       for (final g in groupsController.groups) g.id: _tryParseColor(g.colorHex),
     };
 
+    final timelineChildren = [
+      const SectionHeader(
+        title: 'Timeline',
+        subtitle: 'Eventos do dia selecionado',
+        compact: true,
+      ),
+      ...items.map(
+        (item) => Row(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            SizedBox(
+              width: 64,
+              child: Padding(
+                padding: const EdgeInsets.only(top: 22, left: 8),
+                child: Text(
+                  item.allDay ? 'Dia' : DateFormat('HH:mm').format(item.startAt),
+                  style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                        color: Theme.of(context).colorScheme.onSurfaceVariant,
+                        fontWeight: FontWeight.w600,
+                      ),
+                ),
+              ),
+            ),
+            Expanded(
+              child: _buildAgendaCompleteTimelineCard(
+                context,
+                item: item,
+                groupName: groupNameById[item.groupId] ?? 'Sem grupo',
+                groupColor: groupColorById[item.groupId],
+                onTap: () => Get.toNamed(AppRoutes.eventDetail, arguments: item),
+                onToggleStatus: (status) {
+                  agendaController.toggleStatus(item.id, status);
+                  _showSavedFeedback(context, 'Status atualizado');
+                },
+              ),
+            ),
+          ],
+        ),
+      ),
+    ];
+
+    if (asSection) {
+      return Column(children: timelineChildren);
+    }
+
     return ListView(
       padding: const EdgeInsets.fromLTRB(0, 4, 0, 120),
-      children: [
-        const SectionHeader(
-          title: 'Timeline',
-          subtitle: 'Eventos do dia selecionado',
-          compact: true,
-        ),
-        ...items.map(
-          (item) => Row(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              SizedBox(
-                width: 64,
-                child: Padding(
-                  padding: const EdgeInsets.only(top: 22, left: 8),
-                  child: Text(
-                    item.allDay ? 'Dia' : DateFormat('HH:mm').format(item.startAt),
-                    style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                          color: Theme.of(context).colorScheme.onSurfaceVariant,
-                          fontWeight: FontWeight.w600,
-                        ),
-                  ),
-                ),
-              ),
-              Expanded(
-                child: _buildAgendaCompleteTimelineCard(
-                  context,
-                  item: item,
-                  groupName: groupNameById[item.groupId] ?? 'Sem grupo',
-                  groupColor: groupColorById[item.groupId],
-                  onTap: () => Get.toNamed(AppRoutes.eventDetail, arguments: item),
-                  onToggleStatus: (status) {
-                    agendaController.toggleStatus(item.id, status);
-                    _showSavedFeedback(context, 'Status atualizado');
-                  },
-                ),
-              ),
-            ],
-          ),
-        ),
-      ],
+      children: timelineChildren,
     );
   }
 
@@ -1309,8 +1405,7 @@ class _TodayPageState extends State<TodayPage> {
             );
             _reloadByMode(agendaController);
           },
-              calendarFormat:
-                  isAgendaTabMode ? CalendarFormat.month : calendarFormat,
+          calendarFormat: calendarFormat,
           availableCalendarFormats: const {
             CalendarFormat.week: 'Semana',
             CalendarFormat.month: 'Mes',
