@@ -78,12 +78,40 @@ Inclui testes unitários para:
 ## Pronto para Play Store (Android)
 
 - Configuração de release/signing em `android/app/build.gradle.kts`.
-- Exemplo de keystore em `android/key.properties.example`.
+- Template de keystore em `android/key.properties.template`.
 - Checklist de QA/publicação em `docs/store/qa_release_checklist.md`.
 - Materiais de privacidade e Data Safety em `docs/store/`.
 
-Preflight de release:
+### Build assinado para release
 
-```bash
-bash scripts/release_preflight.sh
-```
+1. **Criar o keystore** (apenas na primeira vez):
+
+   ```bash
+   keytool -genkey -v -keystore upload-keystore.jks -keyalg RSA -keysize 2048 -validity 10000 -alias upload
+   ```
+
+   Defina uma senha e preencha os dados do certificado. Guarde o arquivo `.jks` e a senha em local seguro.
+
+2. **Configurar `key.properties`**:
+
+   ```bash
+   cp android/key.properties.template android/key.properties
+   ```
+
+   Edite `android/key.properties` com suas credenciais reais (senhas e caminho absoluto do `.jks`).
+
+3. **Gerar o App Bundle**:
+
+   ```bash
+   bash scripts/build_release.sh
+   ```
+
+   O script executa `pub get`, `analyze`, `test` e `flutter build appbundle --release`. O AAB é gerado em:
+
+   ```
+   build/app/outputs/bundle/release/app-release.aab
+   ```
+
+4. **Upload no Play Console**: Testar → Teste interno → Criar nova versão → enviar o arquivo `.aab`.
+
+> Os arquivos `key.properties` e `*.jks` estão no `.gitignore` e não devem ser commitados.

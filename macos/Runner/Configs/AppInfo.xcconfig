@@ -8,7 +8,7 @@
 PRODUCT_NAME = smart_agenda
 
 // The application's bundle identifier
-PRODUCT_BUNDLE_IDENTIFIER = com.example.smartAgenda
+PRODUCT_BUNDLE_IDENTIFIER = com.digo.smartagenda
 
 // The copyright displayed in application information
-PRODUCT_COPYRIGHT = Copyright © 2026 com.example. All rights reserved.
+PRODUCT_COPYRIGHT = Copyright © 2026 Smart Agenda. All rights reserved.

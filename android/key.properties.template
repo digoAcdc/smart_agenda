@@ -1,0 +1,8 @@
+# Configuracao do keystore para assinatura de release (Play Store).
+# Copie este arquivo para key.properties e preencha com seus valores.
+# NAO commite key.properties - esta no .gitignore.
+
+storePassword=sua_senha_do_keystore
+keyPassword=sua_senha_da_chave
+keyAlias=upload
+storeFile=/caminho/absoluto/para/upload-keystore.jks
