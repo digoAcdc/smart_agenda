@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import 'package:permission_handler/permission_handler.dart';
 
+import '../../core/routes/app_routes.dart';
 import '../controllers/agenda_transfer_controller.dart';
 import '../widgets/section_header.dart';
 import '../widgets/ui_primitives.dart';
@@ -63,6 +64,10 @@ class _ConfigPageState extends State<ConfigPage> {
       ),
     );
     await _loadPermissionStatus();
+  }
+
+  void _openPrivacyPolicy() {
+    Get.toNamed(AppRoutes.privacyPolicy);
   }
 
   Future<void> _handleShareAgenda() async {
@@ -228,6 +233,29 @@ class _ConfigPageState extends State<ConfigPage> {
                     ),
                   ],
                 ),
+              ),
+            ),
+          ),
+          AppSurfaceCard(
+            child: Padding(
+              padding: const EdgeInsets.fromLTRB(6, 10, 6, 6),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    'Legal',
+                    style: Theme.of(context).textTheme.titleMedium,
+                  ),
+                  const SizedBox(height: 12),
+                  ListTile(
+                    contentPadding: const EdgeInsets.symmetric(horizontal: 6),
+                    leading: const Icon(Icons.privacy_tip_outlined),
+                    title: const Text('Politica de privacidade'),
+                    subtitle: const Text('Leia como tratamos seus dados'),
+                    trailing: const Icon(Icons.open_in_new, size: 18),
+                    onTap: _openPrivacyPolicy,
+                  ),
+                ],
               ),
             ),
           ),

@@ -1,4 +1,6 @@
+import 'package:flutter/widgets.dart';
 import 'package:flutter_local_notifications/flutter_local_notifications.dart';
+import 'package:flutter_timezone/flutter_timezone.dart';
 import 'package:timezone/data/latest.dart' as tz_data;
 import 'package:timezone/timezone.dart' as tz;
 
@@ -13,13 +15,32 @@ class NotificationServiceImpl implements INotificationService {
   final FlutterLocalNotificationsPlugin _notificationsPlugin;
 
   @override
-  Future<Result<void>> init() async {
+  Future<Result<void>> init({
+    Future<void> Function(String? payload)? onNotificationTap,
+  }) async {
     try {
       tz_data.initializeTimeZones();
+      try {
+        final timeZoneInfo = await FlutterTimezone.getLocalTimezone();
+        tz.setLocalLocation(tz.getLocation(timeZoneInfo.identifier));
+      } catch (_) {
+        tz.setLocalLocation(tz.getLocation('America/Sao_Paulo'));
+      }
       const androidSettings =
           AndroidInitializationSettings('@mipmap/ic_launcher');
-      const settings = InitializationSettings(android: androidSettings);
-      await _notificationsPlugin.initialize(settings);
+      final settings = InitializationSettings(
+        android: androidSettings,
+        iOS: DarwinInitializationSettings(),
+      );
+      await _notificationsPlugin.initialize(
+        settings,
+        onDidReceiveNotificationResponse: (response) {
+          final payload = response.payload;
+          if (payload != null && payload.isNotEmpty) {
+            onNotificationTap?.call(payload);
+          }
+        },
+      );
 
       final androidImplementation =
           _notificationsPlugin.resolvePlatformSpecificImplementation<
@@ -31,6 +52,21 @@ class NotificationServiceImpl implements INotificationService {
           importance: Importance.high,
         ),
       );
+
+      if (onNotificationTap != null) {
+        final launchDetails =
+            await _notificationsPlugin.getNotificationAppLaunchDetails();
+        if (launchDetails != null &&
+            launchDetails.didNotificationLaunchApp &&
+            launchDetails.notificationResponse?.payload != null) {
+          final payload = launchDetails.notificationResponse!.payload!;
+          if (payload.isNotEmpty) {
+            WidgetsBinding.instance.addPostFrameCallback((_) {
+              onNotificationTap(payload);
+            });
+          }
+        }
+      }
 
       return Result.success(null);
     } catch (e) {
@@ -121,6 +157,9 @@ class NotificationServiceImpl implements INotificationService {
       }
 
       final scheduleDate = tz.TZDateTime.from(scheduledAt, tz.local);
+      final notificationId = reminder.notificationId != 0
+          ? reminder.notificationId
+          : (item.id.hashCode & 0x7FFFFFFF);
       final details = const NotificationDetails(
         android: AndroidNotificationDetails(
           AppConstants.notificationChannelId,
@@ -134,20 +173,22 @@ class NotificationServiceImpl implements INotificationService {
       // Try exact first and fallback to inexact to keep reminders working.
       try {
         await _notificationsPlugin.zonedSchedule(
-          reminder.notificationId,
+          notificationId,
           item.title,
           item.description ?? 'Evento em breve',
           scheduleDate,
           details,
+          payload: item.id,
           androidScheduleMode: AndroidScheduleMode.exactAllowWhileIdle,
         );
       } catch (_) {
         await _notificationsPlugin.zonedSchedule(
-          reminder.notificationId,
+          notificationId,
           item.title,
           item.description ?? 'Evento em breve',
           scheduleDate,
           details,
+          payload: item.id,
           androidScheduleMode: AndroidScheduleMode.inexactAllowWhileIdle,
         );
       }
@@ -163,7 +204,10 @@ class NotificationServiceImpl implements INotificationService {
     try {
       final reminder = item.reminder;
       if (reminder == null) return Result.success(null);
-      await _notificationsPlugin.cancel(reminder.notificationId);
+      final notificationId = reminder.notificationId != 0
+          ? reminder.notificationId
+          : (item.id.hashCode & 0x7FFFFFFF);
+      await _notificationsPlugin.cancel(notificationId);
       return Result.success(null);
     } catch (e) {
       return Result.failure('Erro ao cancelar notificacao: $e');

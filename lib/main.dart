@@ -9,6 +9,7 @@ import 'core/di/app_binding.dart';
 import 'core/routes/app_pages.dart';
 import 'core/routes/app_routes.dart';
 import 'core/theme/app_theme.dart';
+import 'domain/repositories/i_agenda_repository.dart';
 import 'domain/repositories/i_notification_service.dart';
 
 Future<void> main() async {
@@ -16,8 +17,21 @@ Future<void> main() async {
   await initializeDateFormatting('pt_BR');
   Intl.defaultLocale = 'pt_BR';
   AppBinding().dependencies();
-  await Get.find<INotificationService>().init();
+  await Get.find<INotificationService>().init(
+    onNotificationTap: _handleNotificationTap,
+  );
   runApp(const SmartAgendaApp());
+}
+
+Future<void> _handleNotificationTap(String? payload) async {
+  if (payload == null || payload.isEmpty) return;
+  try {
+    final repo = Get.find<IAgendaRepository>();
+    final result = await repo.getItemById(payload);
+    if (result.isSuccess && result.data != null) {
+      Get.toNamed(AppRoutes.eventDetail, arguments: result.data);
+    }
+  } catch (_) {}
 }
 
 class SmartAgendaApp extends StatelessWidget {

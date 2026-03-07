@@ -20,6 +20,14 @@ import '../widgets/section_header.dart';
 enum AgendaHomeViewMode { day, week, month }
 enum HomeLandingView { dashboard, calendar }
 
+/// Retorna saudação conforme o horário: Bom dia (até 12h), Boa tarde (12h–18h), Boa noite (após 18h).
+String _greetingByTime() {
+  final h = DateTime.now().hour;
+  if (h < 12) return 'BOM DIA';
+  if (h < 18) return 'BOA TARDE';
+  return 'BOA NOITE';
+}
+
 class TodayPage extends StatefulWidget {
   const TodayPage({
     super.key,
@@ -352,6 +360,9 @@ class _TodayPageState extends State<TodayPage> {
         .toList();
     final agendaDoDia = [...agendaController.selectedDayItems]
       ..sort((a, b) => a.startAt.compareTo(b.startAt));
+    final overdueIds = overdue.map((e) => e.id).toSet();
+    final agendaDoDiaExibida =
+        agendaDoDia.where((e) => !overdueIds.contains(e.id)).toList();
     final groupNameById = {
       for (final g in groupsController.groups) g.id: g.name,
     };
@@ -394,14 +405,14 @@ class _TodayPageState extends State<TodayPage> {
                           crossAxisAlignment: CrossAxisAlignment.start,
                           children: [
                             Text(
-                              'BOM DIA',
+                              _greetingByTime(),
                               style: Theme.of(context)
                                   .textTheme
                                   .labelSmall
                                   ?.copyWith(letterSpacing: 1.1),
                             ),
                             Text(
-                              'Alex Smith',
+                              'Usuário',
                               style: Theme.of(context)
                                   .textTheme
                                   .titleMedium
@@ -428,10 +439,10 @@ class _TodayPageState extends State<TodayPage> {
                 const SizedBox(height: 10),
                 _sectionTitle(context, 'Agenda de hoje'),
                 const SizedBox(height: 8),
-                if (agendaDoDia.isEmpty)
+                if (agendaDoDiaExibida.isEmpty)
                   _buildDashboardEmpty(context, accentGreen)
                 else
-                  ...agendaDoDia.take(2).map(
+                  ...agendaDoDiaExibida.take(2).map(
                     (item) => Padding(
                       padding: const EdgeInsets.only(bottom: 8),
                       child: _buildDashboardEventTile(

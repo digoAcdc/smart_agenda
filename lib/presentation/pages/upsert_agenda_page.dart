@@ -163,18 +163,18 @@ class _UpsertAgendaPageState extends State<UpsertAgendaPage> {
     final controller = Get.find<AgendaController>();
     if (titleController.text.trim().isEmpty) return;
 
+    final notificationId =
+        editingItem?.reminder?.notificationId ?? 0;
     final reminder = reminderEnabled
         ? ReminderConfig(
             enabled: true,
             minutesBefore: reminderMinutes,
-            notificationId: editingItem?.reminder?.notificationId ??
-                DateTime.now().millisecondsSinceEpoch.remainder(1000000),
+            notificationId: notificationId,
           )
         : ReminderConfig(
             enabled: false,
             minutesBefore: null,
-            notificationId: editingItem?.reminder?.notificationId ??
-                DateTime.now().millisecondsSinceEpoch.remainder(1000000),
+            notificationId: notificationId,
           );
 
     if (editingItem == null) {
