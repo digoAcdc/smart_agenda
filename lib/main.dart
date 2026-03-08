@@ -3,7 +3,9 @@ import 'package:flutter_localizations/flutter_localizations.dart';
 import 'package:get/get.dart';
 import 'package:intl/date_symbol_data_local.dart';
 import 'package:intl/intl.dart';
+import 'package:supabase_flutter/supabase_flutter.dart';
 
+import 'core/config/supabase_config.dart';
 import 'core/constants/app_constants.dart';
 import 'core/di/app_binding.dart';
 import 'core/routes/app_pages.dart';
@@ -16,6 +18,12 @@ Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();
   await initializeDateFormatting('pt_BR');
   Intl.defaultLocale = 'pt_BR';
+  if (SupabaseConfig.isConfigured) {
+    await Supabase.initialize(
+      url: SupabaseConfig.url,
+      anonKey: SupabaseConfig.anonKey,
+    );
+  }
   AppBinding().dependencies();
   await Get.find<INotificationService>().init(
     onNotificationTap: _handleNotificationTap,

@@ -4,6 +4,7 @@ import 'package:permission_handler/permission_handler.dart';
 
 import '../../core/routes/app_routes.dart';
 import '../controllers/agenda_transfer_controller.dart';
+import '../controllers/auth_controller.dart';
 import '../widgets/section_header.dart';
 import '../widgets/ui_primitives.dart';
 
@@ -68,6 +69,15 @@ class _ConfigPageState extends State<ConfigPage> {
 
   void _openPrivacyPolicy() {
     Get.toNamed(AppRoutes.privacyPolicy);
+  }
+
+  void _openAreaPremium() {
+    final authController = Get.find<AuthController>();
+    if (authController.isLoggedIn.value) {
+      Get.toNamed(AppRoutes.upgrade);
+    } else {
+      Get.toNamed(AppRoutes.login, arguments: {'from': 'premium'});
+    }
   }
 
   Future<void> _handleShareAgenda() async {
@@ -233,6 +243,36 @@ class _ConfigPageState extends State<ConfigPage> {
                     ),
                   ],
                 ),
+              ),
+            ),
+          ),
+          AppSurfaceCard(
+            child: Padding(
+              padding: const EdgeInsets.fromLTRB(6, 10, 6, 6),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    'Premium',
+                    style: Theme.of(context).textTheme.titleMedium,
+                  ),
+                  const SizedBox(height: 12),
+                  ListTile(
+                    contentPadding: const EdgeInsets.symmetric(horizontal: 6),
+                    leading: const Icon(Icons.workspace_premium_outlined),
+                    title: const Text('Area Premium'),
+                    subtitle: Obx(() {
+                      final auth = Get.find<AuthController>();
+                      return Text(
+                        auth.isLoggedIn.value
+                            ? 'Criar ou gerenciar sua assinatura'
+                            : 'Entre para criar acesso premium',
+                      );
+                    }),
+                    trailing: const Icon(Icons.chevron_right, size: 24),
+                    onTap: _openAreaPremium,
+                  ),
+                ],
               ),
             ),
           ),

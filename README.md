@@ -48,6 +48,19 @@ flutter pub run build_runner build --delete-conflicting-outputs
 flutter run
 ```
 
+## Autenticação (Supabase)
+
+Login, cadastro e recuperação de senha usam Supabase Auth. Sem as variáveis configuradas, o app usa um stub local e não inicializa o Supabase.
+
+1. Crie um projeto em [supabase.com](https://supabase.com) e obtenha a URL e a chave anônima (anon key).
+2. Execute o app passando as variáveis:
+
+   ```bash
+   flutter run --dart-define=SUPABASE_URL=https://seu-projeto.supabase.co --dart-define=SUPABASE_ANON_KEY=eyJ...
+   ```
+
+3. Para build de release, inclua as mesmas `--dart-define` no comando de build.
+
 ## Testes
 
 ```bash
