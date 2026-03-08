@@ -101,8 +101,15 @@ class SupabaseAuthServiceImpl implements IAuthService {
       }
       if (msg.contains('error sending confirmation email') ||
           msg.contains('confirmation email') ||
-          msg.contains('unexpected_failure')) {
+          (msg.contains('unexpected_failure') &&
+              msg.contains('sending'))) {
         return 'SMTP nao configurado. Tente fazer login - sua conta pode ter sido criada. No Supabase: Authentication > Providers > desative "Confirm email".';
+      }
+      if (msg.contains('error sending') ||
+          msg.contains('recovery') ||
+          msg.contains('reset') ||
+          msg.contains('password reset')) {
+        return 'SMTP nao configurado. O link de recuperacao nao pode ser enviado. Configure SMTP no Supabase (Project Settings > Auth > SMTP).';
       }
       return e.message;
     }

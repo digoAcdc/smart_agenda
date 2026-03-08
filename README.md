@@ -61,6 +61,28 @@ Login, cadastro e recuperação de senha usam Supabase Auth. Sem as variáveis c
 
 3. Para build de release, inclua as mesmas `--dart-define` no comando de build.
 
+## Plano Premium (allow list temporaria)
+
+O app alterna entre persistencia local (free) e Supabase (premium) conforme o plano do usuario. Premium = autenticado + email na allow list.
+
+### Configuracao no Supabase
+
+1. Execute as migracoes em `supabase/migrations/`:
+   - `001_premium_allowlist.sql` - tabela de e-mails autorizados
+   - `002_premium_data_tables.sql` - tabelas agenda_items, agenda_groups, attachments, class_schedule_slots
+   - `003_storage_bucket.sql` - bucket para imagens
+
+2. Adicione e-mails na allow list:
+   ```sql
+   INSERT INTO premium_allowlist (email, is_active) VALUES ('seu@email.com', true);
+   ```
+
+3. O usuario logado com e-mail na allow list passa a usar dados na nuvem e imagens no Storage.
+
+### Substituir por in-app purchase
+
+Criar `IPremiumEligibilityService` com `isEligible()`. O `PlanServiceImpl` passa a usar essa interface em vez da allow list. Implementar `InAppPurchaseEligibilityService` que verifica assinatura ativa.
+
 ## Testes
 
 ```bash

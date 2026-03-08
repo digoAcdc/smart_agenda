@@ -166,11 +166,19 @@ class EventDetailPage extends StatelessWidget {
                 else
                   Column(
                     children: arg.attachments.map((a) {
-                      final hasFile =
-                          a.localPath != null && File(a.localPath!).existsSync();
+                      final hasLocal = a.localPath != null &&
+                          File(a.localPath!).existsSync();
+                      final hasRemote = a.remoteUrl != null &&
+                          (a.remoteUrl!.startsWith('http://') ||
+                              a.remoteUrl!.startsWith('https://'));
+                      final hasImage = hasLocal || hasRemote;
                       return InkWell(
                         borderRadius: BorderRadius.circular(DesignTokens.radiusMd),
-                        onTap: () => _openAttachmentPreview(context, a.localPath),
+                        onTap: () => _openAttachmentPreview(
+                          context,
+                          localPath: a.localPath,
+                          remoteUrl: a.remoteUrl,
+                        ),
                         child: Container(
                           margin: const EdgeInsets.only(bottom: DesignTokens.spaceXs),
                           padding: const EdgeInsets.all(10),
@@ -181,15 +189,24 @@ class EventDetailPage extends StatelessWidget {
                           ),
                           child: Row(
                             children: [
-                              if (hasFile)
+                              if (hasImage)
                                 ClipRRect(
                                   borderRadius: BorderRadius.circular(10),
-                                  child: Image.file(
-                                    File(a.localPath!),
-                                    width: 42,
-                                    height: 42,
-                                    fit: BoxFit.cover,
-                                  ),
+                                  child: hasLocal
+                                      ? Image.file(
+                                          File(a.localPath!),
+                                          width: 42,
+                                          height: 42,
+                                          fit: BoxFit.cover,
+                                        )
+                                        : Image.network(
+                                            a.remoteUrl!,
+                                            width: 42,
+                                            height: 42,
+                                            fit: BoxFit.cover,
+                                            errorBuilder: (context, error, stackTrace) =>
+                                                const Icon(Icons.broken_image),
+                                          ),
                                 )
                               else
                                 const Icon(Icons.attachment_outlined),
@@ -202,7 +219,7 @@ class EventDetailPage extends StatelessWidget {
                                 ),
                               ),
                               Icon(
-                                hasFile
+                                hasImage
                                     ? Icons.open_in_full_rounded
                                     : Icons.error_outline_rounded,
                                 size: 18,
@@ -233,10 +250,16 @@ class EventDetailPage extends StatelessWidget {
   }
 
   Future<void> _openAttachmentPreview(
-    BuildContext context,
+    BuildContext context, {
     String? localPath,
-  ) async {
-    if (localPath == null || !File(localPath).existsSync()) {
+    String? remoteUrl,
+  }) async {
+    final hasLocal =
+        localPath != null && File(localPath).existsSync();
+    final hasRemote = remoteUrl != null &&
+        (remoteUrl.startsWith('http://') || remoteUrl.startsWith('https://'));
+
+    if (!hasLocal && !hasRemote) {
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(content: Text('Arquivo do anexo nao encontrado.')),
       );
@@ -258,10 +281,18 @@ class EventDetailPage extends StatelessWidget {
                   child: InteractiveViewer(
                     minScale: 0.8,
                     maxScale: 4,
-                    child: Image.file(
-                      File(localPath),
-                      fit: BoxFit.contain,
-                    ),
+                    child: hasLocal
+                        ? Image.file(
+                            File(localPath),
+                            fit: BoxFit.contain,
+                          )
+                        : Image.network(
+                            remoteUrl as String,
+                            fit: BoxFit.contain,
+                            errorBuilder: (context, error, stackTrace) => const Center(
+                              child: Icon(Icons.broken_image, size: 64),
+                            ),
+                          ),
                   ),
                 ),
                 Positioned(

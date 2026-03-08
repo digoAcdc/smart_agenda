@@ -33,6 +33,7 @@ class AgendaGroupsTable extends Table {
   TextColumn get name => text()();
   TextColumn get colorHex => text().nullable()();
   IntColumn get iconCode => integer().nullable()();
+  TextColumn get syncState => text().withDefault(const Constant('pending'))();
   DateTimeColumn get createdAt => dateTime()();
   DateTimeColumn get updatedAt => dateTime()();
   DateTimeColumn get deletedAt => dateTime().nullable()();
@@ -63,6 +64,7 @@ class ClassScheduleSlotsTable extends Table {
   IntColumn get startMinutes => integer()();
   IntColumn get endMinutes => integer()();
   TextColumn get subject => text().nullable()();
+  TextColumn get syncState => text().withDefault(const Constant('pending'))();
   DateTimeColumn get createdAt => dateTime()();
   DateTimeColumn get updatedAt => dateTime()();
 
@@ -82,7 +84,7 @@ class AppDatabase extends _$AppDatabase {
   AppDatabase() : super(_openConnection());
 
   @override
-  int get schemaVersion => 2;
+  int get schemaVersion => 3;
 
   @override
   MigrationStrategy get migration => MigrationStrategy(
@@ -90,6 +92,10 @@ class AppDatabase extends _$AppDatabase {
         onUpgrade: (m, from, to) async {
           if (from < 2) {
             await m.createTable(classScheduleSlotsTable);
+          }
+          if (from < 3) {
+            await m.addColumn(agendaGroupsTable, agendaGroupsTable.syncState);
+            await m.addColumn(classScheduleSlotsTable, classScheduleSlotsTable.syncState);
           }
         },
       );

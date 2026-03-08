@@ -113,6 +113,7 @@ AgendaGroupsTableCompanion groupToCompanion(AgendaGroup group) {
     name: Value(group.name),
     colorHex: Value(group.colorHex),
     iconCode: Value(group.iconCode),
+    syncState: const Value('pending'),
     createdAt: Value(group.createdAt),
     updatedAt: Value(group.updatedAt),
     deletedAt: Value(group.deletedAt),

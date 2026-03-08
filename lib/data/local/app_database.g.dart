@@ -1009,6 +1009,18 @@ class $AgendaGroupsTableTable extends AgendaGroupsTable
     type: DriftSqlType.int,
     requiredDuringInsert: false,
   );
+  static const VerificationMeta _syncStateMeta = const VerificationMeta(
+    'syncState',
+  );
+  @override
+  late final GeneratedColumn<String> syncState = GeneratedColumn<String>(
+    'sync_state',
+    aliasedName,
+    false,
+    type: DriftSqlType.string,
+    requiredDuringInsert: false,
+    defaultValue: const Constant('pending'),
+  );
   static const VerificationMeta _createdAtMeta = const VerificationMeta(
     'createdAt',
   );
@@ -1048,6 +1060,7 @@ class $AgendaGroupsTableTable extends AgendaGroupsTable
     name,
     colorHex,
     iconCode,
+    syncState,
     createdAt,
     updatedAt,
     deletedAt,
@@ -1087,6 +1100,12 @@ class $AgendaGroupsTableTable extends AgendaGroupsTable
       context.handle(
         _iconCodeMeta,
         iconCode.isAcceptableOrUnknown(data['icon_code']!, _iconCodeMeta),
+      );
+    }
+    if (data.containsKey('sync_state')) {
+      context.handle(
+        _syncStateMeta,
+        syncState.isAcceptableOrUnknown(data['sync_state']!, _syncStateMeta),
       );
     }
     if (data.containsKey('created_at')) {
@@ -1136,6 +1155,10 @@ class $AgendaGroupsTableTable extends AgendaGroupsTable
         DriftSqlType.int,
         data['${effectivePrefix}icon_code'],
       ),
+      syncState: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}sync_state'],
+      )!,
       createdAt: attachedDatabase.typeMapping.read(
         DriftSqlType.dateTime,
         data['${effectivePrefix}created_at'],
@@ -1163,6 +1186,7 @@ class AgendaGroupsTableData extends DataClass
   final String name;
   final String? colorHex;
   final int? iconCode;
+  final String syncState;
   final DateTime createdAt;
   final DateTime updatedAt;
   final DateTime? deletedAt;
@@ -1171,6 +1195,7 @@ class AgendaGroupsTableData extends DataClass
     required this.name,
     this.colorHex,
     this.iconCode,
+    required this.syncState,
     required this.createdAt,
     required this.updatedAt,
     this.deletedAt,
@@ -1186,6 +1211,7 @@ class AgendaGroupsTableData extends DataClass
     if (!nullToAbsent || iconCode != null) {
       map['icon_code'] = Variable<int>(iconCode);
     }
+    map['sync_state'] = Variable<String>(syncState);
     map['created_at'] = Variable<DateTime>(createdAt);
     map['updated_at'] = Variable<DateTime>(updatedAt);
     if (!nullToAbsent || deletedAt != null) {
@@ -1204,6 +1230,7 @@ class AgendaGroupsTableData extends DataClass
       iconCode: iconCode == null && nullToAbsent
           ? const Value.absent()
           : Value(iconCode),
+      syncState: Value(syncState),
       createdAt: Value(createdAt),
       updatedAt: Value(updatedAt),
       deletedAt: deletedAt == null && nullToAbsent
@@ -1222,6 +1249,7 @@ class AgendaGroupsTableData extends DataClass
       name: serializer.fromJson<String>(json['name']),
       colorHex: serializer.fromJson<String?>(json['colorHex']),
       iconCode: serializer.fromJson<int?>(json['iconCode']),
+      syncState: serializer.fromJson<String>(json['syncState']),
       createdAt: serializer.fromJson<DateTime>(json['createdAt']),
       updatedAt: serializer.fromJson<DateTime>(json['updatedAt']),
       deletedAt: serializer.fromJson<DateTime?>(json['deletedAt']),
@@ -1235,6 +1263,7 @@ class AgendaGroupsTableData extends DataClass
       'name': serializer.toJson<String>(name),
       'colorHex': serializer.toJson<String?>(colorHex),
       'iconCode': serializer.toJson<int?>(iconCode),
+      'syncState': serializer.toJson<String>(syncState),
       'createdAt': serializer.toJson<DateTime>(createdAt),
       'updatedAt': serializer.toJson<DateTime>(updatedAt),
       'deletedAt': serializer.toJson<DateTime?>(deletedAt),
@@ -1246,6 +1275,7 @@ class AgendaGroupsTableData extends DataClass
     String? name,
     Value<String?> colorHex = const Value.absent(),
     Value<int?> iconCode = const Value.absent(),
+    String? syncState,
     DateTime? createdAt,
     DateTime? updatedAt,
     Value<DateTime?> deletedAt = const Value.absent(),
@@ -1254,6 +1284,7 @@ class AgendaGroupsTableData extends DataClass
     name: name ?? this.name,
     colorHex: colorHex.present ? colorHex.value : this.colorHex,
     iconCode: iconCode.present ? iconCode.value : this.iconCode,
+    syncState: syncState ?? this.syncState,
     createdAt: createdAt ?? this.createdAt,
     updatedAt: updatedAt ?? this.updatedAt,
     deletedAt: deletedAt.present ? deletedAt.value : this.deletedAt,
@@ -1264,6 +1295,7 @@ class AgendaGroupsTableData extends DataClass
       name: data.name.present ? data.name.value : this.name,
       colorHex: data.colorHex.present ? data.colorHex.value : this.colorHex,
       iconCode: data.iconCode.present ? data.iconCode.value : this.iconCode,
+      syncState: data.syncState.present ? data.syncState.value : this.syncState,
       createdAt: data.createdAt.present ? data.createdAt.value : this.createdAt,
       updatedAt: data.updatedAt.present ? data.updatedAt.value : this.updatedAt,
       deletedAt: data.deletedAt.present ? data.deletedAt.value : this.deletedAt,
@@ -1277,6 +1309,7 @@ class AgendaGroupsTableData extends DataClass
           ..write('name: $name, ')
           ..write('colorHex: $colorHex, ')
           ..write('iconCode: $iconCode, ')
+          ..write('syncState: $syncState, ')
           ..write('createdAt: $createdAt, ')
           ..write('updatedAt: $updatedAt, ')
           ..write('deletedAt: $deletedAt')
@@ -1290,6 +1323,7 @@ class AgendaGroupsTableData extends DataClass
     name,
     colorHex,
     iconCode,
+    syncState,
     createdAt,
     updatedAt,
     deletedAt,
@@ -1302,6 +1336,7 @@ class AgendaGroupsTableData extends DataClass
           other.name == this.name &&
           other.colorHex == this.colorHex &&
           other.iconCode == this.iconCode &&
+          other.syncState == this.syncState &&
           other.createdAt == this.createdAt &&
           other.updatedAt == this.updatedAt &&
           other.deletedAt == this.deletedAt);
@@ -1313,6 +1348,7 @@ class AgendaGroupsTableCompanion
   final Value<String> name;
   final Value<String?> colorHex;
   final Value<int?> iconCode;
+  final Value<String> syncState;
   final Value<DateTime> createdAt;
   final Value<DateTime> updatedAt;
   final Value<DateTime?> deletedAt;
@@ -1322,6 +1358,7 @@ class AgendaGroupsTableCompanion
     this.name = const Value.absent(),
     this.colorHex = const Value.absent(),
     this.iconCode = const Value.absent(),
+    this.syncState = const Value.absent(),
     this.createdAt = const Value.absent(),
     this.updatedAt = const Value.absent(),
     this.deletedAt = const Value.absent(),
@@ -1332,6 +1369,7 @@ class AgendaGroupsTableCompanion
     required String name,
     this.colorHex = const Value.absent(),
     this.iconCode = const Value.absent(),
+    this.syncState = const Value.absent(),
     required DateTime createdAt,
     required DateTime updatedAt,
     this.deletedAt = const Value.absent(),
@@ -1345,6 +1383,7 @@ class AgendaGroupsTableCompanion
     Expression<String>? name,
     Expression<String>? colorHex,
     Expression<int>? iconCode,
+    Expression<String>? syncState,
     Expression<DateTime>? createdAt,
     Expression<DateTime>? updatedAt,
     Expression<DateTime>? deletedAt,
@@ -1355,6 +1394,7 @@ class AgendaGroupsTableCompanion
       if (name != null) 'name': name,
       if (colorHex != null) 'color_hex': colorHex,
       if (iconCode != null) 'icon_code': iconCode,
+      if (syncState != null) 'sync_state': syncState,
       if (createdAt != null) 'created_at': createdAt,
       if (updatedAt != null) 'updated_at': updatedAt,
       if (deletedAt != null) 'deleted_at': deletedAt,
@@ -1367,6 +1407,7 @@ class AgendaGroupsTableCompanion
     Value<String>? name,
     Value<String?>? colorHex,
     Value<int?>? iconCode,
+    Value<String>? syncState,
     Value<DateTime>? createdAt,
     Value<DateTime>? updatedAt,
     Value<DateTime?>? deletedAt,
@@ -1377,6 +1418,7 @@ class AgendaGroupsTableCompanion
       name: name ?? this.name,
       colorHex: colorHex ?? this.colorHex,
       iconCode: iconCode ?? this.iconCode,
+      syncState: syncState ?? this.syncState,
       createdAt: createdAt ?? this.createdAt,
       updatedAt: updatedAt ?? this.updatedAt,
       deletedAt: deletedAt ?? this.deletedAt,
@@ -1398,6 +1440,9 @@ class AgendaGroupsTableCompanion
     }
     if (iconCode.present) {
       map['icon_code'] = Variable<int>(iconCode.value);
+    }
+    if (syncState.present) {
+      map['sync_state'] = Variable<String>(syncState.value);
     }
     if (createdAt.present) {
       map['created_at'] = Variable<DateTime>(createdAt.value);
@@ -1421,6 +1466,7 @@ class AgendaGroupsTableCompanion
           ..write('name: $name, ')
           ..write('colorHex: $colorHex, ')
           ..write('iconCode: $iconCode, ')
+          ..write('syncState: $syncState, ')
           ..write('createdAt: $createdAt, ')
           ..write('updatedAt: $updatedAt, ')
           ..write('deletedAt: $deletedAt, ')
@@ -2098,6 +2144,18 @@ class $ClassScheduleSlotsTableTable extends ClassScheduleSlotsTable
     type: DriftSqlType.string,
     requiredDuringInsert: false,
   );
+  static const VerificationMeta _syncStateMeta = const VerificationMeta(
+    'syncState',
+  );
+  @override
+  late final GeneratedColumn<String> syncState = GeneratedColumn<String>(
+    'sync_state',
+    aliasedName,
+    false,
+    type: DriftSqlType.string,
+    requiredDuringInsert: false,
+    defaultValue: const Constant('pending'),
+  );
   static const VerificationMeta _createdAtMeta = const VerificationMeta(
     'createdAt',
   );
@@ -2127,6 +2185,7 @@ class $ClassScheduleSlotsTableTable extends ClassScheduleSlotsTable
     startMinutes,
     endMinutes,
     subject,
+    syncState,
     createdAt,
     updatedAt,
   ];
@@ -2180,6 +2239,12 @@ class $ClassScheduleSlotsTableTable extends ClassScheduleSlotsTable
         subject.isAcceptableOrUnknown(data['subject']!, _subjectMeta),
       );
     }
+    if (data.containsKey('sync_state')) {
+      context.handle(
+        _syncStateMeta,
+        syncState.isAcceptableOrUnknown(data['sync_state']!, _syncStateMeta),
+      );
+    }
     if (data.containsKey('created_at')) {
       context.handle(
         _createdAtMeta,
@@ -2228,6 +2293,10 @@ class $ClassScheduleSlotsTableTable extends ClassScheduleSlotsTable
         DriftSqlType.string,
         data['${effectivePrefix}subject'],
       ),
+      syncState: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}sync_state'],
+      )!,
       createdAt: attachedDatabase.typeMapping.read(
         DriftSqlType.dateTime,
         data['${effectivePrefix}created_at'],
@@ -2252,6 +2321,7 @@ class ClassScheduleSlotsTableData extends DataClass
   final int startMinutes;
   final int endMinutes;
   final String? subject;
+  final String syncState;
   final DateTime createdAt;
   final DateTime updatedAt;
   const ClassScheduleSlotsTableData({
@@ -2260,6 +2330,7 @@ class ClassScheduleSlotsTableData extends DataClass
     required this.startMinutes,
     required this.endMinutes,
     this.subject,
+    required this.syncState,
     required this.createdAt,
     required this.updatedAt,
   });
@@ -2273,6 +2344,7 @@ class ClassScheduleSlotsTableData extends DataClass
     if (!nullToAbsent || subject != null) {
       map['subject'] = Variable<String>(subject);
     }
+    map['sync_state'] = Variable<String>(syncState);
     map['created_at'] = Variable<DateTime>(createdAt);
     map['updated_at'] = Variable<DateTime>(updatedAt);
     return map;
@@ -2287,6 +2359,7 @@ class ClassScheduleSlotsTableData extends DataClass
       subject: subject == null && nullToAbsent
           ? const Value.absent()
           : Value(subject),
+      syncState: Value(syncState),
       createdAt: Value(createdAt),
       updatedAt: Value(updatedAt),
     );
@@ -2303,6 +2376,7 @@ class ClassScheduleSlotsTableData extends DataClass
       startMinutes: serializer.fromJson<int>(json['startMinutes']),
       endMinutes: serializer.fromJson<int>(json['endMinutes']),
       subject: serializer.fromJson<String?>(json['subject']),
+      syncState: serializer.fromJson<String>(json['syncState']),
       createdAt: serializer.fromJson<DateTime>(json['createdAt']),
       updatedAt: serializer.fromJson<DateTime>(json['updatedAt']),
     );
@@ -2316,6 +2390,7 @@ class ClassScheduleSlotsTableData extends DataClass
       'startMinutes': serializer.toJson<int>(startMinutes),
       'endMinutes': serializer.toJson<int>(endMinutes),
       'subject': serializer.toJson<String?>(subject),
+      'syncState': serializer.toJson<String>(syncState),
       'createdAt': serializer.toJson<DateTime>(createdAt),
       'updatedAt': serializer.toJson<DateTime>(updatedAt),
     };
@@ -2327,6 +2402,7 @@ class ClassScheduleSlotsTableData extends DataClass
     int? startMinutes,
     int? endMinutes,
     Value<String?> subject = const Value.absent(),
+    String? syncState,
     DateTime? createdAt,
     DateTime? updatedAt,
   }) => ClassScheduleSlotsTableData(
@@ -2335,6 +2411,7 @@ class ClassScheduleSlotsTableData extends DataClass
     startMinutes: startMinutes ?? this.startMinutes,
     endMinutes: endMinutes ?? this.endMinutes,
     subject: subject.present ? subject.value : this.subject,
+    syncState: syncState ?? this.syncState,
     createdAt: createdAt ?? this.createdAt,
     updatedAt: updatedAt ?? this.updatedAt,
   );
@@ -2351,6 +2428,7 @@ class ClassScheduleSlotsTableData extends DataClass
           ? data.endMinutes.value
           : this.endMinutes,
       subject: data.subject.present ? data.subject.value : this.subject,
+      syncState: data.syncState.present ? data.syncState.value : this.syncState,
       createdAt: data.createdAt.present ? data.createdAt.value : this.createdAt,
       updatedAt: data.updatedAt.present ? data.updatedAt.value : this.updatedAt,
     );
@@ -2364,6 +2442,7 @@ class ClassScheduleSlotsTableData extends DataClass
           ..write('startMinutes: $startMinutes, ')
           ..write('endMinutes: $endMinutes, ')
           ..write('subject: $subject, ')
+          ..write('syncState: $syncState, ')
           ..write('createdAt: $createdAt, ')
           ..write('updatedAt: $updatedAt')
           ..write(')'))
@@ -2377,6 +2456,7 @@ class ClassScheduleSlotsTableData extends DataClass
     startMinutes,
     endMinutes,
     subject,
+    syncState,
     createdAt,
     updatedAt,
   );
@@ -2389,6 +2469,7 @@ class ClassScheduleSlotsTableData extends DataClass
           other.startMinutes == this.startMinutes &&
           other.endMinutes == this.endMinutes &&
           other.subject == this.subject &&
+          other.syncState == this.syncState &&
           other.createdAt == this.createdAt &&
           other.updatedAt == this.updatedAt);
 }
@@ -2400,6 +2481,7 @@ class ClassScheduleSlotsTableCompanion
   final Value<int> startMinutes;
   final Value<int> endMinutes;
   final Value<String?> subject;
+  final Value<String> syncState;
   final Value<DateTime> createdAt;
   final Value<DateTime> updatedAt;
   final Value<int> rowid;
@@ -2409,6 +2491,7 @@ class ClassScheduleSlotsTableCompanion
     this.startMinutes = const Value.absent(),
     this.endMinutes = const Value.absent(),
     this.subject = const Value.absent(),
+    this.syncState = const Value.absent(),
     this.createdAt = const Value.absent(),
     this.updatedAt = const Value.absent(),
     this.rowid = const Value.absent(),
@@ -2419,6 +2502,7 @@ class ClassScheduleSlotsTableCompanion
     required int startMinutes,
     required int endMinutes,
     this.subject = const Value.absent(),
+    this.syncState = const Value.absent(),
     required DateTime createdAt,
     required DateTime updatedAt,
     this.rowid = const Value.absent(),
@@ -2434,6 +2518,7 @@ class ClassScheduleSlotsTableCompanion
     Expression<int>? startMinutes,
     Expression<int>? endMinutes,
     Expression<String>? subject,
+    Expression<String>? syncState,
     Expression<DateTime>? createdAt,
     Expression<DateTime>? updatedAt,
     Expression<int>? rowid,
@@ -2444,6 +2529,7 @@ class ClassScheduleSlotsTableCompanion
       if (startMinutes != null) 'start_minutes': startMinutes,
       if (endMinutes != null) 'end_minutes': endMinutes,
       if (subject != null) 'subject': subject,
+      if (syncState != null) 'sync_state': syncState,
       if (createdAt != null) 'created_at': createdAt,
       if (updatedAt != null) 'updated_at': updatedAt,
       if (rowid != null) 'rowid': rowid,
@@ -2456,6 +2542,7 @@ class ClassScheduleSlotsTableCompanion
     Value<int>? startMinutes,
     Value<int>? endMinutes,
     Value<String?>? subject,
+    Value<String>? syncState,
     Value<DateTime>? createdAt,
     Value<DateTime>? updatedAt,
     Value<int>? rowid,
@@ -2466,6 +2553,7 @@ class ClassScheduleSlotsTableCompanion
       startMinutes: startMinutes ?? this.startMinutes,
       endMinutes: endMinutes ?? this.endMinutes,
       subject: subject ?? this.subject,
+      syncState: syncState ?? this.syncState,
       createdAt: createdAt ?? this.createdAt,
       updatedAt: updatedAt ?? this.updatedAt,
       rowid: rowid ?? this.rowid,
@@ -2490,6 +2578,9 @@ class ClassScheduleSlotsTableCompanion
     if (subject.present) {
       map['subject'] = Variable<String>(subject.value);
     }
+    if (syncState.present) {
+      map['sync_state'] = Variable<String>(syncState.value);
+    }
     if (createdAt.present) {
       map['created_at'] = Variable<DateTime>(createdAt.value);
     }
@@ -2510,6 +2601,7 @@ class ClassScheduleSlotsTableCompanion
           ..write('startMinutes: $startMinutes, ')
           ..write('endMinutes: $endMinutes, ')
           ..write('subject: $subject, ')
+          ..write('syncState: $syncState, ')
           ..write('createdAt: $createdAt, ')
           ..write('updatedAt: $updatedAt, ')
           ..write('rowid: $rowid')
@@ -2995,6 +3087,7 @@ typedef $$AgendaGroupsTableTableCreateCompanionBuilder =
       required String name,
       Value<String?> colorHex,
       Value<int?> iconCode,
+      Value<String> syncState,
       required DateTime createdAt,
       required DateTime updatedAt,
       Value<DateTime?> deletedAt,
@@ -3006,6 +3099,7 @@ typedef $$AgendaGroupsTableTableUpdateCompanionBuilder =
       Value<String> name,
       Value<String?> colorHex,
       Value<int?> iconCode,
+      Value<String> syncState,
       Value<DateTime> createdAt,
       Value<DateTime> updatedAt,
       Value<DateTime?> deletedAt,
@@ -3038,6 +3132,11 @@ class $$AgendaGroupsTableTableFilterComposer
 
   ColumnFilters<int> get iconCode => $composableBuilder(
     column: $table.iconCode,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get syncState => $composableBuilder(
+    column: $table.syncState,
     builder: (column) => ColumnFilters(column),
   );
 
@@ -3086,6 +3185,11 @@ class $$AgendaGroupsTableTableOrderingComposer
     builder: (column) => ColumnOrderings(column),
   );
 
+  ColumnOrderings<String> get syncState => $composableBuilder(
+    column: $table.syncState,
+    builder: (column) => ColumnOrderings(column),
+  );
+
   ColumnOrderings<DateTime> get createdAt => $composableBuilder(
     column: $table.createdAt,
     builder: (column) => ColumnOrderings(column),
@@ -3122,6 +3226,9 @@ class $$AgendaGroupsTableTableAnnotationComposer
 
   GeneratedColumn<int> get iconCode =>
       $composableBuilder(column: $table.iconCode, builder: (column) => column);
+
+  GeneratedColumn<String> get syncState =>
+      $composableBuilder(column: $table.syncState, builder: (column) => column);
 
   GeneratedColumn<DateTime> get createdAt =>
       $composableBuilder(column: $table.createdAt, builder: (column) => column);
@@ -3177,6 +3284,7 @@ class $$AgendaGroupsTableTableTableManager
                 Value<String> name = const Value.absent(),
                 Value<String?> colorHex = const Value.absent(),
                 Value<int?> iconCode = const Value.absent(),
+                Value<String> syncState = const Value.absent(),
                 Value<DateTime> createdAt = const Value.absent(),
                 Value<DateTime> updatedAt = const Value.absent(),
                 Value<DateTime?> deletedAt = const Value.absent(),
@@ -3186,6 +3294,7 @@ class $$AgendaGroupsTableTableTableManager
                 name: name,
                 colorHex: colorHex,
                 iconCode: iconCode,
+                syncState: syncState,
                 createdAt: createdAt,
                 updatedAt: updatedAt,
                 deletedAt: deletedAt,
@@ -3197,6 +3306,7 @@ class $$AgendaGroupsTableTableTableManager
                 required String name,
                 Value<String?> colorHex = const Value.absent(),
                 Value<int?> iconCode = const Value.absent(),
+                Value<String> syncState = const Value.absent(),
                 required DateTime createdAt,
                 required DateTime updatedAt,
                 Value<DateTime?> deletedAt = const Value.absent(),
@@ -3206,6 +3316,7 @@ class $$AgendaGroupsTableTableTableManager
                 name: name,
                 colorHex: colorHex,
                 iconCode: iconCode,
+                syncState: syncState,
                 createdAt: createdAt,
                 updatedAt: updatedAt,
                 deletedAt: deletedAt,
@@ -3552,6 +3663,7 @@ typedef $$ClassScheduleSlotsTableTableCreateCompanionBuilder =
       required int startMinutes,
       required int endMinutes,
       Value<String?> subject,
+      Value<String> syncState,
       required DateTime createdAt,
       required DateTime updatedAt,
       Value<int> rowid,
@@ -3563,6 +3675,7 @@ typedef $$ClassScheduleSlotsTableTableUpdateCompanionBuilder =
       Value<int> startMinutes,
       Value<int> endMinutes,
       Value<String?> subject,
+      Value<String> syncState,
       Value<DateTime> createdAt,
       Value<DateTime> updatedAt,
       Value<int> rowid,
@@ -3599,6 +3712,11 @@ class $$ClassScheduleSlotsTableTableFilterComposer
 
   ColumnFilters<String> get subject => $composableBuilder(
     column: $table.subject,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get syncState => $composableBuilder(
+    column: $table.syncState,
     builder: (column) => ColumnFilters(column),
   );
 
@@ -3647,6 +3765,11 @@ class $$ClassScheduleSlotsTableTableOrderingComposer
     builder: (column) => ColumnOrderings(column),
   );
 
+  ColumnOrderings<String> get syncState => $composableBuilder(
+    column: $table.syncState,
+    builder: (column) => ColumnOrderings(column),
+  );
+
   ColumnOrderings<DateTime> get createdAt => $composableBuilder(
     column: $table.createdAt,
     builder: (column) => ColumnOrderings(column),
@@ -3685,6 +3808,9 @@ class $$ClassScheduleSlotsTableTableAnnotationComposer
 
   GeneratedColumn<String> get subject =>
       $composableBuilder(column: $table.subject, builder: (column) => column);
+
+  GeneratedColumn<String> get syncState =>
+      $composableBuilder(column: $table.syncState, builder: (column) => column);
 
   GeneratedColumn<DateTime> get createdAt =>
       $composableBuilder(column: $table.createdAt, builder: (column) => column);
@@ -3744,6 +3870,7 @@ class $$ClassScheduleSlotsTableTableTableManager
                 Value<int> startMinutes = const Value.absent(),
                 Value<int> endMinutes = const Value.absent(),
                 Value<String?> subject = const Value.absent(),
+                Value<String> syncState = const Value.absent(),
                 Value<DateTime> createdAt = const Value.absent(),
                 Value<DateTime> updatedAt = const Value.absent(),
                 Value<int> rowid = const Value.absent(),
@@ -3753,6 +3880,7 @@ class $$ClassScheduleSlotsTableTableTableManager
                 startMinutes: startMinutes,
                 endMinutes: endMinutes,
                 subject: subject,
+                syncState: syncState,
                 createdAt: createdAt,
                 updatedAt: updatedAt,
                 rowid: rowid,
@@ -3764,6 +3892,7 @@ class $$ClassScheduleSlotsTableTableTableManager
                 required int startMinutes,
                 required int endMinutes,
                 Value<String?> subject = const Value.absent(),
+                Value<String> syncState = const Value.absent(),
                 required DateTime createdAt,
                 required DateTime updatedAt,
                 Value<int> rowid = const Value.absent(),
@@ -3773,6 +3902,7 @@ class $$ClassScheduleSlotsTableTableTableManager
                 startMinutes: startMinutes,
                 endMinutes: endMinutes,
                 subject: subject,
+                syncState: syncState,
                 createdAt: createdAt,
                 updatedAt: updatedAt,
                 rowid: rowid,

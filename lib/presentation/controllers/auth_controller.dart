@@ -1,15 +1,20 @@
 import 'package:get/get.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
+import '../../core/config/supabase_config.dart';
 import '../../domain/repositories/i_auth_service.dart';
+import '../../domain/repositories/i_local_to_cloud_migration_service.dart';
+import '../../domain/repositories/i_sync_service.dart';
+import '../../domain/repositories/i_plan_service.dart';
 
 const _keyRememberMe = 'auth_remember_me';
 const _keyRememberEmail = 'auth_remember_email';
 
 class AuthController extends GetxController {
-  AuthController(this._authService);
+  AuthController(this._authService, this._planService);
 
   final IAuthService _authService;
+  final IPlanService _planService;
 
   final RxBool loading = false.obs;
   final RxnString errorMessage = RxnString();
@@ -44,7 +49,20 @@ class AuthController extends GetxController {
     final result = await _authService.isLoggedIn();
     if (result.isSuccess) {
       isLoggedIn.value = result.data ?? false;
+      if (isLoggedIn.value) {
+        await _planService.refresh();
+        await _runMigrationIfNeeded();
+      }
     }
+  }
+
+  Future<void> _runMigrationIfNeeded() async {
+    if (!SupabaseConfig.isConfigured) return;
+    if (!Get.isRegistered<ILocalToCloudMigrationService>()) return;
+    try {
+      await Get.find<ILocalToCloudMigrationService>().migrateIfNeeded();
+      await Get.find<ISyncService>().syncNow();
+    } catch (_) {}
   }
 
   Future<bool> login(String email, String password) async {
@@ -54,6 +72,8 @@ class AuthController extends GetxController {
       final result = await _authService.signInWithEmail(email, password);
       if (result.isSuccess) {
         isLoggedIn.value = true;
+        await _planService.refresh();
+        await _runMigrationIfNeeded();
         if (rememberMe.value) {
           rememberedEmail.value = email;
           await _saveRememberMe();
@@ -115,6 +135,7 @@ class AuthController extends GetxController {
   Future<void> signOut() async {
     await _authService.signOut();
     isLoggedIn.value = false;
+    await _planService.refresh();
   }
 
   Future<void> setRememberMe(bool value) async {

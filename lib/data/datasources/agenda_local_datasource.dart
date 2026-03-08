@@ -17,8 +17,9 @@ class AgendaLocalDataSource {
     AgendaItemsTableCompanion item,
     List<AttachmentsTableCompanion> attachments,
   ) async {
+    final withSync = item.copyWith(syncState: const Value('pending'));
     await _db.transaction(() async {
-      await _db.into(_db.agendaItemsTable).insert(item);
+      await _db.into(_db.agendaItemsTable).insert(withSync);
       if (attachments.isNotEmpty) {
         await _db.batch((batch) {
           batch.insertAll(_db.attachmentsTable, attachments);
@@ -31,10 +32,11 @@ class AgendaLocalDataSource {
     AgendaItemsTableCompanion item,
     List<AttachmentsTableCompanion> attachments,
   ) async {
+    final withSync = item.copyWith(syncState: const Value('pending'));
     await _db.transaction(() async {
       await (_db.update(_db.agendaItemsTable)
             ..where((tbl) => tbl.id.equals(item.id.value)))
-          .write(item);
+          .write(withSync);
       await (_db.delete(_db.attachmentsTable)
             ..where((tbl) => tbl.itemId.equals(item.id.value)))
           .go();
@@ -106,6 +108,19 @@ class AgendaLocalDataSource {
       ..orderBy([(t) => OrderingTerm(expression: t.startAt)]);
     final rows = await q.get();
     return _joinAttachments(rows);
+  }
+
+  Future<List<AgendaItemRecord>> getPending() async {
+    final rows = await (_db.select(_db.agendaItemsTable)
+          ..where((t) => t.syncState.equals('pending'))
+          ..orderBy([(t) => OrderingTerm(expression: t.startAt)]))
+        .get();
+    return _joinAttachments(rows);
+  }
+
+  Future<void> markSynced(String id) async {
+    await (_db.update(_db.agendaItemsTable)..where((tbl) => tbl.id.equals(id)))
+        .write(const AgendaItemsTableCompanion(syncState: Value('synced')));
   }
 
   Future<void> setStatus(String id, String status, DateTime updatedAt) async {

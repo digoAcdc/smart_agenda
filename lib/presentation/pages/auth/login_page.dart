@@ -189,32 +189,6 @@ class _LoginPageState extends State<LoginPage> {
                 ),
                 const SizedBox(height: DesignTokens.spaceLg),
                 Row(
-                  children: [
-                    Expanded(child: Divider(color: Theme.of(context).colorScheme.outlineVariant)),
-                    Padding(
-                      padding: const EdgeInsets.symmetric(horizontal: DesignTokens.spaceSm),
-                      child: Text(
-                        'ou',
-                        style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                              color: Theme.of(context).colorScheme.onSurfaceVariant,
-                            ),
-                      ),
-                    ),
-                    Expanded(child: Divider(color: Theme.of(context).colorScheme.outlineVariant)),
-                  ],
-                ),
-                const SizedBox(height: DesignTokens.spaceLg),
-                SizedBox(
-                  width: double.infinity,
-                  height: DesignTokens.buttonHeight,
-                  child: OutlinedButton.icon(
-                    onPressed: () {},
-                    icon: const Icon(Icons.fingerprint_rounded),
-                    label: const Text('Usar biometria'),
-                  ),
-                ),
-                const SizedBox(height: DesignTokens.spaceXl * 2),
-                Row(
                   mainAxisAlignment: MainAxisAlignment.center,
                   children: [
                     Text(

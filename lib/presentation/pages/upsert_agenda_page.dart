@@ -114,13 +114,16 @@ class _UpsertAgendaPageState extends State<UpsertAgendaPage> {
     if (!stored.isSuccess || stored.data == null) return;
 
     final itemId = editingItem?.id ?? const Uuid().v4();
+    final pathOrUrl = stored.data!;
+    final isUrl = pathOrUrl.startsWith('http://') || pathOrUrl.startsWith('https://');
     setState(() {
       attachments.add(
         AttachmentRef(
           id: const Uuid().v4(),
           itemId: itemId,
           type: AttachmentType.image,
-          localPath: stored.data,
+          localPath: isUrl ? null : pathOrUrl,
+          remoteUrl: isUrl ? pathOrUrl : null,
           title: picked.name,
           createdAt: DateTime.now(),
         ),
@@ -756,7 +759,12 @@ class _UpsertAgendaPageState extends State<UpsertAgendaPage> {
                 }
                 final attachment = attachments[index];
                 final path = attachment.localPath;
-                final hasFile = path != null && File(path).existsSync();
+                final url = attachment.remoteUrl;
+                final hasLocal =
+                    path != null && File(path).existsSync();
+                final hasRemote = url != null &&
+                    (url.startsWith('http://') || url.startsWith('https://'));
+                final hasImage = hasLocal || hasRemote;
                 return Container(
                   width: 104,
                   decoration: BoxDecoration(
@@ -775,8 +783,16 @@ class _UpsertAgendaPageState extends State<UpsertAgendaPage> {
                                 top: Radius.circular(14),
                               ),
                               child: SizedBox.expand(
-                                child: hasFile
-                                    ? Image.file(File(path), fit: BoxFit.cover)
+                                child: hasImage
+                                    ? hasLocal
+                                        ? Image.file(File(path),
+                                            fit: BoxFit.cover)
+                                        : Image.network(url as String,
+                                            fit: BoxFit.cover,
+                                            errorBuilder: (context, error, stackTrace) =>
+                                                Icon(Icons.broken_image,
+                                                    color:
+                                                        scheme.onSurfaceVariant))
                                     : Icon(Icons.insert_drive_file,
                                         color: scheme.onSurfaceVariant),
                               ),

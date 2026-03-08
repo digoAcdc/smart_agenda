@@ -31,13 +31,22 @@ class _ResetPasswordPageState extends State<ResetPasswordPage> {
     if (!mounted) return;
     if (ok) {
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(
-          content: Text(
+        SnackBar(
+          content: const Text(
             'Verifique seu e-mail. Enviamos um link para redefinir sua senha.',
           ),
+          backgroundColor: Theme.of(context).colorScheme.primaryContainer,
         ),
       );
       Get.back();
+    } else {
+      final msg = authController.errorMessage.value ?? 'Erro ao enviar e-mail.';
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text(msg),
+          backgroundColor: Theme.of(context).colorScheme.error,
+        ),
+      );
     }
   }
 

@@ -3,6 +3,8 @@ import 'package:get/get.dart';
 import 'package:permission_handler/permission_handler.dart';
 
 import '../../core/routes/app_routes.dart';
+import '../../domain/repositories/i_auth_service.dart';
+import '../../domain/repositories/i_plan_service.dart';
 import '../controllers/agenda_transfer_controller.dart';
 import '../controllers/auth_controller.dart';
 import '../widgets/section_header.dart';
@@ -17,14 +19,47 @@ class ConfigPage extends StatefulWidget {
 
 class _ConfigPageState extends State<ConfigPage> {
   final transferController = Get.find<AgendaTransferController>();
+  bool _isPremium = false;
+  bool _loadingPlan = true;
+  String? _diagnosticEmail;
+  String? _planError;
 
   bool loadingPermission = true;
   bool notificationsEnabled = false;
+
+  Worker? _authWorker;
 
   @override
   void initState() {
     super.initState();
     _loadPermissionStatus();
+    _checkPlanStatus();
+    _authWorker = ever(Get.find<AuthController>().isLoggedIn, (_) => _checkPlanStatus());
+  }
+
+  @override
+  void dispose() {
+    _authWorker?.dispose();
+    super.dispose();
+  }
+
+  Future<void> _checkPlanStatus() async {
+    final planService = Get.find<IPlanService>();
+    final authController = Get.find<AuthController>();
+    final authService = Get.find<IAuthService>();
+    String? email;
+    if (authController.isLoggedIn.value) {
+      final authResult = await authService.getCurrentUser();
+      email = authResult.data?.email;
+    }
+    final isPremium = await planService.isPremium();
+    if (!mounted) return;
+    setState(() {
+      _isPremium = isPremium;
+      _loadingPlan = false;
+      _diagnosticEmail = email;
+      _planError = planService.error;
+    });
   }
 
   Future<void> _loadPermissionStatus() async {
@@ -252,9 +287,47 @@ class _ConfigPageState extends State<ConfigPage> {
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  Text(
-                    'Premium',
-                    style: Theme.of(context).textTheme.titleMedium,
+                  Row(
+                    children: [
+                      Text(
+                        'Premium',
+                        style: Theme.of(context).textTheme.titleMedium,
+                      ),
+                      if (_loadingPlan) ...[
+                        const SizedBox(width: 8),
+                        const SizedBox(
+                          width: 14,
+                          height: 14,
+                          child: CircularProgressIndicator(strokeWidth: 2),
+                        ),
+                      ] else if (_isPremium) ...[
+                        const SizedBox(width: 8),
+                        Container(
+                          padding: const EdgeInsets.symmetric(
+                            horizontal: 8,
+                            vertical: 2,
+                          ),
+                          decoration: BoxDecoration(
+                            color: Theme.of(context)
+                                .colorScheme
+                                .primaryContainer,
+                            borderRadius: BorderRadius.circular(12),
+                          ),
+                          child: Text(
+                            'Premium',
+                            style: Theme.of(context)
+                                .textTheme
+                                .labelSmall
+                                ?.copyWith(
+                                  color: Theme.of(context)
+                                      .colorScheme
+                                      .onPrimaryContainer,
+                                  fontWeight: FontWeight.w600,
+                                ),
+                          ),
+                        ),
+                      ],
+                    ],
                   ),
                   const SizedBox(height: 12),
                   ListTile(
@@ -265,13 +338,59 @@ class _ConfigPageState extends State<ConfigPage> {
                       final auth = Get.find<AuthController>();
                       return Text(
                         auth.isLoggedIn.value
-                            ? 'Criar ou gerenciar sua assinatura'
+                            ? (_isPremium
+                                ? 'Dados sincronizados na nuvem'
+                                : 'Criar ou gerenciar sua assinatura')
                             : 'Entre para criar acesso premium',
                       );
                     }),
                     trailing: const Icon(Icons.chevron_right, size: 24),
                     onTap: _openAreaPremium,
                   ),
+                  if (!_loadingPlan && _diagnosticEmail != null) ...[
+                    const Divider(height: 24),
+                    Padding(
+                      padding: const EdgeInsets.symmetric(horizontal: 6),
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Text(
+                            'Diagnostico',
+                            style: Theme.of(context).textTheme.labelMedium?.copyWith(
+                              color: Theme.of(context).colorScheme.outline,
+                            ),
+                          ),
+                          const SizedBox(height: 6),
+                          Text(
+                            'Email: $_diagnosticEmail',
+                            style: Theme.of(context).textTheme.bodySmall,
+                          ),
+                          Text(
+                            'Status: ${_isPremium ? "Premium" : "Free"}',
+                            style: Theme.of(context).textTheme.bodySmall,
+                          ),
+                          if (_planError != null) ...[
+                            const SizedBox(height: 4),
+                            Text(
+                              'Erro: $_planError',
+                              style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                                color: Theme.of(context).colorScheme.error,
+                              ),
+                            ),
+                          ],
+                          if (!_isPremium && _diagnosticEmail != null) ...[
+                            const SizedBox(height: 8),
+                            Text(
+                              'Para ativar Premium: no Supabase, SQL Editor, execute o script supabase/setup_completo.sql',
+                              style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                                color: Theme.of(context).colorScheme.outline,
+                              ),
+                            ),
+                          ],
+                        ],
+                      ),
+                    ),
+                  ],
                 ],
               ),
             ),

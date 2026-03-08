@@ -3,16 +3,18 @@ import '../../core/utils/date_utils.dart';
 import '../../domain/entities/agenda_enums.dart';
 import '../../domain/entities/agenda_item.dart';
 import '../../domain/repositories/i_agenda_repository.dart';
+import '../../domain/repositories/i_sync_service.dart';
 import '../../domain/value_objects/search_filters.dart';
 import '../datasources/agenda_local_datasource.dart';
-import '../datasources/agenda_remote_datasource.dart';
 import '../models/mappers.dart';
 
 class AgendaRepositoryImpl implements IAgendaRepository {
-  const AgendaRepositoryImpl(this._local, this._remote);
+  AgendaRepositoryImpl(this._local, this._syncService);
 
   final AgendaLocalDataSource _local;
-  final IAgendaRemoteDataSource _remote;
+  final ISyncService _syncService;
+
+  void _scheduleSync() => _syncService.syncNow();
 
   @override
   Future<Result<void>> createItem(AgendaItem item) async {
@@ -21,7 +23,7 @@ class AgendaRepositoryImpl implements IAgendaRepository {
         agendaItemToCompanion(item),
         item.attachments.map(attachmentToCompanion).toList(),
       );
-      await _remote.pushItem(item);
+      _scheduleSync();
       return Result.success(null);
     } catch (e) {
       return Result.failure('Erro ao criar item: $e');
@@ -32,6 +34,7 @@ class AgendaRepositoryImpl implements IAgendaRepository {
   Future<Result<void>> deleteItemSoft(String itemId) async {
     try {
       await _local.deleteItemSoft(itemId, DateTime.now());
+      _scheduleSync();
       return Result.success(null);
     } catch (e) {
       return Result.failure('Erro ao remover item: $e');
@@ -126,6 +129,7 @@ class AgendaRepositoryImpl implements IAgendaRepository {
   Future<Result<void>> setStatus(String itemId, AgendaStatus status) async {
     try {
       await _local.setStatus(itemId, status.name, DateTime.now());
+      _scheduleSync();
       return Result.success(null);
     } catch (e) {
       return Result.failure('Erro ao atualizar status: $e');
@@ -139,7 +143,7 @@ class AgendaRepositoryImpl implements IAgendaRepository {
         agendaItemToCompanion(item),
         item.attachments.map(attachmentToCompanion).toList(),
       );
-      await _remote.pushItem(item);
+      _scheduleSync();
       return Result.success(null);
     } catch (e) {
       return Result.failure('Erro ao atualizar item: $e');
