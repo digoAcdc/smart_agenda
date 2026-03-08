@@ -53,6 +53,10 @@ class _ConfigPageState extends State<ConfigPage> {
       email = authResult.data?.email;
     }
     final isPremium = await planService.isPremium();
+    if (authController.isLoggedIn.value) {
+      authController.userEmail.value = email;
+      authController.isPremium.value = isPremium;
+    }
     if (!mounted) return;
     setState(() {
       _isPremium = isPremium;
@@ -256,6 +260,17 @@ class _ConfigPageState extends State<ConfigPage> {
                               onPressed: _handleShareAgenda,
                               child: const Text('Compartilhar'),
                             ),
+                    ),
+                    ListTile(
+                      contentPadding:
+                          const EdgeInsets.symmetric(horizontal: 6),
+                      leading: const Icon(Icons.people_outline),
+                      title: const Text('Compartilhar com usuario'),
+                      subtitle: const Text(
+                        'Outro usuario premium pode ver sua agenda (somente leitura)',
+                      ),
+                      trailing: const Icon(Icons.chevron_right, size: 24),
+                      onTap: () => Get.toNamed(AppRoutes.sharing),
                     ),
                     ListTile(
                       contentPadding:

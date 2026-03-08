@@ -75,6 +75,7 @@ AgendaItem itemFromDb(
     recurrence:
         recurrenceMap == null ? null : RecurrenceRule.fromJson(recurrenceMap),
     attachments: attachments.map(attachmentFromDb).toList(),
+    ownerEmail: null,
     source: ItemSource.values.firstWhere(
       (e) => e.name == row.source,
       orElse: () => ItemSource.local,

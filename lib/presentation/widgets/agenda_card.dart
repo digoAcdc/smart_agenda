@@ -57,8 +57,11 @@ class AgendaCard extends StatelessWidget {
         : DesignTokens.radiusLg;
     final railHeight = variant == AgendaCardVariant.timeline ? 48.0 : 56.0;
 
+    final isShared = item.ownerEmail != null;
+
     return Dismissible(
       key: ValueKey(item.id),
+      direction: isShared ? DismissDirection.none : DismissDirection.horizontal,
       background: _swipeBackground(
         context,
         icon: Icons.check_circle,
@@ -78,6 +81,7 @@ class AgendaCard extends StatelessWidget {
         radius: radius,
       ),
       confirmDismiss: (direction) async {
+        if (isShared) return false;
         if (direction == DismissDirection.startToEnd) {
           onToggleStatus?.call(AgendaStatus.done);
           return false;
@@ -140,6 +144,15 @@ class AgendaCard extends StatelessWidget {
                               GroupChip(label: groupName!, color: groupColor),
                           ],
                         ),
+                        if (isShared) ...[
+                          Text(
+                            'Compartilhada por ${item.ownerEmail}',
+                            style: Theme.of(context).textTheme.labelSmall?.copyWith(
+                                  color: Theme.of(context).colorScheme.primary,
+                                ),
+                          ),
+                          const SizedBox(height: 4),
+                        ],
                         const SizedBox(height: 8),
                         Text(
                           item.title,
@@ -167,21 +180,22 @@ class AgendaCard extends StatelessWidget {
                       ],
                     ),
                   ),
-                  IconButton(
-                    onPressed: () {
-                      if (item.status == AgendaStatus.done) {
-                        onToggleStatus?.call(AgendaStatus.pending);
-                      } else {
-                        onToggleStatus?.call(AgendaStatus.done);
-                      }
-                    },
-                    icon: Icon(
-                      item.status == AgendaStatus.done
-                          ? Icons.check_circle
-                          : Icons.radio_button_unchecked,
-                      color: statusColor,
+                  if (!isShared)
+                    IconButton(
+                      onPressed: () {
+                        if (item.status == AgendaStatus.done) {
+                          onToggleStatus?.call(AgendaStatus.pending);
+                        } else {
+                          onToggleStatus?.call(AgendaStatus.done);
+                        }
+                      },
+                      icon: Icon(
+                        item.status == AgendaStatus.done
+                            ? Icons.check_circle
+                            : Icons.radio_button_unchecked,
+                        color: statusColor,
+                      ),
                     ),
-                  ),
                 ],
               ),
             ),

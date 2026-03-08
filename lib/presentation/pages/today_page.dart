@@ -9,6 +9,7 @@ import '../../core/utils/date_utils.dart';
 import '../../domain/entities/agenda_enums.dart';
 import '../../domain/entities/agenda_item.dart';
 import '../controllers/agenda_controller.dart';
+import '../controllers/auth_controller.dart';
 import '../controllers/class_schedule_controller.dart';
 import '../controllers/groups_controller.dart';
 import '../widgets/agenda_card.dart';
@@ -401,35 +402,64 @@ class _TodayPageState extends State<TodayPage> {
                       ),
                       const SizedBox(width: 10),
                       Expanded(
-                        child: Column(
-                          crossAxisAlignment: CrossAxisAlignment.start,
-                          children: [
-                            Text(
-                              _greetingByTime(),
-                              style: Theme.of(context)
-                                  .textTheme
-                                  .labelSmall
-                                  ?.copyWith(letterSpacing: 1.1),
-                            ),
-                            Text(
-                              'Usuário',
-                              style: Theme.of(context)
-                                  .textTheme
-                                  .titleMedium
-                                  ?.copyWith(fontWeight: FontWeight.w700),
-                            ),
-                          ],
-                        ),
-                      ),
-                      IconButton(
-                        visualDensity: VisualDensity.compact,
-                        onPressed: () {},
-                        icon: const Icon(Icons.search_rounded),
-                      ),
-                      IconButton(
-                        visualDensity: VisualDensity.compact,
-                        onPressed: () {},
-                        icon: const Icon(Icons.notifications_none_rounded),
+                        child: Obx(() {
+                          final authController = Get.find<AuthController>();
+                          final displayName = authController.userEmail.value ??
+                              'Usuário';
+                          final isPremium = authController.isPremium.value;
+                          return Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              Text(
+                                _greetingByTime(),
+                                style: Theme.of(context)
+                                    .textTheme
+                                    .labelSmall
+                                    ?.copyWith(letterSpacing: 1.1),
+                              ),
+                              Text(
+                                displayName,
+                                style: Theme.of(context)
+                                    .textTheme
+                                    .titleMedium
+                                    ?.copyWith(
+                                      fontWeight: FontWeight.w700,
+                                    ),
+                                maxLines: 1,
+                                overflow: TextOverflow.ellipsis,
+                              ),
+                              if (isPremium) ...[
+                                const SizedBox(height: 4),
+                                Container(
+                                  padding: const EdgeInsets.symmetric(
+                                    horizontal: 8,
+                                    vertical: 2,
+                                  ),
+                                  decoration: BoxDecoration(
+                                    color: Theme.of(context)
+                                        .colorScheme
+                                        .primary
+                                        .withValues(alpha: 0.12),
+                                    borderRadius:
+                                        BorderRadius.circular(999),
+                                  ),
+                                  child: Text(
+                                    'Premium',
+                                    style: Theme.of(context)
+                                        .textTheme
+                                        .labelSmall
+                                        ?.copyWith(
+                                          color: Theme.of(context)
+                                              .colorScheme
+                                              .primary,
+                                          fontWeight: FontWeight.w700,
+                                        ),
+                                  ),
+                                ),
+                              ],
+                            ],
+                          );
+                        }),
                       ),
                     ],
                   ),
@@ -829,6 +859,11 @@ class _TodayPageState extends State<TodayPage> {
     required Color accentGreen,
   }) {
     final timeLabel = DateFormat('HH:mm').format(item.startAt);
+    final isExpired = item.status == AgendaStatus.pending &&
+        item.startAt.isBefore(DateTime.now());
+    final lineColor = isExpired
+        ? context.semanticColors.danger
+        : accentGreen;
     return Row(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
@@ -839,35 +874,67 @@ class _TodayPageState extends State<TodayPage> {
             style: Theme.of(context).textTheme.bodySmall?.copyWith(
                   color: Theme.of(context).colorScheme.onSurfaceVariant,
                 ),
+            ),
           ),
-        ),
-        const SizedBox(width: 4),
-        Container(
-          width: 1.5,
-          height: 92,
-          color: accentGreen.withValues(alpha: 0.7),
-        ),
-        const SizedBox(width: 8),
-        Expanded(
-          child: InkWell(
+          const SizedBox(width: 4),
+          Container(
+            width: 1.5,
+            height: 92,
+            color: lineColor.withValues(alpha: 0.7),
+          ),
+          const SizedBox(width: 8),
+          Expanded(
+            child: InkWell(
             borderRadius: BorderRadius.circular(16),
-            onTap: () => Get.toNamed(AppRoutes.eventDetail, arguments: item),
+              onTap: () => Get.toNamed(AppRoutes.eventDetail, arguments: item),
             child: Container(
               padding: const EdgeInsets.all(12),
               decoration: BoxDecoration(
                 color: Theme.of(context).colorScheme.surface,
                 borderRadius: BorderRadius.circular(16),
+                border: isExpired
+                    ? Border.all(
+                        color: context.semanticColors.danger.withValues(alpha: 0.2),
+                      )
+                    : null,
               ),
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  Text(
-                    groupName.toUpperCase(),
-                    style: Theme.of(context).textTheme.labelSmall?.copyWith(
-                          color: Theme.of(context).colorScheme.primary,
-                          fontWeight: FontWeight.w700,
+                  Row(
+                    children: [
+                      Expanded(
+                        child: Text(
+                          groupName.toUpperCase(),
+                          style: Theme.of(context).textTheme.labelSmall?.copyWith(
+                              color: Theme.of(context).colorScheme.primary,
+                              fontWeight: FontWeight.w700,
+                            ),
+                          maxLines: 1,
+                          overflow: TextOverflow.ellipsis,
                         ),
+                      ),
+                      if (isExpired)
+                        Text(
+                          'Expirado',
+                          style: Theme.of(context).textTheme.labelSmall?.copyWith(
+                                color: context.semanticColors.danger,
+                                fontWeight: FontWeight.w700,
+                              ),
+                        ),
+                    ],
                   ),
+                  if (item.ownerEmail != null) ...[
+                    const SizedBox(height: 4),
+                    Text(
+                      'Compartilhada por ${item.ownerEmail}',
+                      style: Theme.of(context).textTheme.labelSmall?.copyWith(
+                            color: Theme.of(context).colorScheme.primary,
+                          ),
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
+                    ),
+                  ],
                   const SizedBox(height: 4),
                   Text(
                     item.title,
@@ -1073,11 +1140,21 @@ class _TodayPageState extends State<TodayPage> {
         : item.status == AgendaStatus.canceled
             ? context.semanticColors.warning
             : context.semanticColors.pending;
+    final isExpired = item.status == AgendaStatus.pending &&
+        item.startAt.isBefore(DateTime.now());
+    final railColor = isExpired
+        ? context.semanticColors.danger
+        : (groupColor ?? statusColor);
     return Container(
       margin: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
       decoration: BoxDecoration(
         color: Theme.of(context).colorScheme.surface,
         borderRadius: BorderRadius.circular(16),
+        border: isExpired
+            ? Border.all(
+                color: context.semanticColors.danger.withValues(alpha: 0.2),
+              )
+            : null,
         boxShadow: [
           BoxShadow(
             color: Colors.black.withValues(alpha: 0.03),
@@ -1099,7 +1176,7 @@ class _TodayPageState extends State<TodayPage> {
                   width: 3,
                   height: 54,
                   decoration: BoxDecoration(
-                    color: groupColor ?? statusColor,
+                    color: railColor,
                     borderRadius: BorderRadius.circular(4),
                   ),
                 ),
@@ -1117,26 +1194,73 @@ class _TodayPageState extends State<TodayPage> {
                                 ),
                           ),
                           const SizedBox(width: 8),
-                          Container(
-                            padding: const EdgeInsets.symmetric(
-                              horizontal: 8,
-                              vertical: 4,
-                            ),
-                            decoration: BoxDecoration(
-                              color: (groupColor ?? statusColor)
-                                  .withValues(alpha: 0.12),
-                              borderRadius: BorderRadius.circular(999),
-                            ),
-                            child: Text(
-                              groupName,
-                              style: Theme.of(context).textTheme.labelSmall?.copyWith(
-                                    color: groupColor ?? statusColor,
-                                    fontWeight: FontWeight.w700,
-                                  ),
+                          Flexible(
+                            child: Container(
+                              padding: const EdgeInsets.symmetric(
+                                horizontal: 8,
+                                vertical: 4,
+                              ),
+                              decoration: BoxDecoration(
+                                color: railColor.withValues(alpha: 0.12),
+                                borderRadius: BorderRadius.circular(999),
+                              ),
+                              child: Text(
+                                groupName,
+                                style: Theme.of(context).textTheme.labelSmall?.copyWith(
+                                      color: railColor,
+                                      fontWeight: FontWeight.w700,
+                                    ),
+                                maxLines: 1,
+                                overflow: TextOverflow.ellipsis,
+                              ),
                             ),
                           ),
+                          if (isExpired) ...[
+                            const SizedBox(width: 8),
+                            Container(
+                              padding: const EdgeInsets.symmetric(
+                                horizontal: 8,
+                                vertical: 4,
+                              ),
+                              decoration: BoxDecoration(
+                                color: context.semanticColors.danger
+                                    .withValues(alpha: 0.12),
+                                borderRadius: BorderRadius.circular(999),
+                              ),
+                              child: Text(
+                                'Expirado',
+                                style: Theme.of(context).textTheme.labelSmall?.copyWith(
+                                      color: context.semanticColors.danger,
+                                      fontWeight: FontWeight.w700,
+                                    ),
+                              ),
+                            ),
+                          ],
                         ],
                       ),
+                      if (item.ownerEmail != null) ...[
+                        const SizedBox(height: 4),
+                        Row(
+                          children: [
+                            Icon(
+                              Icons.people_outline,
+                              size: 14,
+                              color: Theme.of(context).colorScheme.primary,
+                            ),
+                            const SizedBox(width: 4),
+                            Expanded(
+                              child: Text(
+                                'Compartilhada por ${item.ownerEmail}',
+                                style: Theme.of(context).textTheme.labelSmall?.copyWith(
+                                      color: Theme.of(context).colorScheme.primary,
+                                    ),
+                                maxLines: 1,
+                                overflow: TextOverflow.ellipsis,
+                              ),
+                            ),
+                          ],
+                        ),
+                      ],
                       const SizedBox(height: 6),
                       Text(
                         item.title,
@@ -1154,19 +1278,20 @@ class _TodayPageState extends State<TodayPage> {
                     ],
                   ),
                 ),
-                IconButton(
-                  onPressed: () => onToggleStatus(
-                    item.status == AgendaStatus.done
-                        ? AgendaStatus.pending
-                        : AgendaStatus.done,
+                if (item.ownerEmail == null)
+                  IconButton(
+                    onPressed: () => onToggleStatus(
+                      item.status == AgendaStatus.done
+                          ? AgendaStatus.pending
+                          : AgendaStatus.done,
+                    ),
+                    icon: Icon(
+                      item.status == AgendaStatus.done
+                          ? Icons.check_circle
+                          : Icons.radio_button_unchecked,
+                      color: statusColor,
+                    ),
                   ),
-                  icon: Icon(
-                    item.status == AgendaStatus.done
-                        ? Icons.check_circle
-                        : Icons.radio_button_unchecked,
-                    color: statusColor,
-                  ),
-                ),
               ],
             ),
           ),

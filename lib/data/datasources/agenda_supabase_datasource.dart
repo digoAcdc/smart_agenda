@@ -88,6 +88,123 @@ class AgendaSupabaseDataSource {
     );
   }
 
+  /// Itens compartilhados comigo (somente leitura, com ownerEmail).
+  Future<List<AgendaItem>> getSharedByRange(
+    DateTime start,
+    DateTime end,
+    Map<String, String> ownerIdToEmail,
+  ) async {
+    final uid = _userId;
+    if (uid == null || ownerIdToEmail.isEmpty) return [];
+
+    final ownerIds = ownerIdToEmail.keys.toList();
+    final rows = await _client
+        .from('agenda_items')
+        .select()
+        .inFilter('user_id', ownerIds)
+        .gte('start_at', start.toIso8601String())
+        .lte('start_at', end.toIso8601String())
+        .isFilter('deleted_at', null)
+        .order('start_at');
+
+    if (rows.isEmpty) return [];
+    final items = rows.map((r) => Map<String, dynamic>.from(r)).toList();
+    return _joinAttachmentsWithOwnerEmail(items, ownerIdToEmail);
+  }
+
+  Future<AgendaItem?> getSharedById(
+    String id,
+    Map<String, String> ownerIdToEmail,
+  ) async {
+    if (ownerIdToEmail.isEmpty) return null;
+
+    final rows = await _client
+        .from('agenda_items')
+        .select()
+        .eq('id', id)
+        .inFilter('user_id', ownerIdToEmail.keys.toList())
+        .isFilter('deleted_at', null);
+
+    if (rows.isEmpty) return null;
+    final row = Map<String, dynamic>.from(rows.first);
+    final ownerId = row['user_id'] as String?;
+    final ownerEmail = ownerId != null ? ownerIdToEmail[ownerId] : null;
+
+    final attRows = await _client
+        .from('attachments')
+        .select()
+        .eq('item_id', id)
+        .inFilter('user_id', ownerIdToEmail.keys.toList());
+    final attList = List<Map<String, dynamic>>.from(attRows);
+
+    return agendaItemFromSupabase(row, attList, ownerEmail: ownerEmail);
+  }
+
+  Future<List<AgendaItem>> searchShared(
+    String query, {
+    DateTime? start,
+    DateTime? end,
+    String? groupId,
+    String? status,
+    required Map<String, String> ownerIdToEmail,
+  }) async {
+    if (ownerIdToEmail.isEmpty) return [];
+
+    var q = _client
+        .from('agenda_items')
+        .select()
+        .inFilter('user_id', ownerIdToEmail.keys.toList())
+        .isFilter('deleted_at', null);
+
+    if (query.isNotEmpty) {
+      final pattern = '%$query%';
+      q = q.or('title.ilike.$pattern,description.ilike.$pattern');
+    }
+    if (start != null && end != null) {
+      q = q
+          .gte('start_at', start.toIso8601String())
+          .lte('start_at', end.toIso8601String());
+    }
+    if (groupId != null && groupId.isNotEmpty) {
+      q = q.eq('group_id', groupId);
+    }
+    if (status != null && status.isNotEmpty) {
+      q = q.eq('status', status);
+    }
+
+    final rows = await q.order('start_at');
+    if (rows.isEmpty) return [];
+    return _joinAttachmentsWithOwnerEmail(
+      List<Map<String, dynamic>>.from(rows),
+      ownerIdToEmail,
+    );
+  }
+
+  Future<List<AgendaItem>> _joinAttachmentsWithOwnerEmail(
+    List<Map<String, dynamic>> items,
+    Map<String, String> ownerIdToEmail,
+  ) async {
+    if (items.isEmpty) return [];
+    final itemIds = items.map((e) => e['id'] as String).toList();
+    final ownerIds = ownerIdToEmail.keys.toList();
+
+    final attRows = await _client
+        .from('attachments')
+        .select()
+        .inFilter('user_id', ownerIds)
+        .inFilter('item_id', itemIds);
+    final attList =
+        (attRows as List).map((e) => Map<String, dynamic>.from(e)).toList();
+
+    return items.map((row) {
+      final ownerId = row['user_id'] as String?;
+      final ownerEmail = ownerId != null ? ownerIdToEmail[ownerId] : null;
+      final itemAtts =
+          attList.where((a) => a['item_id'] == row['id']).toList();
+      return agendaItemFromSupabase(row, itemAtts, ownerEmail: ownerEmail);
+    }).toList();
+  }
+
   Future<List<AgendaItem>> getByRange(DateTime start, DateTime end) async {
     final uid = _userId;
     if (uid == null) return [];

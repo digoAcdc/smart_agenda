@@ -19,6 +19,8 @@ class AuthController extends GetxController {
   final RxBool loading = false.obs;
   final RxnString errorMessage = RxnString();
   final RxBool isLoggedIn = false.obs;
+  final RxnString userEmail = RxnString();
+  final RxBool isPremium = false.obs;
   final RxBool rememberMe = true.obs;
   final RxnString rememberedEmail = RxnString();
 
@@ -52,8 +54,18 @@ class AuthController extends GetxController {
       if (isLoggedIn.value) {
         await _planService.refresh();
         await _runMigrationIfNeeded();
+        await _updateUserInfo();
+      } else {
+        userEmail.value = null;
+        isPremium.value = false;
       }
     }
+  }
+
+  Future<void> _updateUserInfo() async {
+    final authResult = await _authService.getCurrentUser();
+    userEmail.value = authResult.data?.email;
+    isPremium.value = await _planService.isPremium();
   }
 
   Future<void> _runMigrationIfNeeded() async {
@@ -72,7 +84,9 @@ class AuthController extends GetxController {
       final result = await _authService.signInWithEmail(email, password);
       if (result.isSuccess) {
         isLoggedIn.value = true;
+        userEmail.value = email;
         await _planService.refresh();
+        isPremium.value = await _planService.isPremium();
         await _runMigrationIfNeeded();
         if (rememberMe.value) {
           rememberedEmail.value = email;
@@ -100,6 +114,10 @@ class AuthController extends GetxController {
     try {
       final result = await _authService.signUp(email, password);
       if (result.isSuccess) {
+        isLoggedIn.value = true;
+        userEmail.value = email;
+        await _planService.refresh();
+        isPremium.value = await _planService.isPremium();
         loading.value = false;
         return true;
       }
@@ -135,6 +153,8 @@ class AuthController extends GetxController {
   Future<void> signOut() async {
     await _authService.signOut();
     isLoggedIn.value = false;
+    userEmail.value = null;
+    isPremium.value = false;
     await _planService.refresh();
   }
 

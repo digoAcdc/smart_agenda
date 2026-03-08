@@ -8,4 +8,5 @@ class AppRoutes {
   static const eventDetail = '/event-detail';
   static const groups = '/groups';
   static const privacyPolicy = '/privacy-policy';
+  static const sharing = '/sharing';
 }

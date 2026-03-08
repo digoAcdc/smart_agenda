@@ -14,8 +14,9 @@ Map<String, dynamic>? _decodeJson(String? raw) {
 
 AgendaItem agendaItemFromSupabase(
   Map<String, dynamic> row,
-  List<Map<String, dynamic>> attachmentsRows,
-) {
+  List<Map<String, dynamic>> attachmentsRows, {
+  String? ownerEmail,
+}) {
   final reminderMap = _decodeJson(row['reminder_json'] as String?);
   final recurrenceMap = _decodeJson(row['recurrence_json'] as String?);
   return AgendaItem(
@@ -38,6 +39,7 @@ AgendaItem agendaItemFromSupabase(
     recurrence:
         recurrenceMap == null ? null : RecurrenceRule.fromJson(recurrenceMap),
     attachments: attachmentsRows.map(attachmentFromSupabase).toList(),
+    ownerEmail: ownerEmail,
     source: ItemSource.values.firstWhere(
       (e) => e.name == (row['source'] ?? 'local'),
       orElse: () => ItemSource.cloud,

@@ -44,16 +44,18 @@ class EventDetailPage extends StatelessWidget {
     final dateLabel = arg.allDay
         ? DateFormat('EEEE, dd MMM').format(arg.startAt)
         : '${startFmt.format(arg.startAt)}${arg.endAt != null ? ' - ${endFmt.format(arg.endAt!)}' : ''}';
+    final isShared = arg.ownerEmail != null;
 
     return Scaffold(
       appBar: AppBar(
         title: const Text('Detalhe do evento'),
         actions: [
-          IconButton(
-            tooltip: 'Editar',
-            onPressed: () => Get.toNamed(AppRoutes.upsertAgenda, arguments: arg),
-            icon: const Icon(Icons.edit_outlined),
-          ),
+          if (!isShared)
+            IconButton(
+              tooltip: 'Editar',
+              onPressed: () => Get.toNamed(AppRoutes.upsertAgenda, arguments: arg),
+              icon: const Icon(Icons.edit_outlined),
+            ),
         ],
       ),
       body: SafeArea(
@@ -62,6 +64,27 @@ class EventDetailPage extends StatelessWidget {
         child: ListView(
           padding: const EdgeInsets.fromLTRB(0, 10, 0, 120),
           children: [
+          if (isShared)
+            AppSurfaceCard(
+              child: Row(
+                children: [
+                  Icon(
+                    Icons.people_outline,
+                    size: 20,
+                    color: Theme.of(context).colorScheme.primary,
+                  ),
+                  const SizedBox(width: DesignTokens.spaceSm),
+                  Expanded(
+                    child: Text(
+                      'Compartilhada por ${arg.ownerEmail}',
+                      style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+                            color: Theme.of(context).colorScheme.primary,
+                          ),
+                    ),
+                  ),
+                ],
+              ),
+            ),
           AppSurfaceCard(
             child: Row(
               children: [
@@ -106,35 +129,36 @@ class EventDetailPage extends StatelessWidget {
               ],
             ),
           ),
-          AppSurfaceCard(
-            child: Row(
-              children: [
-                Expanded(
-                  child: OutlinedButton(
-                    onPressed: () async {
-                      await agendaController.toggleStatus(
-                        arg.id,
-                        AgendaStatus.canceled,
-                      );
-                      Get.back();
-                    },
-                    child: const Text('Cancelar evento'),
+          if (!isShared)
+            AppSurfaceCard(
+              child: Row(
+                children: [
+                  Expanded(
+                    child: OutlinedButton(
+                      onPressed: () async {
+                        await agendaController.toggleStatus(
+                          arg.id,
+                          AgendaStatus.canceled,
+                        );
+                        Get.back();
+                      },
+                      child: const Text('Cancelar evento'),
+                    ),
                   ),
-                ),
-                const SizedBox(width: DesignTokens.spaceSm),
-                Expanded(
-                  child: FilledButton.icon(
-                    onPressed: () async {
-                      await agendaController.toggleStatus(arg.id, AgendaStatus.done);
-                      Get.back();
-                    },
-                    icon: const Icon(Icons.check_rounded),
-                    label: const Text('Marcar concluido'),
+                  const SizedBox(width: DesignTokens.spaceSm),
+                  Expanded(
+                    child: FilledButton.icon(
+                      onPressed: () async {
+                        await agendaController.toggleStatus(arg.id, AgendaStatus.done);
+                        Get.back();
+                      },
+                      icon: const Icon(Icons.check_rounded),
+                      label: const Text('Marcar concluido'),
+                    ),
                   ),
-                ),
-              ],
+                ],
+              ),
             ),
-          ),
           if ((arg.description ?? '').trim().isNotEmpty)
             AppSurfaceCard(
               child: Column(

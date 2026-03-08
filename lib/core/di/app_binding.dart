@@ -10,6 +10,7 @@ import '../../data/datasources/class_schedule_datasource_orchestrator.dart';
 import '../../data/datasources/class_schedule_local_datasource.dart';
 import '../../data/datasources/class_schedule_supabase_datasource.dart';
 import '../../data/datasources/groups_local_datasource.dart';
+import '../../data/datasources/agenda_sharing_supabase_datasource.dart';
 import '../../data/datasources/groups_supabase_datasource.dart';
 import '../../data/local/app_database.dart';
 import '../../data/repositories/agenda_repository_impl.dart';
@@ -23,6 +24,8 @@ import '../../data/services/plan_service_impl.dart';
 import '../../data/services/supabase_auth_service_impl.dart';
 import '../../data/services/notification_service_impl.dart';
 import '../../data/services/connectivity_service_impl.dart';
+import '../../data/services/sharing_service_impl.dart';
+import '../../data/services/sharing_service_stub.dart';
 import '../../data/services/sync_engine_impl.dart';
 import '../../data/services/sync_service_stub.dart';
 import '../../domain/repositories/i_ads_service.dart';
@@ -36,6 +39,7 @@ import '../../domain/repositories/i_class_schedule_datasource.dart';
 import '../../domain/repositories/i_local_to_cloud_migration_service.dart';
 import '../../domain/repositories/i_connectivity_service.dart';
 import '../../domain/repositories/i_plan_service.dart';
+import '../../domain/repositories/i_sharing_service.dart';
 import '../../domain/repositories/i_sync_service.dart';
 import '../../domain/usecases/agenda_usecases.dart';
 import '../../domain/usecases/agenda_transfer_usecases.dart';
@@ -78,6 +82,22 @@ class AppBinding extends Bindings {
         () => GroupsSupabaseDataSource(Supabase.instance.client),
         fenix: true,
       );
+      Get.lazyPut<AgendaSharingSupabaseDataSource>(
+        () => AgendaSharingSupabaseDataSource(Supabase.instance.client),
+        fenix: true,
+      );
+    }
+    Get.lazyPut<ISharingService>(
+      () => SupabaseConfig.isConfigured
+          ? SharingServiceImpl(
+              Get.find<IPlanService>(),
+              Get.find<IAuthService>(),
+              Get.find<AgendaSharingSupabaseDataSource>(),
+            )
+          : SharingServiceStub(),
+      fenix: true,
+    );
+    if (SupabaseConfig.isConfigured) {
       Get.lazyPut<ILocalToCloudMigrationService>(
         () => LocalToCloudMigrationServiceImpl(
           Get.find<IPlanService>(),
@@ -96,6 +116,8 @@ class AppBinding extends Bindings {
       () => AgendaRepositoryImpl(
         Get.find<AgendaLocalDataSource>(),
         Get.find<ISyncService>(),
+        SupabaseConfig.isConfigured ? Get.find<AgendaSupabaseDataSource>() : null,
+        Get.find<ISharingService>(),
       ),
       fenix: true,
     );
