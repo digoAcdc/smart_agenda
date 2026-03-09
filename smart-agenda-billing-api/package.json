@@ -1,0 +1,20 @@
+{
+  "name": "smart-agenda-billing-api",
+  "version": "1.0.0",
+  "description": "Production-ready API for Google Play subscription validation.",
+  "type": "module",
+  "main": "server.js",
+  "scripts": {
+    "start": "node server.js"
+  },
+  "engines": {
+    "node": ">=20.0.0"
+  },
+  "dependencies": {
+    "@fastify/rate-limit": "^10.3.0",
+    "@supabase/supabase-js": "^2.49.1",
+    "dotenv": "^16.4.7",
+    "fastify": "^5.2.2",
+    "jose": "^5.9.6"
+  }
+}

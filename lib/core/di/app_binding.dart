@@ -1,5 +1,8 @@
+import 'dart:io';
+
 import 'package:flutter_local_notifications/flutter_local_notifications.dart';
 import 'package:get/get.dart';
+import 'package:in_app_purchase/in_app_purchase.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 import 'package:uuid/uuid.dart';
 
@@ -11,6 +14,7 @@ import '../../data/datasources/class_schedule_local_datasource.dart';
 import '../../data/datasources/class_schedule_supabase_datasource.dart';
 import '../../data/datasources/groups_local_datasource.dart';
 import '../../data/datasources/agenda_sharing_supabase_datasource.dart';
+import '../../data/datasources/subscription_supabase_datasource.dart';
 import '../../data/datasources/groups_supabase_datasource.dart';
 import '../../data/local/app_database.dart';
 import '../../data/repositories/agenda_repository_impl.dart';
@@ -20,6 +24,8 @@ import '../../data/services/agenda_transfer_service_impl.dart';
 import '../../data/services/auth_service_stub.dart';
 import '../../data/services/file_storage_service_orchestrator.dart';
 import '../../data/services/local_to_cloud_migration_service_impl.dart';
+import '../../data/services/billing_service_impl.dart';
+import '../../data/services/billing_service_stub.dart';
 import '../../data/services/plan_service_impl.dart';
 import '../../data/services/supabase_auth_service_impl.dart';
 import '../../data/services/notification_service_impl.dart';
@@ -38,6 +44,7 @@ import '../../domain/repositories/i_notification_service.dart';
 import '../../domain/repositories/i_class_schedule_datasource.dart';
 import '../../domain/repositories/i_local_to_cloud_migration_service.dart';
 import '../../domain/repositories/i_connectivity_service.dart';
+import '../../domain/repositories/i_billing_service.dart';
 import '../../domain/repositories/i_plan_service.dart';
 import '../../domain/repositories/i_sharing_service.dart';
 import '../../domain/repositories/i_sync_service.dart';
@@ -45,6 +52,7 @@ import '../../domain/usecases/agenda_usecases.dart';
 import '../../domain/usecases/agenda_transfer_usecases.dart';
 import '../../domain/usecases/group_usecases.dart';
 import '../../presentation/controllers/ads_controller.dart';
+import '../../presentation/controllers/billing_controller.dart';
 import '../../presentation/controllers/agenda_controller.dart';
 import '../../presentation/controllers/auth_controller.dart';
 import '../../presentation/controllers/agenda_transfer_controller.dart';
@@ -86,7 +94,20 @@ class AppBinding extends Bindings {
         () => AgendaSharingSupabaseDataSource(Supabase.instance.client),
         fenix: true,
       );
+      Get.lazyPut<SubscriptionSupabaseDataSource>(
+        () => SubscriptionSupabaseDataSource(Supabase.instance.client),
+        fenix: true,
+      );
     }
+    Get.lazyPut<IBillingService>(
+      () => SupabaseConfig.isConfigured && Platform.isAndroid
+          ? BillingServiceImpl(
+              iap: InAppPurchase.instance,
+              subscriptionDataSource: Get.find<SubscriptionSupabaseDataSource>(),
+            )
+          : BillingServiceStub(),
+      fenix: true,
+    );
     Get.lazyPut<ISharingService>(
       () => SupabaseConfig.isConfigured
           ? SharingServiceImpl(
@@ -242,6 +263,10 @@ class AppBinding extends Bindings {
       );
     }
     Get.put(AdsController(Get.find()), permanent: true);
+    Get.put(
+      BillingController(Get.find<IBillingService>(), Get.find<IPlanService>()),
+      permanent: true,
+    );
     Get.put(
       AgendaTransferController(
         exportAgendaToFile: Get.find(),

@@ -46,6 +46,21 @@ class PlanServiceImpl extends GetxController implements IPlanService {
     _isLoading.value = true;
     _error.value = null;
     try {
+      // 1. Consultar assinatura validada (fonte oficial)
+      final subResult = await _client.rpc('get_subscription_premium_status');
+      final subList = subResult as List?;
+      if (subList != null && subList.isNotEmpty) {
+        final row = subList.first as Map<String, dynamic>;
+        final isPremiumFromSub = row['is_premium'] as bool? ?? false;
+        if (isPremiumFromSub) {
+          _cachedPremium = true;
+          _cachedUserId = user.id;
+          debugPrint('[PlanService] subscription active -> premium');
+          return true;
+        }
+      }
+
+      // 2. TEMPORÁRIO: fallback allow list para dev/admin
       final response = await _client
           .from('premium_allowlist')
           .select('id')
@@ -56,7 +71,7 @@ class PlanServiceImpl extends GetxController implements IPlanService {
       final isPremium = response != null;
       _cachedPremium = isPremium;
       _cachedUserId = user.id;
-      debugPrint('[PlanService] email=${user.email} -> ${isPremium ? "premium" : "free"}');
+      debugPrint('[PlanService] email=${user.email} -> ${isPremium ? "premium (allowlist)" : "free"}');
       return isPremium;
     } catch (e) {
       debugPrint('[PlanService] Erro ao verificar allow list: $e');
