@@ -30,7 +30,7 @@ CREATE POLICY "Users can read own subscriptions"
   ON user_subscriptions FOR SELECT
   USING (auth.uid() = user_id);
 
--- INSERT/UPDATE/DELETE apenas via Edge Function (service_role)
+-- INSERT/UPDATE/DELETE apenas via API Node (service_role)
 
 
 CREATE TABLE purchase_validations (

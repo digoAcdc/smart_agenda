@@ -18,7 +18,7 @@ class SubscriptionValidationResult {
 }
 
 /// Servico de billing para compras in-app (Google Play).
-/// Abstrai InAppPurchase e envio para Edge Function.
+/// Abstrai InAppPurchase e envio para API Node de validação.
 abstract class IBillingService {
   /// Carrega os produtos disponiveis (assinaturas).
   Future<bool> loadProducts();
