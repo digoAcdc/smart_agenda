@@ -1,7 +1,11 @@
+import 'package:flutter/foundation.dart';
 import 'package:get/get.dart';
 import 'package:shared_preferences/shared_preferences.dart';
+import 'package:supabase_flutter/supabase_flutter.dart';
 
 import '../../core/config/supabase_config.dart';
+import '../../core/services/firebase_service.dart';
+import '../../data/datasources/fcm_token_supabase_datasource.dart';
 import '../../domain/repositories/i_auth_service.dart';
 import '../../domain/repositories/i_local_to_cloud_migration_service.dart';
 import '../../domain/repositories/i_sync_service.dart';
@@ -65,7 +69,34 @@ class AuthController extends GetxController {
   Future<void> _updateUserInfo() async {
     final authResult = await _authService.getCurrentUser();
     userEmail.value = authResult.data?.email;
+    final userId = authResult.data?.id;
+    if (userId != null) {
+      await FirebaseService.setUserId(userId);
+      await _saveFcmTokenIfNeeded(userId);
+    }
     isPremium.value = await _planService.isPremium();
+  }
+
+  Future<void> _saveFcmTokenIfNeeded(String userId) async {
+    if (!SupabaseConfig.isConfigured) {
+      if (kDebugMode) debugPrint('[FCM] Supabase nao configurado');
+      return;
+    }
+    if (!Get.isRegistered<FcmTokenSupabaseDataSource>()) {
+      if (kDebugMode) debugPrint('[FCM] FcmTokenSupabaseDataSource nao registrado');
+      return;
+    }
+    final token = await FirebaseService.getToken();
+    if (token == null) {
+      if (kDebugMode) debugPrint('[FCM] Token FCM null (Firebase nao init ou permissao negada)');
+      return;
+    }
+    try {
+      await Get.find<FcmTokenSupabaseDataSource>().upsertToken(userId, token);
+      if (kDebugMode) debugPrint('[FCM] Token salvo no Supabase');
+    } catch (e, st) {
+      if (kDebugMode) debugPrint('[FCM] Erro ao salvar token: $e\n$st');
+    }
   }
 
   Future<void> _runMigrationIfNeeded() async {
@@ -85,6 +116,11 @@ class AuthController extends GetxController {
       if (result.isSuccess) {
         isLoggedIn.value = true;
         userEmail.value = email;
+        final userResult = await _authService.getCurrentUser();
+        if (userResult.data?.id != null) {
+          await FirebaseService.setUserId(userResult.data!.id);
+          await _saveFcmTokenIfNeeded(userResult.data!.id);
+        }
         await _planService.refresh();
         isPremium.value = await _planService.isPremium();
         await _runMigrationIfNeeded();
@@ -116,6 +152,11 @@ class AuthController extends GetxController {
       if (result.isSuccess) {
         isLoggedIn.value = true;
         userEmail.value = email;
+        final userResult = await _authService.getCurrentUser();
+        if (userResult.data?.id != null) {
+          await FirebaseService.setUserId(userResult.data!.id);
+          await _saveFcmTokenIfNeeded(userResult.data!.id);
+        }
         await _planService.refresh();
         isPremium.value = await _planService.isPremium();
         loading.value = false;
@@ -151,7 +192,19 @@ class AuthController extends GetxController {
   }
 
   Future<void> signOut() async {
+    final userId = SupabaseConfig.isConfigured
+        ? Supabase.instance.client.auth.currentUser?.id
+        : null;
+    final token = await FirebaseService.getToken();
+    if (userId != null &&
+        token != null &&
+        Get.isRegistered<FcmTokenSupabaseDataSource>()) {
+      try {
+        await Get.find<FcmTokenSupabaseDataSource>().deleteToken(userId, token);
+      } catch (_) {}
+    }
     await _authService.signOut();
+    await FirebaseService.setUserId(null);
     isLoggedIn.value = false;
     userEmail.value = null;
     isPremium.value = false;

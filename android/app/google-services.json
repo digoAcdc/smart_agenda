@@ -1,0 +1,29 @@
+{
+  "project_info": {
+    "project_number": "157345975923",
+    "project_id": "smart-agenda-a550b",
+    "storage_bucket": "smart-agenda-a550b.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:157345975923:android:fc443a65ca476792c4e406",
+        "android_client_info": {
+          "package_name": "com.digo.smartagenda"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyBvguoAGSdz74B0Z5TaSu3TEhIVPGzL1IM"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}

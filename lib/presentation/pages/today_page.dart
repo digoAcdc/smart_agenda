@@ -12,6 +12,7 @@ import '../controllers/agenda_controller.dart';
 import '../controllers/auth_controller.dart';
 import '../controllers/class_schedule_controller.dart';
 import '../controllers/groups_controller.dart';
+import '../controllers/home_controller.dart';
 import '../widgets/agenda_card.dart';
 import '../widgets/ads_placeholder_widget.dart';
 import '../widgets/empty_state_widget.dart';
@@ -35,11 +36,15 @@ class TodayPage extends StatefulWidget {
     this.initialLandingView = HomeLandingView.dashboard,
     this.allowLandingSwitch = true,
     this.initialCalendarFormat = CalendarFormat.week,
+    this.initialDate,
+    this.initialMode,
   });
 
   final HomeLandingView initialLandingView;
   final bool allowLandingSwitch;
   final CalendarFormat initialCalendarFormat;
+  final DateTime? initialDate;
+  final AgendaHomeViewMode? initialMode;
 
   @override
   State<TodayPage> createState() => _TodayPageState();
@@ -63,9 +68,24 @@ class _TodayPageState extends State<TodayPage> {
     super.initState();
     landingView = widget.initialLandingView;
     calendarFormat = widget.initialCalendarFormat;
+    mode = widget.initialMode ?? AgendaHomeViewMode.day;
+    if (mode == AgendaHomeViewMode.week) {
+      calendarFormat = CalendarFormat.week;
+    }
+    if (widget.initialDate != null) {
+      selectedDate = DateUtilsEx.startOfDay(widget.initialDate!);
+      focusedDay = DateUtilsEx.startOfDay(widget.initialDate!);
+      if (isAgendaTabMode && Get.isRegistered<HomeController>()) {
+        Get.find<HomeController>().clearInitialAgendaNavigation();
+      }
+    }
     WidgetsBinding.instance.addPostFrameCallback((_) {
       if (!mounted) return;
       final controller = Get.find<AgendaController>();
+      if (widget.initialDate != null) {
+        controller.selectedDayItems.clear();
+        controller.selectedDate.value = selectedDate;
+      }
       controller.loadByDay(selectedDate);
       controller.loadWeek(
         DateUtilsEx.startOfWeek(selectedDate),
@@ -295,8 +315,7 @@ class _TodayPageState extends State<TodayPage> {
           ),
           const Divider(height: 1),
           Expanded(
-            child: ListView(
-              padding: const EdgeInsets.fromLTRB(0, 8, 0, 120),
+            child: Column(
               children: [
                 SectionHeader(
                   title: 'Calendario completo',
@@ -320,11 +339,45 @@ class _TodayPageState extends State<TodayPage> {
                   ),
                 ),
                 _buildCalendarCard(context, agendaController),
-                const SizedBox(height: 6),
-                _buildSelectedDayTimeline(
-                  agendaController: agendaController,
-                  groupsController: groupsController,
-                  asSection: true,
+                const SizedBox(height: 8),
+                Padding(
+                  padding: const EdgeInsets.fromLTRB(16, 0, 16, 10),
+                  child: SegmentedButton<AgendaHomeViewMode>(
+                    segments: const [
+                      ButtonSegment(
+                          value: AgendaHomeViewMode.day, label: Text('Dia')),
+                      ButtonSegment(
+                          value: AgendaHomeViewMode.week, label: Text('Semana')),
+                      ButtonSegment(
+                          value: AgendaHomeViewMode.month, label: Text('Mes')),
+                    ],
+                    selected: {mode},
+                    onSelectionChanged: (value) {
+                      setState(() => mode = value.first);
+                      _reloadByMode(agendaController);
+                    },
+                  ),
+                ),
+                Expanded(
+                  child: mode == AgendaHomeViewMode.day
+                      ? _buildSelectedDayTimeline(
+                          agendaController: agendaController,
+                          groupsController: groupsController,
+                        )
+                      : mode == AgendaHomeViewMode.week
+                          ? _buildRangeByDayAndGroup(
+                              agendaController: agendaController,
+                              groupsController: groupsController,
+                              items: agendaController.weekItems,
+                              emptyMessage:
+                                  'Sua semana esta leve. Que tal criar um novo evento?',
+                            )
+                          : _buildRangeByDayAndGroup(
+                              agendaController: agendaController,
+                              groupsController: groupsController,
+                              items: agendaController.monthItems,
+                              emptyMessage: 'Nenhum evento para este mes.',
+                            ),
                 ),
               ],
             ),
@@ -1522,6 +1575,8 @@ class _TodayPageState extends State<TodayPage> {
           },
           onDaySelected: (selected, focused) {
             setState(() {
+              // Melhor UX: ao tocar em um dia no calendario, foca no modo dia.
+              mode = AgendaHomeViewMode.day;
               selectedDate = DateUtilsEx.startOfDay(selected);
               focusedDay = DateUtilsEx.startOfDay(focused);
             });

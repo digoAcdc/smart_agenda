@@ -45,6 +45,7 @@ class AgendaController extends GetxController {
   final RxSet<DateTime> monthMarkers = <DateTime>{}.obs;
   final RxBool loading = false.obs;
   final RxnString errorMessage = RxnString();
+  int _loadByDayRequestId = 0;
 
   @override
   void onInit() {
@@ -96,8 +97,10 @@ class AgendaController extends GetxController {
   }
 
   Future<void> loadByDay(DateTime date) async {
+    final requestId = ++_loadByDayRequestId;
     selectedDate.value = date;
     final result = await getAgendaItemsByDay(date);
+    if (requestId != _loadByDayRequestId) return;
     if (result.isSuccess) {
       selectedDayItems.assignAll(result.data ?? []);
     } else {

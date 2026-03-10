@@ -2,12 +2,14 @@ import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import 'package:permission_handler/permission_handler.dart';
 
+import '../../core/config/supabase_config.dart';
 import '../../core/routes/app_routes.dart';
 import '../../core/theme/design_tokens.dart';
 import '../../domain/repositories/i_auth_service.dart';
 import '../../domain/repositories/i_plan_service.dart';
 import '../controllers/agenda_transfer_controller.dart';
 import '../controllers/auth_controller.dart';
+import '../controllers/notifications_controller.dart';
 import '../widgets/ui_primitives.dart';
 
 class ConfigPage extends StatefulWidget {
@@ -499,6 +501,18 @@ class _ConfigPageState extends State<ConfigPage> {
                 onTap: _isPremium ? () => Get.toNamed(AppRoutes.sharing) : null,
                 isPremiumLocked: !_isPremium,
               ),
+              if (Get.find<AuthController>().isLoggedIn.value &&
+                  SupabaseConfig.isConfigured &&
+                  Get.isRegistered<NotificationsController>()) ...[
+                const Divider(height: 1),
+                _buildAgendaActionTile(
+                  icon: Icons.notifications_outlined,
+                  iconColor: Theme.of(context).colorScheme.tertiary,
+                  title: 'Resumos da agenda',
+                  subtitle: 'Notificacoes diarias e semanais',
+                  onTap: () => Get.toNamed(AppRoutes.notifications),
+                ),
+              ],
             ],
           ),
         ),

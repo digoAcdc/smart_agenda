@@ -14,6 +14,9 @@ import '../../data/datasources/class_schedule_local_datasource.dart';
 import '../../data/datasources/class_schedule_supabase_datasource.dart';
 import '../../data/datasources/groups_local_datasource.dart';
 import '../../data/datasources/agenda_sharing_supabase_datasource.dart';
+import '../../data/datasources/fcm_token_supabase_datasource.dart';
+import '../../data/datasources/notifications_supabase_datasource.dart';
+import '../../data/datasources/push_preferences_supabase_datasource.dart';
 import '../../data/datasources/subscription_supabase_datasource.dart';
 import '../../data/datasources/groups_supabase_datasource.dart';
 import '../../data/local/app_database.dart';
@@ -57,6 +60,7 @@ import '../../presentation/controllers/agenda_controller.dart';
 import '../../presentation/controllers/auth_controller.dart';
 import '../../presentation/controllers/agenda_transfer_controller.dart';
 import '../../presentation/controllers/class_schedule_controller.dart';
+import '../../presentation/controllers/notifications_controller.dart';
 import '../../presentation/controllers/sync_controller.dart';
 import '../../presentation/controllers/groups_controller.dart';
 import '../../presentation/controllers/home_controller.dart';
@@ -96,6 +100,25 @@ class AppBinding extends Bindings {
       );
       Get.lazyPut<SubscriptionSupabaseDataSource>(
         () => SubscriptionSupabaseDataSource(Supabase.instance.client),
+        fenix: true,
+      );
+      Get.lazyPut<FcmTokenSupabaseDataSource>(
+        () => FcmTokenSupabaseDataSource(Supabase.instance.client),
+        fenix: true,
+      );
+      Get.lazyPut<NotificationsSupabaseDataSource>(
+        () => NotificationsSupabaseDataSource(Supabase.instance.client),
+        fenix: true,
+      );
+      Get.lazyPut<PushPreferencesSupabaseDataSource>(
+        () => PushPreferencesSupabaseDataSource(Supabase.instance.client),
+        fenix: true,
+      );
+      Get.lazyPut<NotificationsController>(
+        () => NotificationsController(
+          Get.find<NotificationsSupabaseDataSource>(),
+          Get.find<PushPreferencesSupabaseDataSource>(),
+        ),
         fenix: true,
       );
     }
