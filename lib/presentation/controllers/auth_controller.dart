@@ -10,6 +10,7 @@ import '../../domain/repositories/i_auth_service.dart';
 import '../../domain/repositories/i_local_to_cloud_migration_service.dart';
 import '../../domain/repositories/i_sync_service.dart';
 import '../../domain/repositories/i_plan_service.dart';
+import '../../domain/repositories/i_premium_service.dart';
 
 const _keyRememberMe = 'auth_remember_me';
 const _keyRememberEmail = 'auth_remember_email';
@@ -64,6 +65,7 @@ class AuthController extends GetxController {
         isPremium.value = false;
       }
     }
+    _refreshPremiumService();
   }
 
   Future<void> _updateUserInfo() async {
@@ -75,6 +77,13 @@ class AuthController extends GetxController {
       await _saveFcmTokenIfNeeded(userId);
     }
     isPremium.value = await _planService.isPremium();
+    _refreshPremiumService();
+  }
+
+  void _refreshPremiumService() {
+    if (Get.isRegistered<IPremiumService>()) {
+      Get.find<IPremiumService>().refresh();
+    }
   }
 
   Future<void> _saveFcmTokenIfNeeded(String userId) async {
@@ -123,6 +132,7 @@ class AuthController extends GetxController {
         }
         await _planService.refresh();
         isPremium.value = await _planService.isPremium();
+        _refreshPremiumService();
         await _runMigrationIfNeeded();
         if (rememberMe.value) {
           rememberedEmail.value = email;
@@ -159,6 +169,7 @@ class AuthController extends GetxController {
         }
         await _planService.refresh();
         isPremium.value = await _planService.isPremium();
+        _refreshPremiumService();
         loading.value = false;
         return true;
       }
@@ -209,6 +220,7 @@ class AuthController extends GetxController {
     userEmail.value = null;
     isPremium.value = false;
     await _planService.refresh();
+    _refreshPremiumService();
   }
 
   Future<void> setRememberMe(bool value) async {

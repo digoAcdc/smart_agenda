@@ -5,11 +5,14 @@ import 'package:permission_handler/permission_handler.dart';
 import '../../core/config/supabase_config.dart';
 import '../../core/routes/app_routes.dart';
 import '../../core/theme/design_tokens.dart';
+import '../../domain/repositories/i_ad_unlock_provider.dart';
+import '../../domain/repositories/i_ads_service.dart';
 import '../../domain/repositories/i_auth_service.dart';
 import '../../domain/repositories/i_plan_service.dart';
 import '../controllers/agenda_transfer_controller.dart';
 import '../controllers/auth_controller.dart';
 import '../controllers/notifications_controller.dart';
+import '../widgets/ad_banner_widget.dart';
 import '../widgets/ui_primitives.dart';
 
 class ConfigPage extends StatefulWidget {
@@ -24,6 +27,7 @@ class _ConfigPageState extends State<ConfigPage> {
   bool _isPremium = false;
 
   bool loadingPermission = true;
+  bool _compartilharLoading = false;
   bool notificationsEnabled = false;
 
   Worker? _authWorker;
@@ -107,6 +111,27 @@ class _ConfigPageState extends State<ConfigPage> {
     Get.toNamed(AppRoutes.privacyPolicy);
   }
 
+  Future<void> _handleCompartilharAgenda() async {
+    if (_isPremium) {
+      Get.toNamed(AppRoutes.sharing);
+      return;
+    }
+    if (!mounted) return;
+    setState(() => _compartilharLoading = true);
+    try {
+      final adService = Get.find<IAdsService>();
+      final adUnlock = Get.find<IAdUnlockProvider>();
+      final rewarded = await adService.showRewardedAd();
+      if (!mounted) return;
+      if (rewarded) {
+        adUnlock.setShareUnlocked(true);
+        await Get.toNamed(AppRoutes.sharing);
+      }
+    } finally {
+      if (mounted) setState(() => _compartilharLoading = false);
+    }
+  }
+
   void _openAreaPremium() {
     final authController = Get.find<AuthController>();
     if (authController.isLoggedIn.value) {
@@ -132,6 +157,11 @@ class _ConfigPageState extends State<ConfigPage> {
   }
 
   Future<void> _handleImportAgenda() async {
+    if (!_isPremium) {
+      final adService = Get.find<IAdsService>();
+      final rewarded = await adService.showRewardedAd();
+      if (!rewarded) return;
+    }
     final report = await transferController.importAgenda();
     if (!mounted) return;
 
@@ -182,6 +212,7 @@ class _ConfigPageState extends State<ConfigPage> {
           _buildGeralSection(),
           _buildPreferenciasSection(),
           _buildFooter(),
+          const AdBannerWidget(),
         ],
       ),
     );
@@ -493,13 +524,13 @@ class _ConfigPageState extends State<ConfigPage> {
               ],
               _buildAgendaActionTile(
                 icon: Icons.people_outline,
-                iconColor: _isPremium
-                    ? Theme.of(context).colorScheme.primary
-                    : Theme.of(context).colorScheme.outline,
+                iconColor: Theme.of(context).colorScheme.primary,
                 title: 'Compartilhar Agenda',
-                subtitle: 'Convidar outros usuarios',
-                onTap: _isPremium ? () => Get.toNamed(AppRoutes.sharing) : null,
-                isPremiumLocked: !_isPremium,
+                subtitle: _isPremium
+                    ? 'Convidar outros usuarios'
+                    : 'Assista um video para desbloquear',
+                onTap: _compartilharLoading ? null : () => _handleCompartilharAgenda(),
+                loading: _compartilharLoading,
               ),
               if (Get.find<AuthController>().isLoggedIn.value &&
                   SupabaseConfig.isConfigured &&

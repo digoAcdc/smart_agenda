@@ -14,7 +14,7 @@ import '../controllers/class_schedule_controller.dart';
 import '../controllers/groups_controller.dart';
 import '../controllers/home_controller.dart';
 import '../widgets/agenda_card.dart';
-import '../widgets/ads_placeholder_widget.dart';
+import '../widgets/ad_banner_widget.dart';
 import '../widgets/empty_state_widget.dart';
 import '../widgets/loading_placeholder_list.dart';
 import '../widgets/section_header.dart';
@@ -169,7 +169,7 @@ class _TodayPageState extends State<TodayPage> {
                 ),
               ),
             const SizedBox(height: 8),
-            if (!isAgendaTabMode) const AdsPlaceholderWidget(),
+            if (!isAgendaTabMode) const AdBannerWidget(),
             SectionHeader(
               title: isAgendaTabMode
                   ? 'Calendario completo'
@@ -301,16 +301,22 @@ class _TodayPageState extends State<TodayPage> {
         children: [
           Padding(
             padding: const EdgeInsets.fromLTRB(16, 12, 16, 8),
-            child: SizedBox(
-              height: 40,
-              child: Center(
-                child: Text(
-                  'Agenda',
-                  style: Theme.of(context).textTheme.titleLarge?.copyWith(
-                        fontWeight: FontWeight.w700,
-                      ),
+            child: Column(
+              children: [
+                SizedBox(
+                  height: 40,
+                  child: Center(
+                    child: Text(
+                      'Agenda',
+                      style: Theme.of(context).textTheme.titleLarge?.copyWith(
+                            fontWeight: FontWeight.w700,
+                          ),
+                    ),
+                  ),
                 ),
-              ),
+                const SizedBox(height: 8),
+                const AdBannerWidget(),
+              ],
             ),
           ),
           const Divider(height: 1),
@@ -571,6 +577,8 @@ class _TodayPageState extends State<TodayPage> {
                     ],
                   ),
                 ),
+                const SizedBox(height: 8),
+                const AdBannerWidget(),
                 const SizedBox(height: 8),
                 _buildWeekStrip(agendaController, accentGreen),
                 const SizedBox(height: 10),
