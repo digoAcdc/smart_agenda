@@ -7,6 +7,9 @@ class AppRoutes {
   static const upsertAgenda = '/upsert-agenda';
   static const eventDetail = '/event-detail';
   static const groups = '/groups';
+  static const classGroups = '/class-groups';
+  static const classGroupDetail = '/class-group-detail';
+  static const more = '/more';
   static const privacyPolicy = '/privacy-policy';
   static const sharing = '/sharing';
   static const notifications = '/notifications';

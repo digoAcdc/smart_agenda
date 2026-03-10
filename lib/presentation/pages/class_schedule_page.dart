@@ -2,8 +2,9 @@ import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import 'package:url_launcher/url_launcher.dart';
 
-import '../../domain/entities/class_schedule_slot.dart';
 import '../../core/theme/design_tokens.dart';
+import '../../core/utils/form_validators.dart';
+import '../../domain/entities/class_schedule_slot.dart';
 import '../controllers/class_schedule_controller.dart';
 import '../widgets/empty_state_widget.dart';
 import '../widgets/loading_placeholder_list.dart';
@@ -314,7 +315,7 @@ class ClassSchedulePage extends GetView<ClassScheduleController> {
       items.add(_emailRow(context, cell.professorEmail!));
     }
     if (cell.professorPhone?.isNotEmpty == true) {
-      items.add(_phoneRow(context, cell.professorPhone!));
+      items.add(_phoneRow(context, cell.professorPhone!, formatPhoneForDisplay(cell.professorPhone)));
     }
     if (items.isEmpty) {
       items.add(const Text('Nenhum detalhe cadastrado.'));
@@ -365,7 +366,9 @@ class ClassSchedulePage extends GetView<ClassScheduleController> {
     final professorController =
         TextEditingController(text: cell.professorName ?? '');
     final emailController = TextEditingController(text: cell.professorEmail ?? '');
-    final phoneController = TextEditingController(text: cell.professorPhone ?? '');
+    final phoneController = TextEditingController(
+      text: formatPhoneForDisplay(cell.professorPhone),
+    );
 
     void onDropdownChanged(String? value) {
       dropdownValue = value;
@@ -384,21 +387,26 @@ class ClassSchedulePage extends GetView<ClassScheduleController> {
         subjectController.text = value;
         professorController.text = slot?.professorName ?? '';
         emailController.text = slot?.professorEmail ?? '';
-        phoneController.text = slot?.professorPhone ?? '';
+        phoneController.text = formatPhoneForDisplay(slot?.professorPhone);
       }
     }
+
+    final formKey = GlobalKey<FormState>();
 
     await Get.dialog(
       AlertDialog(
         title: Text(dayLabels[day] ?? 'Dia'),
         content: SingleChildScrollView(
-          child: StatefulBuilder(
-            builder: (context, setState) {
-              return Column(
-                mainAxisSize: MainAxisSize.min,
-                crossAxisAlignment: CrossAxisAlignment.stretch,
-                children: [
-                  DropdownButtonFormField<String?>(
+          child: Form(
+            key: formKey,
+            autovalidateMode: AutovalidateMode.onUserInteraction,
+            child: StatefulBuilder(
+              builder: (context, setState) {
+                return Column(
+                  mainAxisSize: MainAxisSize.min,
+                  crossAxisAlignment: CrossAxisAlignment.stretch,
+                  children: [
+                    DropdownButtonFormField<String?>(
                     value: dropdownValue,
                     decoration: const InputDecoration(
                       labelText: 'Materia (opcional)',
@@ -445,7 +453,7 @@ class ClassSchedulePage extends GetView<ClassScheduleController> {
                     ),
                   ),
                   const SizedBox(height: 8),
-                  TextField(
+                  TextFormField(
                     controller: emailController,
                     keyboardType: TextInputType.emailAddress,
                     decoration: const InputDecoration(
@@ -454,9 +462,10 @@ class ClassSchedulePage extends GetView<ClassScheduleController> {
                       isDense: true,
                       contentPadding: EdgeInsets.symmetric(horizontal: 12, vertical: 8),
                     ),
+                    validator: (v) => emailValidator(v),
                   ),
                   const SizedBox(height: 8),
-                  TextField(
+                  TextFormField(
                     controller: phoneController,
                     keyboardType: TextInputType.phone,
                     decoration: const InputDecoration(
@@ -465,12 +474,15 @@ class ClassSchedulePage extends GetView<ClassScheduleController> {
                       isDense: true,
                       contentPadding: EdgeInsets.symmetric(horizontal: 12, vertical: 8),
                     ),
+                    inputFormatters: phoneInputFormatters,
+                    validator: (v) => phoneValidator(v),
                   ),
                 ],
               );
             },
           ),
         ),
+      ),
         actions: [
           TextButton(
             onPressed: () async {
@@ -482,15 +494,17 @@ class ClassSchedulePage extends GetView<ClassScheduleController> {
           TextButton(onPressed: Get.back, child: const Text('Cancelar')),
           FilledButton(
             onPressed: () async {
+              if (formKey.currentState?.validate() != true) return;
               final subject = dropdownValue == _novaMateriaValue
                   ? subjectController.text
                   : (dropdownValue ?? subjectController.text);
+              final phone = unmaskPhone(phoneController.text);
               await controller.updateSlotDetails(
                 cell.id,
                 subject: subject.trim().isEmpty ? null : subject.trim(),
                 professorName: professorController.text,
                 professorEmail: emailController.text,
-                professorPhone: phoneController.text,
+                professorPhone: phone.isEmpty ? null : phone,
               );
               Get.back();
             },
@@ -566,7 +580,7 @@ class ClassSchedulePage extends GetView<ClassScheduleController> {
     );
   }
 
-  Widget _phoneRow(BuildContext context, String phone) {
+  Widget _phoneRow(BuildContext context, String phoneRaw, String phoneDisplay) {
     return Padding(
       padding: const EdgeInsets.only(bottom: 8),
       child: Column(
@@ -587,7 +601,7 @@ class ClassSchedulePage extends GetView<ClassScheduleController> {
                 mainAxisSize: MainAxisSize.min,
                 children: [
                   Text(
-                    phone,
+                    phoneDisplay,
                     style: TextStyle(
                       color: Theme.of(context).colorScheme.primary,
                       decoration: TextDecoration.underline,
@@ -600,12 +614,12 @@ class ClassSchedulePage extends GetView<ClassScheduleController> {
             ),
             menuChildren: [
               MenuItemButton(
-                onPressed: () => _launchTel(phone),
+                onPressed: () => _launchTel(phoneRaw),
                 leadingIcon: const Icon(Icons.phone_outlined),
                 child: const Text('Ligar'),
               ),
               MenuItemButton(
-                onPressed: () => _launchWhatsApp(phone),
+                onPressed: () => _launchWhatsApp(phoneRaw),
                 leadingIcon: const Icon(Icons.chat_outlined),
                 child: const Text('WhatsApp'),
               ),

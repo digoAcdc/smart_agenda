@@ -4,6 +4,7 @@ import 'package:flutter/foundation.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 
 import '../../domain/entities/attachment_ref.dart';
+import '../../domain/entities/student.dart';
 import '../../domain/repositories/i_connectivity_service.dart';
 import '../../domain/repositories/i_file_storage_service.dart';
 import '../../domain/repositories/i_plan_service.dart';
@@ -11,6 +12,7 @@ import '../../domain/repositories/i_sync_service.dart';
 import '../../core/result/result.dart';
 import '../datasources/agenda_local_datasource.dart';
 import '../datasources/agenda_supabase_datasource.dart';
+import '../datasources/class_group_local_datasource.dart';
 import '../datasources/class_schedule_local_datasource.dart';
 import '../datasources/groups_local_datasource.dart';
 import '../datasources/groups_supabase_datasource.dart';
@@ -24,6 +26,7 @@ class SyncEngineImpl implements ISyncService {
     this._localAgenda,
     this._localGroups,
     this._localSchedule,
+    this._localClassGroups,
     this._supabaseAgenda,
     this._supabaseGroups,
     this._fileStorage,
@@ -35,6 +38,7 @@ class SyncEngineImpl implements ISyncService {
   final AgendaLocalDataSource _localAgenda;
   final GroupsLocalDataSource _localGroups;
   final ClassScheduleLocalDataSource _localSchedule;
+  final ClassGroupLocalDataSource _localClassGroups;
   final AgendaSupabaseDataSource _supabaseAgenda;
   final GroupsSupabaseDataSource _supabaseGroups;
   final IFileStorageService _fileStorage;
@@ -57,6 +61,7 @@ class SyncEngineImpl implements ISyncService {
       await _pushGroups();
       await _pushAgendaItems();
       await _pushClassSchedule();
+      await _pushClassGroups();
       debugPrint('[SyncEngine] Sync concluido');
       return Result.success(null);
     } catch (e) {
@@ -86,7 +91,7 @@ class SyncEngineImpl implements ISyncService {
         String? remoteUrl = att.remoteUrl;
         if (att.localPath != null) {
           final path = att.localPath!;
-          if (File(path).existsSync()) {
+          if (await File(path).exists()) {
             final result = await _fileStorage.copyImageToAppStorage(path);
             if (result.isSuccess) remoteUrl = result.data;
           }
@@ -136,5 +141,48 @@ class SyncEngineImpl implements ISyncService {
     }
     await _localSchedule.markSlotsSynced();
     debugPrint('[SyncEngine] ${allSlots.length} slots sincronizados');
+  }
+
+  Future<void> _pushClassGroups() async {
+    final uid = _client.auth.currentUser?.id;
+    if (uid == null) return;
+
+    final allGroups = await _localClassGroups.getGroups();
+    final allStudents = <String, List<Student>>{};
+    for (final g in allGroups) {
+      allStudents[g.id] = await _localClassGroups.getStudentsByGroup(g.id);
+    }
+
+    await _client.from('students').delete().eq('user_id', uid);
+    await _client.from('class_groups').delete().eq('user_id', uid);
+
+    for (final g in allGroups) {
+      await _client.from('class_groups').insert({
+        'id': g.id,
+        'user_id': uid,
+        'name': g.name,
+        'description': g.description,
+        'created_at': g.createdAt.toIso8601String(),
+        'updated_at': g.updatedAt.toIso8601String(),
+      });
+    }
+    for (final g in allGroups) {
+      for (final s in allStudents[g.id]!) {
+        await _client.from('students').insert({
+          'id': s.id,
+          'user_id': uid,
+          'group_id': s.groupId,
+          'name': s.name,
+          'email': s.email,
+          'phone': s.phone,
+          'guardian_name': s.guardianName,
+          'guardian_email': s.guardianEmail,
+          'guardian_phone': s.guardianPhone,
+          'created_at': s.createdAt.toIso8601String(),
+          'updated_at': s.updatedAt.toIso8601String(),
+        });
+      }
+    }
+    debugPrint('[SyncEngine] ${allGroups.length} turmas sincronizadas');
   }
 }

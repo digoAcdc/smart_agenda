@@ -36,11 +36,12 @@ class GroupsController extends GetxController {
     loading.value = false;
   }
 
-  Future<void> create(String name, {String? colorHex}) async {
+  Future<String?> create(String name, {String? colorHex}) async {
     final now = DateTime.now();
-    await createGroupUseCase(
+    final id = const Uuid().v4();
+    final result = await createGroupUseCase(
       AgendaGroup(
-        id: const Uuid().v4(),
+        id: id,
         name: name,
         colorHex: colorHex,
         createdAt: now,
@@ -48,6 +49,7 @@ class GroupsController extends GetxController {
       ),
     );
     await loadGroups();
+    return result.isSuccess ? id : null;
   }
 
   Future<void> updateGroup(AgendaGroup group, String name,

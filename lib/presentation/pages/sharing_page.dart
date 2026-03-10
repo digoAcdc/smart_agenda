@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 
 import '../../core/theme/design_tokens.dart';
+import '../../core/utils/form_validators.dart';
 import '../../domain/repositories/i_plan_service.dart';
 import '../../domain/repositories/i_sharing_service.dart';
 import '../controllers/auth_controller.dart';
@@ -16,6 +17,7 @@ class SharingPage extends StatefulWidget {
 }
 
 class _SharingPageState extends State<SharingPage> {
+  final _formKey = GlobalKey<FormState>();
   final _emailController = TextEditingController();
   final _sharingService = Get.find<ISharingService>();
   final _planService = Get.find<IPlanService>();
@@ -53,8 +55,8 @@ class _SharingPageState extends State<SharingPage> {
   }
 
   Future<void> _handleShare() async {
+    if (_formKey.currentState?.validate() != true) return;
     final email = _emailController.text.trim();
-    if (email.isEmpty) return;
 
     setState(() {
       _sharing = true;
@@ -140,17 +142,22 @@ class _SharingPageState extends State<SharingPage> {
                         ),
                   ),
                   const SizedBox(height: DesignTokens.spaceLg),
-                  TextField(
-                    controller: _emailController,
-                    decoration: const InputDecoration(
-                      labelText: 'Email do usuario',
-                      hintText: 'exemplo@email.com',
-                      prefixIcon: Icon(Icons.email_outlined),
-                      border: OutlineInputBorder(),
+                  Form(
+                    key: _formKey,
+                    autovalidateMode: AutovalidateMode.onUserInteraction,
+                    child: TextFormField(
+                      controller: _emailController,
+                      decoration: const InputDecoration(
+                        labelText: 'Email do usuario',
+                        hintText: 'exemplo@email.com',
+                        prefixIcon: Icon(Icons.email_outlined),
+                        border: OutlineInputBorder(),
+                      ),
+                      keyboardType: TextInputType.emailAddress,
+                      textInputAction: TextInputAction.done,
+                      validator: (v) => emailValidator(v, required: true),
+                      onFieldSubmitted: (_) => _handleShare(),
                     ),
-                    keyboardType: TextInputType.emailAddress,
-                    textInputAction: TextInputAction.done,
-                    onSubmitted: (_) => _handleShare(),
                   ),
                   const SizedBox(height: DesignTokens.spaceSm),
                   if (_error != null) ...[

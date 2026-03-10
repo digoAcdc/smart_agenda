@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 
 import '../../core/theme/design_tokens.dart';
+import '../../core/utils/form_validators.dart';
 import '../controllers/groups_controller.dart';
 import '../widgets/empty_state_widget.dart';
 import '../widgets/section_header.dart';
@@ -66,19 +67,31 @@ class GroupsPage extends StatelessWidget {
                               await controller.delete(group.id);
                             }
                             if (value == 'edit') {
+                              final formKey = GlobalKey<FormState>();
                               final textController =
                                   TextEditingController(text: group.name);
                               await Get.dialog(
                                 AlertDialog(
                                   title: const Text('Editar grupo'),
-                                  content:
-                                      TextField(controller: textController),
+                                  content: Form(
+                                    key: formKey,
+                                    autovalidateMode: AutovalidateMode.onUserInteraction,
+                                    child: TextFormField(
+                                      controller: textController,
+                                      decoration: const InputDecoration(
+                                        labelText: 'Nome do grupo',
+                                      ),
+                                      validator: (v) =>
+                                          requiredValidator(v, 'Nome e obrigatorio'),
+                                    ),
+                                  ),
                                   actions: [
                                     TextButton(
                                         onPressed: Get.back,
                                         child: const Text('Cancelar')),
                                     FilledButton(
                                       onPressed: () async {
+                                        if (formKey.currentState?.validate() != true) return;
                                         await controller.updateGroup(
                                             group, textController.text);
                                         Get.back();
@@ -122,15 +135,29 @@ class GroupsPage extends StatelessWidget {
 
   Future<void> _openCreateDialog(
       BuildContext context, GroupsController controller) async {
+    final formKey = GlobalKey<FormState>();
     final textController = TextEditingController();
     await Get.dialog(
       AlertDialog(
         title: const Text('Novo grupo'),
-        content: TextField(controller: textController),
+        content: Form(
+          key: formKey,
+          autovalidateMode: AutovalidateMode.onUserInteraction,
+          child: TextFormField(
+            controller: textController,
+            decoration: const InputDecoration(
+              labelText: 'Nome do grupo',
+              hintText: 'Ex: Trabalho, Pessoal',
+            ),
+            autofocus: true,
+            validator: (v) => requiredValidator(v, 'Nome e obrigatorio'),
+          ),
+        ),
         actions: [
           TextButton(onPressed: Get.back, child: const Text('Cancelar')),
           FilledButton(
             onPressed: () async {
+              if (formKey.currentState?.validate() != true) return;
               await controller.create(textController.text);
               Get.back();
             },

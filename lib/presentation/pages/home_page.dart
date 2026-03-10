@@ -7,7 +7,7 @@ import '../../core/theme/design_tokens.dart';
 import '../controllers/home_controller.dart';
 import 'class_schedule_page.dart';
 import 'config_page.dart';
-import 'groups_page.dart';
+import 'more_page.dart';
 import 'today_page.dart';
 
 class HomePage extends StatelessWidget {
@@ -57,14 +57,14 @@ class HomePage extends StatelessWidget {
         initialMode: initialMode,
       ),
       ClassSchedulePage(),
-      GroupsPage(),
+      MorePage(),
       ConfigPage(),
     ];
     const iconList = [
       Icons.home_rounded,
       Icons.calendar_month_rounded,
       Icons.menu_book_rounded,
-      Icons.layers_rounded,
+      Icons.apps_rounded,
       Icons.settings_rounded,
     ];
 
@@ -118,7 +118,7 @@ class HomePage extends StatelessWidget {
                     child: Row(
                       children: List.generate(iconList.length, (index) {
                         final isActive = homeController.currentIndex.value == index;
-                        final labels = ['Home', 'Agenda', 'Table', 'Groups', 'Settings'];
+                        final labels = ['Home', 'Agenda', 'Materias', 'Mais', 'Config'];
                         final inactive = Theme.of(context).colorScheme.onSurfaceVariant;
                         return Expanded(
                           child: InkWell(

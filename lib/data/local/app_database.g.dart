@@ -2085,6 +2085,1000 @@ class AttachmentsTableCompanion extends UpdateCompanion<AttachmentsTableData> {
   }
 }
 
+class $ClassGroupsTableTable extends ClassGroupsTable
+    with TableInfo<$ClassGroupsTableTable, ClassGroupsTableData> {
+  @override
+  final GeneratedDatabase attachedDatabase;
+  final String? _alias;
+  $ClassGroupsTableTable(this.attachedDatabase, [this._alias]);
+  static const VerificationMeta _idMeta = const VerificationMeta('id');
+  @override
+  late final GeneratedColumn<String> id = GeneratedColumn<String>(
+    'id',
+    aliasedName,
+    false,
+    type: DriftSqlType.string,
+    requiredDuringInsert: true,
+  );
+  static const VerificationMeta _nameMeta = const VerificationMeta('name');
+  @override
+  late final GeneratedColumn<String> name = GeneratedColumn<String>(
+    'name',
+    aliasedName,
+    false,
+    type: DriftSqlType.string,
+    requiredDuringInsert: true,
+  );
+  static const VerificationMeta _descriptionMeta = const VerificationMeta(
+    'description',
+  );
+  @override
+  late final GeneratedColumn<String> description = GeneratedColumn<String>(
+    'description',
+    aliasedName,
+    true,
+    type: DriftSqlType.string,
+    requiredDuringInsert: false,
+  );
+  static const VerificationMeta _createdAtMeta = const VerificationMeta(
+    'createdAt',
+  );
+  @override
+  late final GeneratedColumn<DateTime> createdAt = GeneratedColumn<DateTime>(
+    'created_at',
+    aliasedName,
+    false,
+    type: DriftSqlType.dateTime,
+    requiredDuringInsert: true,
+  );
+  static const VerificationMeta _updatedAtMeta = const VerificationMeta(
+    'updatedAt',
+  );
+  @override
+  late final GeneratedColumn<DateTime> updatedAt = GeneratedColumn<DateTime>(
+    'updated_at',
+    aliasedName,
+    false,
+    type: DriftSqlType.dateTime,
+    requiredDuringInsert: true,
+  );
+  @override
+  List<GeneratedColumn> get $columns => [
+    id,
+    name,
+    description,
+    createdAt,
+    updatedAt,
+  ];
+  @override
+  String get aliasedName => _alias ?? actualTableName;
+  @override
+  String get actualTableName => $name;
+  static const String $name = 'class_groups_table';
+  @override
+  VerificationContext validateIntegrity(
+    Insertable<ClassGroupsTableData> instance, {
+    bool isInserting = false,
+  }) {
+    final context = VerificationContext();
+    final data = instance.toColumns(true);
+    if (data.containsKey('id')) {
+      context.handle(_idMeta, id.isAcceptableOrUnknown(data['id']!, _idMeta));
+    } else if (isInserting) {
+      context.missing(_idMeta);
+    }
+    if (data.containsKey('name')) {
+      context.handle(
+        _nameMeta,
+        name.isAcceptableOrUnknown(data['name']!, _nameMeta),
+      );
+    } else if (isInserting) {
+      context.missing(_nameMeta);
+    }
+    if (data.containsKey('description')) {
+      context.handle(
+        _descriptionMeta,
+        description.isAcceptableOrUnknown(
+          data['description']!,
+          _descriptionMeta,
+        ),
+      );
+    }
+    if (data.containsKey('created_at')) {
+      context.handle(
+        _createdAtMeta,
+        createdAt.isAcceptableOrUnknown(data['created_at']!, _createdAtMeta),
+      );
+    } else if (isInserting) {
+      context.missing(_createdAtMeta);
+    }
+    if (data.containsKey('updated_at')) {
+      context.handle(
+        _updatedAtMeta,
+        updatedAt.isAcceptableOrUnknown(data['updated_at']!, _updatedAtMeta),
+      );
+    } else if (isInserting) {
+      context.missing(_updatedAtMeta);
+    }
+    return context;
+  }
+
+  @override
+  Set<GeneratedColumn> get $primaryKey => {id};
+  @override
+  ClassGroupsTableData map(Map<String, dynamic> data, {String? tablePrefix}) {
+    final effectivePrefix = tablePrefix != null ? '$tablePrefix.' : '';
+    return ClassGroupsTableData(
+      id: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}id'],
+      )!,
+      name: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}name'],
+      )!,
+      description: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}description'],
+      ),
+      createdAt: attachedDatabase.typeMapping.read(
+        DriftSqlType.dateTime,
+        data['${effectivePrefix}created_at'],
+      )!,
+      updatedAt: attachedDatabase.typeMapping.read(
+        DriftSqlType.dateTime,
+        data['${effectivePrefix}updated_at'],
+      )!,
+    );
+  }
+
+  @override
+  $ClassGroupsTableTable createAlias(String alias) {
+    return $ClassGroupsTableTable(attachedDatabase, alias);
+  }
+}
+
+class ClassGroupsTableData extends DataClass
+    implements Insertable<ClassGroupsTableData> {
+  final String id;
+  final String name;
+  final String? description;
+  final DateTime createdAt;
+  final DateTime updatedAt;
+  const ClassGroupsTableData({
+    required this.id,
+    required this.name,
+    this.description,
+    required this.createdAt,
+    required this.updatedAt,
+  });
+  @override
+  Map<String, Expression> toColumns(bool nullToAbsent) {
+    final map = <String, Expression>{};
+    map['id'] = Variable<String>(id);
+    map['name'] = Variable<String>(name);
+    if (!nullToAbsent || description != null) {
+      map['description'] = Variable<String>(description);
+    }
+    map['created_at'] = Variable<DateTime>(createdAt);
+    map['updated_at'] = Variable<DateTime>(updatedAt);
+    return map;
+  }
+
+  ClassGroupsTableCompanion toCompanion(bool nullToAbsent) {
+    return ClassGroupsTableCompanion(
+      id: Value(id),
+      name: Value(name),
+      description: description == null && nullToAbsent
+          ? const Value.absent()
+          : Value(description),
+      createdAt: Value(createdAt),
+      updatedAt: Value(updatedAt),
+    );
+  }
+
+  factory ClassGroupsTableData.fromJson(
+    Map<String, dynamic> json, {
+    ValueSerializer? serializer,
+  }) {
+    serializer ??= driftRuntimeOptions.defaultSerializer;
+    return ClassGroupsTableData(
+      id: serializer.fromJson<String>(json['id']),
+      name: serializer.fromJson<String>(json['name']),
+      description: serializer.fromJson<String?>(json['description']),
+      createdAt: serializer.fromJson<DateTime>(json['createdAt']),
+      updatedAt: serializer.fromJson<DateTime>(json['updatedAt']),
+    );
+  }
+  @override
+  Map<String, dynamic> toJson({ValueSerializer? serializer}) {
+    serializer ??= driftRuntimeOptions.defaultSerializer;
+    return <String, dynamic>{
+      'id': serializer.toJson<String>(id),
+      'name': serializer.toJson<String>(name),
+      'description': serializer.toJson<String?>(description),
+      'createdAt': serializer.toJson<DateTime>(createdAt),
+      'updatedAt': serializer.toJson<DateTime>(updatedAt),
+    };
+  }
+
+  ClassGroupsTableData copyWith({
+    String? id,
+    String? name,
+    Value<String?> description = const Value.absent(),
+    DateTime? createdAt,
+    DateTime? updatedAt,
+  }) => ClassGroupsTableData(
+    id: id ?? this.id,
+    name: name ?? this.name,
+    description: description.present ? description.value : this.description,
+    createdAt: createdAt ?? this.createdAt,
+    updatedAt: updatedAt ?? this.updatedAt,
+  );
+  ClassGroupsTableData copyWithCompanion(ClassGroupsTableCompanion data) {
+    return ClassGroupsTableData(
+      id: data.id.present ? data.id.value : this.id,
+      name: data.name.present ? data.name.value : this.name,
+      description: data.description.present
+          ? data.description.value
+          : this.description,
+      createdAt: data.createdAt.present ? data.createdAt.value : this.createdAt,
+      updatedAt: data.updatedAt.present ? data.updatedAt.value : this.updatedAt,
+    );
+  }
+
+  @override
+  String toString() {
+    return (StringBuffer('ClassGroupsTableData(')
+          ..write('id: $id, ')
+          ..write('name: $name, ')
+          ..write('description: $description, ')
+          ..write('createdAt: $createdAt, ')
+          ..write('updatedAt: $updatedAt')
+          ..write(')'))
+        .toString();
+  }
+
+  @override
+  int get hashCode => Object.hash(id, name, description, createdAt, updatedAt);
+  @override
+  bool operator ==(Object other) =>
+      identical(this, other) ||
+      (other is ClassGroupsTableData &&
+          other.id == this.id &&
+          other.name == this.name &&
+          other.description == this.description &&
+          other.createdAt == this.createdAt &&
+          other.updatedAt == this.updatedAt);
+}
+
+class ClassGroupsTableCompanion extends UpdateCompanion<ClassGroupsTableData> {
+  final Value<String> id;
+  final Value<String> name;
+  final Value<String?> description;
+  final Value<DateTime> createdAt;
+  final Value<DateTime> updatedAt;
+  final Value<int> rowid;
+  const ClassGroupsTableCompanion({
+    this.id = const Value.absent(),
+    this.name = const Value.absent(),
+    this.description = const Value.absent(),
+    this.createdAt = const Value.absent(),
+    this.updatedAt = const Value.absent(),
+    this.rowid = const Value.absent(),
+  });
+  ClassGroupsTableCompanion.insert({
+    required String id,
+    required String name,
+    this.description = const Value.absent(),
+    required DateTime createdAt,
+    required DateTime updatedAt,
+    this.rowid = const Value.absent(),
+  }) : id = Value(id),
+       name = Value(name),
+       createdAt = Value(createdAt),
+       updatedAt = Value(updatedAt);
+  static Insertable<ClassGroupsTableData> custom({
+    Expression<String>? id,
+    Expression<String>? name,
+    Expression<String>? description,
+    Expression<DateTime>? createdAt,
+    Expression<DateTime>? updatedAt,
+    Expression<int>? rowid,
+  }) {
+    return RawValuesInsertable({
+      if (id != null) 'id': id,
+      if (name != null) 'name': name,
+      if (description != null) 'description': description,
+      if (createdAt != null) 'created_at': createdAt,
+      if (updatedAt != null) 'updated_at': updatedAt,
+      if (rowid != null) 'rowid': rowid,
+    });
+  }
+
+  ClassGroupsTableCompanion copyWith({
+    Value<String>? id,
+    Value<String>? name,
+    Value<String?>? description,
+    Value<DateTime>? createdAt,
+    Value<DateTime>? updatedAt,
+    Value<int>? rowid,
+  }) {
+    return ClassGroupsTableCompanion(
+      id: id ?? this.id,
+      name: name ?? this.name,
+      description: description ?? this.description,
+      createdAt: createdAt ?? this.createdAt,
+      updatedAt: updatedAt ?? this.updatedAt,
+      rowid: rowid ?? this.rowid,
+    );
+  }
+
+  @override
+  Map<String, Expression> toColumns(bool nullToAbsent) {
+    final map = <String, Expression>{};
+    if (id.present) {
+      map['id'] = Variable<String>(id.value);
+    }
+    if (name.present) {
+      map['name'] = Variable<String>(name.value);
+    }
+    if (description.present) {
+      map['description'] = Variable<String>(description.value);
+    }
+    if (createdAt.present) {
+      map['created_at'] = Variable<DateTime>(createdAt.value);
+    }
+    if (updatedAt.present) {
+      map['updated_at'] = Variable<DateTime>(updatedAt.value);
+    }
+    if (rowid.present) {
+      map['rowid'] = Variable<int>(rowid.value);
+    }
+    return map;
+  }
+
+  @override
+  String toString() {
+    return (StringBuffer('ClassGroupsTableCompanion(')
+          ..write('id: $id, ')
+          ..write('name: $name, ')
+          ..write('description: $description, ')
+          ..write('createdAt: $createdAt, ')
+          ..write('updatedAt: $updatedAt, ')
+          ..write('rowid: $rowid')
+          ..write(')'))
+        .toString();
+  }
+}
+
+class $StudentsTableTable extends StudentsTable
+    with TableInfo<$StudentsTableTable, StudentsTableData> {
+  @override
+  final GeneratedDatabase attachedDatabase;
+  final String? _alias;
+  $StudentsTableTable(this.attachedDatabase, [this._alias]);
+  static const VerificationMeta _idMeta = const VerificationMeta('id');
+  @override
+  late final GeneratedColumn<String> id = GeneratedColumn<String>(
+    'id',
+    aliasedName,
+    false,
+    type: DriftSqlType.string,
+    requiredDuringInsert: true,
+  );
+  static const VerificationMeta _groupIdMeta = const VerificationMeta(
+    'groupId',
+  );
+  @override
+  late final GeneratedColumn<String> groupId = GeneratedColumn<String>(
+    'group_id',
+    aliasedName,
+    false,
+    type: DriftSqlType.string,
+    requiredDuringInsert: true,
+  );
+  static const VerificationMeta _nameMeta = const VerificationMeta('name');
+  @override
+  late final GeneratedColumn<String> name = GeneratedColumn<String>(
+    'name',
+    aliasedName,
+    false,
+    type: DriftSqlType.string,
+    requiredDuringInsert: true,
+  );
+  static const VerificationMeta _emailMeta = const VerificationMeta('email');
+  @override
+  late final GeneratedColumn<String> email = GeneratedColumn<String>(
+    'email',
+    aliasedName,
+    true,
+    type: DriftSqlType.string,
+    requiredDuringInsert: false,
+  );
+  static const VerificationMeta _phoneMeta = const VerificationMeta('phone');
+  @override
+  late final GeneratedColumn<String> phone = GeneratedColumn<String>(
+    'phone',
+    aliasedName,
+    true,
+    type: DriftSqlType.string,
+    requiredDuringInsert: false,
+  );
+  static const VerificationMeta _guardianNameMeta = const VerificationMeta(
+    'guardianName',
+  );
+  @override
+  late final GeneratedColumn<String> guardianName = GeneratedColumn<String>(
+    'guardian_name',
+    aliasedName,
+    true,
+    type: DriftSqlType.string,
+    requiredDuringInsert: false,
+  );
+  static const VerificationMeta _guardianEmailMeta = const VerificationMeta(
+    'guardianEmail',
+  );
+  @override
+  late final GeneratedColumn<String> guardianEmail = GeneratedColumn<String>(
+    'guardian_email',
+    aliasedName,
+    true,
+    type: DriftSqlType.string,
+    requiredDuringInsert: false,
+  );
+  static const VerificationMeta _guardianPhoneMeta = const VerificationMeta(
+    'guardianPhone',
+  );
+  @override
+  late final GeneratedColumn<String> guardianPhone = GeneratedColumn<String>(
+    'guardian_phone',
+    aliasedName,
+    true,
+    type: DriftSqlType.string,
+    requiredDuringInsert: false,
+  );
+  static const VerificationMeta _createdAtMeta = const VerificationMeta(
+    'createdAt',
+  );
+  @override
+  late final GeneratedColumn<DateTime> createdAt = GeneratedColumn<DateTime>(
+    'created_at',
+    aliasedName,
+    false,
+    type: DriftSqlType.dateTime,
+    requiredDuringInsert: true,
+  );
+  static const VerificationMeta _updatedAtMeta = const VerificationMeta(
+    'updatedAt',
+  );
+  @override
+  late final GeneratedColumn<DateTime> updatedAt = GeneratedColumn<DateTime>(
+    'updated_at',
+    aliasedName,
+    false,
+    type: DriftSqlType.dateTime,
+    requiredDuringInsert: true,
+  );
+  @override
+  List<GeneratedColumn> get $columns => [
+    id,
+    groupId,
+    name,
+    email,
+    phone,
+    guardianName,
+    guardianEmail,
+    guardianPhone,
+    createdAt,
+    updatedAt,
+  ];
+  @override
+  String get aliasedName => _alias ?? actualTableName;
+  @override
+  String get actualTableName => $name;
+  static const String $name = 'students_table';
+  @override
+  VerificationContext validateIntegrity(
+    Insertable<StudentsTableData> instance, {
+    bool isInserting = false,
+  }) {
+    final context = VerificationContext();
+    final data = instance.toColumns(true);
+    if (data.containsKey('id')) {
+      context.handle(_idMeta, id.isAcceptableOrUnknown(data['id']!, _idMeta));
+    } else if (isInserting) {
+      context.missing(_idMeta);
+    }
+    if (data.containsKey('group_id')) {
+      context.handle(
+        _groupIdMeta,
+        groupId.isAcceptableOrUnknown(data['group_id']!, _groupIdMeta),
+      );
+    } else if (isInserting) {
+      context.missing(_groupIdMeta);
+    }
+    if (data.containsKey('name')) {
+      context.handle(
+        _nameMeta,
+        name.isAcceptableOrUnknown(data['name']!, _nameMeta),
+      );
+    } else if (isInserting) {
+      context.missing(_nameMeta);
+    }
+    if (data.containsKey('email')) {
+      context.handle(
+        _emailMeta,
+        email.isAcceptableOrUnknown(data['email']!, _emailMeta),
+      );
+    }
+    if (data.containsKey('phone')) {
+      context.handle(
+        _phoneMeta,
+        phone.isAcceptableOrUnknown(data['phone']!, _phoneMeta),
+      );
+    }
+    if (data.containsKey('guardian_name')) {
+      context.handle(
+        _guardianNameMeta,
+        guardianName.isAcceptableOrUnknown(
+          data['guardian_name']!,
+          _guardianNameMeta,
+        ),
+      );
+    }
+    if (data.containsKey('guardian_email')) {
+      context.handle(
+        _guardianEmailMeta,
+        guardianEmail.isAcceptableOrUnknown(
+          data['guardian_email']!,
+          _guardianEmailMeta,
+        ),
+      );
+    }
+    if (data.containsKey('guardian_phone')) {
+      context.handle(
+        _guardianPhoneMeta,
+        guardianPhone.isAcceptableOrUnknown(
+          data['guardian_phone']!,
+          _guardianPhoneMeta,
+        ),
+      );
+    }
+    if (data.containsKey('created_at')) {
+      context.handle(
+        _createdAtMeta,
+        createdAt.isAcceptableOrUnknown(data['created_at']!, _createdAtMeta),
+      );
+    } else if (isInserting) {
+      context.missing(_createdAtMeta);
+    }
+    if (data.containsKey('updated_at')) {
+      context.handle(
+        _updatedAtMeta,
+        updatedAt.isAcceptableOrUnknown(data['updated_at']!, _updatedAtMeta),
+      );
+    } else if (isInserting) {
+      context.missing(_updatedAtMeta);
+    }
+    return context;
+  }
+
+  @override
+  Set<GeneratedColumn> get $primaryKey => {id};
+  @override
+  StudentsTableData map(Map<String, dynamic> data, {String? tablePrefix}) {
+    final effectivePrefix = tablePrefix != null ? '$tablePrefix.' : '';
+    return StudentsTableData(
+      id: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}id'],
+      )!,
+      groupId: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}group_id'],
+      )!,
+      name: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}name'],
+      )!,
+      email: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}email'],
+      ),
+      phone: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}phone'],
+      ),
+      guardianName: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}guardian_name'],
+      ),
+      guardianEmail: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}guardian_email'],
+      ),
+      guardianPhone: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}guardian_phone'],
+      ),
+      createdAt: attachedDatabase.typeMapping.read(
+        DriftSqlType.dateTime,
+        data['${effectivePrefix}created_at'],
+      )!,
+      updatedAt: attachedDatabase.typeMapping.read(
+        DriftSqlType.dateTime,
+        data['${effectivePrefix}updated_at'],
+      )!,
+    );
+  }
+
+  @override
+  $StudentsTableTable createAlias(String alias) {
+    return $StudentsTableTable(attachedDatabase, alias);
+  }
+}
+
+class StudentsTableData extends DataClass
+    implements Insertable<StudentsTableData> {
+  final String id;
+  final String groupId;
+  final String name;
+  final String? email;
+  final String? phone;
+  final String? guardianName;
+  final String? guardianEmail;
+  final String? guardianPhone;
+  final DateTime createdAt;
+  final DateTime updatedAt;
+  const StudentsTableData({
+    required this.id,
+    required this.groupId,
+    required this.name,
+    this.email,
+    this.phone,
+    this.guardianName,
+    this.guardianEmail,
+    this.guardianPhone,
+    required this.createdAt,
+    required this.updatedAt,
+  });
+  @override
+  Map<String, Expression> toColumns(bool nullToAbsent) {
+    final map = <String, Expression>{};
+    map['id'] = Variable<String>(id);
+    map['group_id'] = Variable<String>(groupId);
+    map['name'] = Variable<String>(name);
+    if (!nullToAbsent || email != null) {
+      map['email'] = Variable<String>(email);
+    }
+    if (!nullToAbsent || phone != null) {
+      map['phone'] = Variable<String>(phone);
+    }
+    if (!nullToAbsent || guardianName != null) {
+      map['guardian_name'] = Variable<String>(guardianName);
+    }
+    if (!nullToAbsent || guardianEmail != null) {
+      map['guardian_email'] = Variable<String>(guardianEmail);
+    }
+    if (!nullToAbsent || guardianPhone != null) {
+      map['guardian_phone'] = Variable<String>(guardianPhone);
+    }
+    map['created_at'] = Variable<DateTime>(createdAt);
+    map['updated_at'] = Variable<DateTime>(updatedAt);
+    return map;
+  }
+
+  StudentsTableCompanion toCompanion(bool nullToAbsent) {
+    return StudentsTableCompanion(
+      id: Value(id),
+      groupId: Value(groupId),
+      name: Value(name),
+      email: email == null && nullToAbsent
+          ? const Value.absent()
+          : Value(email),
+      phone: phone == null && nullToAbsent
+          ? const Value.absent()
+          : Value(phone),
+      guardianName: guardianName == null && nullToAbsent
+          ? const Value.absent()
+          : Value(guardianName),
+      guardianEmail: guardianEmail == null && nullToAbsent
+          ? const Value.absent()
+          : Value(guardianEmail),
+      guardianPhone: guardianPhone == null && nullToAbsent
+          ? const Value.absent()
+          : Value(guardianPhone),
+      createdAt: Value(createdAt),
+      updatedAt: Value(updatedAt),
+    );
+  }
+
+  factory StudentsTableData.fromJson(
+    Map<String, dynamic> json, {
+    ValueSerializer? serializer,
+  }) {
+    serializer ??= driftRuntimeOptions.defaultSerializer;
+    return StudentsTableData(
+      id: serializer.fromJson<String>(json['id']),
+      groupId: serializer.fromJson<String>(json['groupId']),
+      name: serializer.fromJson<String>(json['name']),
+      email: serializer.fromJson<String?>(json['email']),
+      phone: serializer.fromJson<String?>(json['phone']),
+      guardianName: serializer.fromJson<String?>(json['guardianName']),
+      guardianEmail: serializer.fromJson<String?>(json['guardianEmail']),
+      guardianPhone: serializer.fromJson<String?>(json['guardianPhone']),
+      createdAt: serializer.fromJson<DateTime>(json['createdAt']),
+      updatedAt: serializer.fromJson<DateTime>(json['updatedAt']),
+    );
+  }
+  @override
+  Map<String, dynamic> toJson({ValueSerializer? serializer}) {
+    serializer ??= driftRuntimeOptions.defaultSerializer;
+    return <String, dynamic>{
+      'id': serializer.toJson<String>(id),
+      'groupId': serializer.toJson<String>(groupId),
+      'name': serializer.toJson<String>(name),
+      'email': serializer.toJson<String?>(email),
+      'phone': serializer.toJson<String?>(phone),
+      'guardianName': serializer.toJson<String?>(guardianName),
+      'guardianEmail': serializer.toJson<String?>(guardianEmail),
+      'guardianPhone': serializer.toJson<String?>(guardianPhone),
+      'createdAt': serializer.toJson<DateTime>(createdAt),
+      'updatedAt': serializer.toJson<DateTime>(updatedAt),
+    };
+  }
+
+  StudentsTableData copyWith({
+    String? id,
+    String? groupId,
+    String? name,
+    Value<String?> email = const Value.absent(),
+    Value<String?> phone = const Value.absent(),
+    Value<String?> guardianName = const Value.absent(),
+    Value<String?> guardianEmail = const Value.absent(),
+    Value<String?> guardianPhone = const Value.absent(),
+    DateTime? createdAt,
+    DateTime? updatedAt,
+  }) => StudentsTableData(
+    id: id ?? this.id,
+    groupId: groupId ?? this.groupId,
+    name: name ?? this.name,
+    email: email.present ? email.value : this.email,
+    phone: phone.present ? phone.value : this.phone,
+    guardianName: guardianName.present ? guardianName.value : this.guardianName,
+    guardianEmail: guardianEmail.present
+        ? guardianEmail.value
+        : this.guardianEmail,
+    guardianPhone: guardianPhone.present
+        ? guardianPhone.value
+        : this.guardianPhone,
+    createdAt: createdAt ?? this.createdAt,
+    updatedAt: updatedAt ?? this.updatedAt,
+  );
+  StudentsTableData copyWithCompanion(StudentsTableCompanion data) {
+    return StudentsTableData(
+      id: data.id.present ? data.id.value : this.id,
+      groupId: data.groupId.present ? data.groupId.value : this.groupId,
+      name: data.name.present ? data.name.value : this.name,
+      email: data.email.present ? data.email.value : this.email,
+      phone: data.phone.present ? data.phone.value : this.phone,
+      guardianName: data.guardianName.present
+          ? data.guardianName.value
+          : this.guardianName,
+      guardianEmail: data.guardianEmail.present
+          ? data.guardianEmail.value
+          : this.guardianEmail,
+      guardianPhone: data.guardianPhone.present
+          ? data.guardianPhone.value
+          : this.guardianPhone,
+      createdAt: data.createdAt.present ? data.createdAt.value : this.createdAt,
+      updatedAt: data.updatedAt.present ? data.updatedAt.value : this.updatedAt,
+    );
+  }
+
+  @override
+  String toString() {
+    return (StringBuffer('StudentsTableData(')
+          ..write('id: $id, ')
+          ..write('groupId: $groupId, ')
+          ..write('name: $name, ')
+          ..write('email: $email, ')
+          ..write('phone: $phone, ')
+          ..write('guardianName: $guardianName, ')
+          ..write('guardianEmail: $guardianEmail, ')
+          ..write('guardianPhone: $guardianPhone, ')
+          ..write('createdAt: $createdAt, ')
+          ..write('updatedAt: $updatedAt')
+          ..write(')'))
+        .toString();
+  }
+
+  @override
+  int get hashCode => Object.hash(
+    id,
+    groupId,
+    name,
+    email,
+    phone,
+    guardianName,
+    guardianEmail,
+    guardianPhone,
+    createdAt,
+    updatedAt,
+  );
+  @override
+  bool operator ==(Object other) =>
+      identical(this, other) ||
+      (other is StudentsTableData &&
+          other.id == this.id &&
+          other.groupId == this.groupId &&
+          other.name == this.name &&
+          other.email == this.email &&
+          other.phone == this.phone &&
+          other.guardianName == this.guardianName &&
+          other.guardianEmail == this.guardianEmail &&
+          other.guardianPhone == this.guardianPhone &&
+          other.createdAt == this.createdAt &&
+          other.updatedAt == this.updatedAt);
+}
+
+class StudentsTableCompanion extends UpdateCompanion<StudentsTableData> {
+  final Value<String> id;
+  final Value<String> groupId;
+  final Value<String> name;
+  final Value<String?> email;
+  final Value<String?> phone;
+  final Value<String?> guardianName;
+  final Value<String?> guardianEmail;
+  final Value<String?> guardianPhone;
+  final Value<DateTime> createdAt;
+  final Value<DateTime> updatedAt;
+  final Value<int> rowid;
+  const StudentsTableCompanion({
+    this.id = const Value.absent(),
+    this.groupId = const Value.absent(),
+    this.name = const Value.absent(),
+    this.email = const Value.absent(),
+    this.phone = const Value.absent(),
+    this.guardianName = const Value.absent(),
+    this.guardianEmail = const Value.absent(),
+    this.guardianPhone = const Value.absent(),
+    this.createdAt = const Value.absent(),
+    this.updatedAt = const Value.absent(),
+    this.rowid = const Value.absent(),
+  });
+  StudentsTableCompanion.insert({
+    required String id,
+    required String groupId,
+    required String name,
+    this.email = const Value.absent(),
+    this.phone = const Value.absent(),
+    this.guardianName = const Value.absent(),
+    this.guardianEmail = const Value.absent(),
+    this.guardianPhone = const Value.absent(),
+    required DateTime createdAt,
+    required DateTime updatedAt,
+    this.rowid = const Value.absent(),
+  }) : id = Value(id),
+       groupId = Value(groupId),
+       name = Value(name),
+       createdAt = Value(createdAt),
+       updatedAt = Value(updatedAt);
+  static Insertable<StudentsTableData> custom({
+    Expression<String>? id,
+    Expression<String>? groupId,
+    Expression<String>? name,
+    Expression<String>? email,
+    Expression<String>? phone,
+    Expression<String>? guardianName,
+    Expression<String>? guardianEmail,
+    Expression<String>? guardianPhone,
+    Expression<DateTime>? createdAt,
+    Expression<DateTime>? updatedAt,
+    Expression<int>? rowid,
+  }) {
+    return RawValuesInsertable({
+      if (id != null) 'id': id,
+      if (groupId != null) 'group_id': groupId,
+      if (name != null) 'name': name,
+      if (email != null) 'email': email,
+      if (phone != null) 'phone': phone,
+      if (guardianName != null) 'guardian_name': guardianName,
+      if (guardianEmail != null) 'guardian_email': guardianEmail,
+      if (guardianPhone != null) 'guardian_phone': guardianPhone,
+      if (createdAt != null) 'created_at': createdAt,
+      if (updatedAt != null) 'updated_at': updatedAt,
+      if (rowid != null) 'rowid': rowid,
+    });
+  }
+
+  StudentsTableCompanion copyWith({
+    Value<String>? id,
+    Value<String>? groupId,
+    Value<String>? name,
+    Value<String?>? email,
+    Value<String?>? phone,
+    Value<String?>? guardianName,
+    Value<String?>? guardianEmail,
+    Value<String?>? guardianPhone,
+    Value<DateTime>? createdAt,
+    Value<DateTime>? updatedAt,
+    Value<int>? rowid,
+  }) {
+    return StudentsTableCompanion(
+      id: id ?? this.id,
+      groupId: groupId ?? this.groupId,
+      name: name ?? this.name,
+      email: email ?? this.email,
+      phone: phone ?? this.phone,
+      guardianName: guardianName ?? this.guardianName,
+      guardianEmail: guardianEmail ?? this.guardianEmail,
+      guardianPhone: guardianPhone ?? this.guardianPhone,
+      createdAt: createdAt ?? this.createdAt,
+      updatedAt: updatedAt ?? this.updatedAt,
+      rowid: rowid ?? this.rowid,
+    );
+  }
+
+  @override
+  Map<String, Expression> toColumns(bool nullToAbsent) {
+    final map = <String, Expression>{};
+    if (id.present) {
+      map['id'] = Variable<String>(id.value);
+    }
+    if (groupId.present) {
+      map['group_id'] = Variable<String>(groupId.value);
+    }
+    if (name.present) {
+      map['name'] = Variable<String>(name.value);
+    }
+    if (email.present) {
+      map['email'] = Variable<String>(email.value);
+    }
+    if (phone.present) {
+      map['phone'] = Variable<String>(phone.value);
+    }
+    if (guardianName.present) {
+      map['guardian_name'] = Variable<String>(guardianName.value);
+    }
+    if (guardianEmail.present) {
+      map['guardian_email'] = Variable<String>(guardianEmail.value);
+    }
+    if (guardianPhone.present) {
+      map['guardian_phone'] = Variable<String>(guardianPhone.value);
+    }
+    if (createdAt.present) {
+      map['created_at'] = Variable<DateTime>(createdAt.value);
+    }
+    if (updatedAt.present) {
+      map['updated_at'] = Variable<DateTime>(updatedAt.value);
+    }
+    if (rowid.present) {
+      map['rowid'] = Variable<int>(rowid.value);
+    }
+    return map;
+  }
+
+  @override
+  String toString() {
+    return (StringBuffer('StudentsTableCompanion(')
+          ..write('id: $id, ')
+          ..write('groupId: $groupId, ')
+          ..write('name: $name, ')
+          ..write('email: $email, ')
+          ..write('phone: $phone, ')
+          ..write('guardianName: $guardianName, ')
+          ..write('guardianEmail: $guardianEmail, ')
+          ..write('guardianPhone: $guardianPhone, ')
+          ..write('createdAt: $createdAt, ')
+          ..write('updatedAt: $updatedAt, ')
+          ..write('rowid: $rowid')
+          ..write(')'))
+        .toString();
+  }
+}
+
 class $ClassScheduleSlotsTableTable extends ClassScheduleSlotsTable
     with TableInfo<$ClassScheduleSlotsTableTable, ClassScheduleSlotsTableData> {
   @override
@@ -2789,6 +3783,10 @@ abstract class _$AppDatabase extends GeneratedDatabase {
   late final $AttachmentsTableTable attachmentsTable = $AttachmentsTableTable(
     this,
   );
+  late final $ClassGroupsTableTable classGroupsTable = $ClassGroupsTableTable(
+    this,
+  );
+  late final $StudentsTableTable studentsTable = $StudentsTableTable(this);
   late final $ClassScheduleSlotsTableTable classScheduleSlotsTable =
       $ClassScheduleSlotsTableTable(this);
   @override
@@ -2799,6 +3797,8 @@ abstract class _$AppDatabase extends GeneratedDatabase {
     agendaItemsTable,
     agendaGroupsTable,
     attachmentsTable,
+    classGroupsTable,
+    studentsTable,
     classScheduleSlotsTable,
   ];
 }
@@ -3824,6 +4824,523 @@ typedef $$AttachmentsTableTableProcessedTableManager =
       AttachmentsTableData,
       PrefetchHooks Function()
     >;
+typedef $$ClassGroupsTableTableCreateCompanionBuilder =
+    ClassGroupsTableCompanion Function({
+      required String id,
+      required String name,
+      Value<String?> description,
+      required DateTime createdAt,
+      required DateTime updatedAt,
+      Value<int> rowid,
+    });
+typedef $$ClassGroupsTableTableUpdateCompanionBuilder =
+    ClassGroupsTableCompanion Function({
+      Value<String> id,
+      Value<String> name,
+      Value<String?> description,
+      Value<DateTime> createdAt,
+      Value<DateTime> updatedAt,
+      Value<int> rowid,
+    });
+
+class $$ClassGroupsTableTableFilterComposer
+    extends Composer<_$AppDatabase, $ClassGroupsTableTable> {
+  $$ClassGroupsTableTableFilterComposer({
+    required super.$db,
+    required super.$table,
+    super.joinBuilder,
+    super.$addJoinBuilderToRootComposer,
+    super.$removeJoinBuilderFromRootComposer,
+  });
+  ColumnFilters<String> get id => $composableBuilder(
+    column: $table.id,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get name => $composableBuilder(
+    column: $table.name,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get description => $composableBuilder(
+    column: $table.description,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<DateTime> get createdAt => $composableBuilder(
+    column: $table.createdAt,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<DateTime> get updatedAt => $composableBuilder(
+    column: $table.updatedAt,
+    builder: (column) => ColumnFilters(column),
+  );
+}
+
+class $$ClassGroupsTableTableOrderingComposer
+    extends Composer<_$AppDatabase, $ClassGroupsTableTable> {
+  $$ClassGroupsTableTableOrderingComposer({
+    required super.$db,
+    required super.$table,
+    super.joinBuilder,
+    super.$addJoinBuilderToRootComposer,
+    super.$removeJoinBuilderFromRootComposer,
+  });
+  ColumnOrderings<String> get id => $composableBuilder(
+    column: $table.id,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get name => $composableBuilder(
+    column: $table.name,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get description => $composableBuilder(
+    column: $table.description,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<DateTime> get createdAt => $composableBuilder(
+    column: $table.createdAt,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<DateTime> get updatedAt => $composableBuilder(
+    column: $table.updatedAt,
+    builder: (column) => ColumnOrderings(column),
+  );
+}
+
+class $$ClassGroupsTableTableAnnotationComposer
+    extends Composer<_$AppDatabase, $ClassGroupsTableTable> {
+  $$ClassGroupsTableTableAnnotationComposer({
+    required super.$db,
+    required super.$table,
+    super.joinBuilder,
+    super.$addJoinBuilderToRootComposer,
+    super.$removeJoinBuilderFromRootComposer,
+  });
+  GeneratedColumn<String> get id =>
+      $composableBuilder(column: $table.id, builder: (column) => column);
+
+  GeneratedColumn<String> get name =>
+      $composableBuilder(column: $table.name, builder: (column) => column);
+
+  GeneratedColumn<String> get description => $composableBuilder(
+    column: $table.description,
+    builder: (column) => column,
+  );
+
+  GeneratedColumn<DateTime> get createdAt =>
+      $composableBuilder(column: $table.createdAt, builder: (column) => column);
+
+  GeneratedColumn<DateTime> get updatedAt =>
+      $composableBuilder(column: $table.updatedAt, builder: (column) => column);
+}
+
+class $$ClassGroupsTableTableTableManager
+    extends
+        RootTableManager<
+          _$AppDatabase,
+          $ClassGroupsTableTable,
+          ClassGroupsTableData,
+          $$ClassGroupsTableTableFilterComposer,
+          $$ClassGroupsTableTableOrderingComposer,
+          $$ClassGroupsTableTableAnnotationComposer,
+          $$ClassGroupsTableTableCreateCompanionBuilder,
+          $$ClassGroupsTableTableUpdateCompanionBuilder,
+          (
+            ClassGroupsTableData,
+            BaseReferences<
+              _$AppDatabase,
+              $ClassGroupsTableTable,
+              ClassGroupsTableData
+            >,
+          ),
+          ClassGroupsTableData,
+          PrefetchHooks Function()
+        > {
+  $$ClassGroupsTableTableTableManager(
+    _$AppDatabase db,
+    $ClassGroupsTableTable table,
+  ) : super(
+        TableManagerState(
+          db: db,
+          table: table,
+          createFilteringComposer: () =>
+              $$ClassGroupsTableTableFilterComposer($db: db, $table: table),
+          createOrderingComposer: () =>
+              $$ClassGroupsTableTableOrderingComposer($db: db, $table: table),
+          createComputedFieldComposer: () =>
+              $$ClassGroupsTableTableAnnotationComposer($db: db, $table: table),
+          updateCompanionCallback:
+              ({
+                Value<String> id = const Value.absent(),
+                Value<String> name = const Value.absent(),
+                Value<String?> description = const Value.absent(),
+                Value<DateTime> createdAt = const Value.absent(),
+                Value<DateTime> updatedAt = const Value.absent(),
+                Value<int> rowid = const Value.absent(),
+              }) => ClassGroupsTableCompanion(
+                id: id,
+                name: name,
+                description: description,
+                createdAt: createdAt,
+                updatedAt: updatedAt,
+                rowid: rowid,
+              ),
+          createCompanionCallback:
+              ({
+                required String id,
+                required String name,
+                Value<String?> description = const Value.absent(),
+                required DateTime createdAt,
+                required DateTime updatedAt,
+                Value<int> rowid = const Value.absent(),
+              }) => ClassGroupsTableCompanion.insert(
+                id: id,
+                name: name,
+                description: description,
+                createdAt: createdAt,
+                updatedAt: updatedAt,
+                rowid: rowid,
+              ),
+          withReferenceMapper: (p0) => p0
+              .map((e) => (e.readTable(table), BaseReferences(db, table, e)))
+              .toList(),
+          prefetchHooksCallback: null,
+        ),
+      );
+}
+
+typedef $$ClassGroupsTableTableProcessedTableManager =
+    ProcessedTableManager<
+      _$AppDatabase,
+      $ClassGroupsTableTable,
+      ClassGroupsTableData,
+      $$ClassGroupsTableTableFilterComposer,
+      $$ClassGroupsTableTableOrderingComposer,
+      $$ClassGroupsTableTableAnnotationComposer,
+      $$ClassGroupsTableTableCreateCompanionBuilder,
+      $$ClassGroupsTableTableUpdateCompanionBuilder,
+      (
+        ClassGroupsTableData,
+        BaseReferences<
+          _$AppDatabase,
+          $ClassGroupsTableTable,
+          ClassGroupsTableData
+        >,
+      ),
+      ClassGroupsTableData,
+      PrefetchHooks Function()
+    >;
+typedef $$StudentsTableTableCreateCompanionBuilder =
+    StudentsTableCompanion Function({
+      required String id,
+      required String groupId,
+      required String name,
+      Value<String?> email,
+      Value<String?> phone,
+      Value<String?> guardianName,
+      Value<String?> guardianEmail,
+      Value<String?> guardianPhone,
+      required DateTime createdAt,
+      required DateTime updatedAt,
+      Value<int> rowid,
+    });
+typedef $$StudentsTableTableUpdateCompanionBuilder =
+    StudentsTableCompanion Function({
+      Value<String> id,
+      Value<String> groupId,
+      Value<String> name,
+      Value<String?> email,
+      Value<String?> phone,
+      Value<String?> guardianName,
+      Value<String?> guardianEmail,
+      Value<String?> guardianPhone,
+      Value<DateTime> createdAt,
+      Value<DateTime> updatedAt,
+      Value<int> rowid,
+    });
+
+class $$StudentsTableTableFilterComposer
+    extends Composer<_$AppDatabase, $StudentsTableTable> {
+  $$StudentsTableTableFilterComposer({
+    required super.$db,
+    required super.$table,
+    super.joinBuilder,
+    super.$addJoinBuilderToRootComposer,
+    super.$removeJoinBuilderFromRootComposer,
+  });
+  ColumnFilters<String> get id => $composableBuilder(
+    column: $table.id,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get groupId => $composableBuilder(
+    column: $table.groupId,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get name => $composableBuilder(
+    column: $table.name,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get email => $composableBuilder(
+    column: $table.email,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get phone => $composableBuilder(
+    column: $table.phone,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get guardianName => $composableBuilder(
+    column: $table.guardianName,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get guardianEmail => $composableBuilder(
+    column: $table.guardianEmail,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get guardianPhone => $composableBuilder(
+    column: $table.guardianPhone,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<DateTime> get createdAt => $composableBuilder(
+    column: $table.createdAt,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<DateTime> get updatedAt => $composableBuilder(
+    column: $table.updatedAt,
+    builder: (column) => ColumnFilters(column),
+  );
+}
+
+class $$StudentsTableTableOrderingComposer
+    extends Composer<_$AppDatabase, $StudentsTableTable> {
+  $$StudentsTableTableOrderingComposer({
+    required super.$db,
+    required super.$table,
+    super.joinBuilder,
+    super.$addJoinBuilderToRootComposer,
+    super.$removeJoinBuilderFromRootComposer,
+  });
+  ColumnOrderings<String> get id => $composableBuilder(
+    column: $table.id,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get groupId => $composableBuilder(
+    column: $table.groupId,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get name => $composableBuilder(
+    column: $table.name,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get email => $composableBuilder(
+    column: $table.email,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get phone => $composableBuilder(
+    column: $table.phone,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get guardianName => $composableBuilder(
+    column: $table.guardianName,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get guardianEmail => $composableBuilder(
+    column: $table.guardianEmail,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get guardianPhone => $composableBuilder(
+    column: $table.guardianPhone,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<DateTime> get createdAt => $composableBuilder(
+    column: $table.createdAt,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<DateTime> get updatedAt => $composableBuilder(
+    column: $table.updatedAt,
+    builder: (column) => ColumnOrderings(column),
+  );
+}
+
+class $$StudentsTableTableAnnotationComposer
+    extends Composer<_$AppDatabase, $StudentsTableTable> {
+  $$StudentsTableTableAnnotationComposer({
+    required super.$db,
+    required super.$table,
+    super.joinBuilder,
+    super.$addJoinBuilderToRootComposer,
+    super.$removeJoinBuilderFromRootComposer,
+  });
+  GeneratedColumn<String> get id =>
+      $composableBuilder(column: $table.id, builder: (column) => column);
+
+  GeneratedColumn<String> get groupId =>
+      $composableBuilder(column: $table.groupId, builder: (column) => column);
+
+  GeneratedColumn<String> get name =>
+      $composableBuilder(column: $table.name, builder: (column) => column);
+
+  GeneratedColumn<String> get email =>
+      $composableBuilder(column: $table.email, builder: (column) => column);
+
+  GeneratedColumn<String> get phone =>
+      $composableBuilder(column: $table.phone, builder: (column) => column);
+
+  GeneratedColumn<String> get guardianName => $composableBuilder(
+    column: $table.guardianName,
+    builder: (column) => column,
+  );
+
+  GeneratedColumn<String> get guardianEmail => $composableBuilder(
+    column: $table.guardianEmail,
+    builder: (column) => column,
+  );
+
+  GeneratedColumn<String> get guardianPhone => $composableBuilder(
+    column: $table.guardianPhone,
+    builder: (column) => column,
+  );
+
+  GeneratedColumn<DateTime> get createdAt =>
+      $composableBuilder(column: $table.createdAt, builder: (column) => column);
+
+  GeneratedColumn<DateTime> get updatedAt =>
+      $composableBuilder(column: $table.updatedAt, builder: (column) => column);
+}
+
+class $$StudentsTableTableTableManager
+    extends
+        RootTableManager<
+          _$AppDatabase,
+          $StudentsTableTable,
+          StudentsTableData,
+          $$StudentsTableTableFilterComposer,
+          $$StudentsTableTableOrderingComposer,
+          $$StudentsTableTableAnnotationComposer,
+          $$StudentsTableTableCreateCompanionBuilder,
+          $$StudentsTableTableUpdateCompanionBuilder,
+          (
+            StudentsTableData,
+            BaseReferences<
+              _$AppDatabase,
+              $StudentsTableTable,
+              StudentsTableData
+            >,
+          ),
+          StudentsTableData,
+          PrefetchHooks Function()
+        > {
+  $$StudentsTableTableTableManager(_$AppDatabase db, $StudentsTableTable table)
+    : super(
+        TableManagerState(
+          db: db,
+          table: table,
+          createFilteringComposer: () =>
+              $$StudentsTableTableFilterComposer($db: db, $table: table),
+          createOrderingComposer: () =>
+              $$StudentsTableTableOrderingComposer($db: db, $table: table),
+          createComputedFieldComposer: () =>
+              $$StudentsTableTableAnnotationComposer($db: db, $table: table),
+          updateCompanionCallback:
+              ({
+                Value<String> id = const Value.absent(),
+                Value<String> groupId = const Value.absent(),
+                Value<String> name = const Value.absent(),
+                Value<String?> email = const Value.absent(),
+                Value<String?> phone = const Value.absent(),
+                Value<String?> guardianName = const Value.absent(),
+                Value<String?> guardianEmail = const Value.absent(),
+                Value<String?> guardianPhone = const Value.absent(),
+                Value<DateTime> createdAt = const Value.absent(),
+                Value<DateTime> updatedAt = const Value.absent(),
+                Value<int> rowid = const Value.absent(),
+              }) => StudentsTableCompanion(
+                id: id,
+                groupId: groupId,
+                name: name,
+                email: email,
+                phone: phone,
+                guardianName: guardianName,
+                guardianEmail: guardianEmail,
+                guardianPhone: guardianPhone,
+                createdAt: createdAt,
+                updatedAt: updatedAt,
+                rowid: rowid,
+              ),
+          createCompanionCallback:
+              ({
+                required String id,
+                required String groupId,
+                required String name,
+                Value<String?> email = const Value.absent(),
+                Value<String?> phone = const Value.absent(),
+                Value<String?> guardianName = const Value.absent(),
+                Value<String?> guardianEmail = const Value.absent(),
+                Value<String?> guardianPhone = const Value.absent(),
+                required DateTime createdAt,
+                required DateTime updatedAt,
+                Value<int> rowid = const Value.absent(),
+              }) => StudentsTableCompanion.insert(
+                id: id,
+                groupId: groupId,
+                name: name,
+                email: email,
+                phone: phone,
+                guardianName: guardianName,
+                guardianEmail: guardianEmail,
+                guardianPhone: guardianPhone,
+                createdAt: createdAt,
+                updatedAt: updatedAt,
+                rowid: rowid,
+              ),
+          withReferenceMapper: (p0) => p0
+              .map((e) => (e.readTable(table), BaseReferences(db, table, e)))
+              .toList(),
+          prefetchHooksCallback: null,
+        ),
+      );
+}
+
+typedef $$StudentsTableTableProcessedTableManager =
+    ProcessedTableManager<
+      _$AppDatabase,
+      $StudentsTableTable,
+      StudentsTableData,
+      $$StudentsTableTableFilterComposer,
+      $$StudentsTableTableOrderingComposer,
+      $$StudentsTableTableAnnotationComposer,
+      $$StudentsTableTableCreateCompanionBuilder,
+      $$StudentsTableTableUpdateCompanionBuilder,
+      (
+        StudentsTableData,
+        BaseReferences<_$AppDatabase, $StudentsTableTable, StudentsTableData>,
+      ),
+      StudentsTableData,
+      PrefetchHooks Function()
+    >;
 typedef $$ClassScheduleSlotsTableTableCreateCompanionBuilder =
     ClassScheduleSlotsTableCompanion Function({
       required String id,
@@ -4177,6 +5694,10 @@ class $AppDatabaseManager {
       $$AgendaGroupsTableTableTableManager(_db, _db.agendaGroupsTable);
   $$AttachmentsTableTableTableManager get attachmentsTable =>
       $$AttachmentsTableTableTableManager(_db, _db.attachmentsTable);
+  $$ClassGroupsTableTableTableManager get classGroupsTable =>
+      $$ClassGroupsTableTableTableManager(_db, _db.classGroupsTable);
+  $$StudentsTableTableTableManager get studentsTable =>
+      $$StudentsTableTableTableManager(_db, _db.studentsTable);
   $$ClassScheduleSlotsTableTableTableManager get classScheduleSlotsTable =>
       $$ClassScheduleSlotsTableTableTableManager(
         _db,

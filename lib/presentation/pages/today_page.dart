@@ -56,7 +56,7 @@ class _TodayPageState extends State<TodayPage> {
   AgendaHomeViewMode mode = AgendaHomeViewMode.day;
   DateTime selectedDate = DateUtilsEx.startOfDay(DateTime.now());
   DateTime focusedDay = DateUtilsEx.startOfDay(DateTime.now());
-  bool isCalendarExpanded = true;
+  bool isCalendarExpanded = false;
   late CalendarFormat calendarFormat;
 
   bool get isAgendaTabMode =>
@@ -320,25 +320,79 @@ class _TodayPageState extends State<TodayPage> {
                 SectionHeader(
                   title: 'Calendario completo',
                   subtitle: DateFormat('EEEE, dd MMMM').format(selectedDate),
-                  trailing: IconButton(
-                    onPressed: () {
-                      setState(() {
-                        calendarFormat = calendarFormat == CalendarFormat.week
-                            ? CalendarFormat.month
-                            : CalendarFormat.week;
-                      });
-                    },
-                    tooltip: calendarFormat == CalendarFormat.week
-                        ? 'Calendario maior'
-                        : 'Calendario menor',
-                    icon: Icon(
-                      calendarFormat == CalendarFormat.week
-                          ? Icons.open_in_full_rounded
-                          : Icons.close_fullscreen_rounded,
+                  trailing: Row(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      IconButton(
+                        onPressed: () {
+                          setState(() {
+                            calendarFormat = calendarFormat == CalendarFormat.week
+                                ? CalendarFormat.month
+                                : CalendarFormat.week;
+                          });
+                        },
+                        tooltip: calendarFormat == CalendarFormat.week
+                            ? 'Calendario maior'
+                            : 'Calendario menor',
+                        icon: Icon(
+                          calendarFormat == CalendarFormat.week
+                              ? Icons.open_in_full_rounded
+                              : Icons.close_fullscreen_rounded,
+                        ),
+                      ),
+                      IconButton(
+                        onPressed: () =>
+                            setState(() => isCalendarExpanded = !isCalendarExpanded),
+                        tooltip: isCalendarExpanded
+                            ? 'Recolher calendario'
+                            : 'Expandir calendario',
+                        icon: Icon(
+                          isCalendarExpanded
+                              ? Icons.keyboard_arrow_up_rounded
+                              : Icons.keyboard_arrow_down_rounded,
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+                AnimatedCrossFade(
+                  duration: DesignTokens.motionStandard,
+                  crossFadeState: isCalendarExpanded
+                      ? CrossFadeState.showFirst
+                      : CrossFadeState.showSecond,
+                  firstChild: _buildCalendarCard(context, agendaController),
+                  secondChild: Padding(
+                    padding: const EdgeInsets.symmetric(horizontal: 16),
+                    child: Container(
+                      width: double.infinity,
+                      padding: const EdgeInsets.symmetric(
+                        horizontal: 14,
+                        vertical: 12,
+                      ),
+                      decoration: BoxDecoration(
+                        color: Theme.of(context).colorScheme.surfaceContainerLow,
+                        borderRadius: BorderRadius.circular(16),
+                      ),
+                      child: Row(
+                        children: [
+                          const Icon(Icons.today_rounded, size: 18),
+                          const SizedBox(width: 8),
+                          Expanded(
+                            child: Text(
+                              DateFormat('dd/MM/yyyy').format(selectedDate),
+                              style: Theme.of(context).textTheme.bodyMedium,
+                            ),
+                          ),
+                          TextButton(
+                            onPressed: () =>
+                                setState(() => isCalendarExpanded = true),
+                            child: const Text('Abrir calendario'),
+                          ),
+                        ],
+                      ),
                     ),
                   ),
                 ),
-                _buildCalendarCard(context, agendaController),
                 const SizedBox(height: 8),
                 Padding(
                   padding: const EdgeInsets.fromLTRB(16, 0, 16, 10),

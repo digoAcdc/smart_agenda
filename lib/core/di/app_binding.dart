@@ -9,6 +9,7 @@ import 'package:uuid/uuid.dart';
 import '../../core/config/supabase_config.dart';
 import '../../data/datasources/agenda_local_datasource.dart';
 import '../../data/datasources/agenda_supabase_datasource.dart';
+import '../../data/datasources/class_group_local_datasource.dart';
 import '../../data/datasources/class_schedule_datasource_orchestrator.dart';
 import '../../data/datasources/class_schedule_local_datasource.dart';
 import '../../data/datasources/class_schedule_supabase_datasource.dart';
@@ -21,6 +22,7 @@ import '../../data/datasources/subscription_supabase_datasource.dart';
 import '../../data/datasources/groups_supabase_datasource.dart';
 import '../../data/local/app_database.dart';
 import '../../data/repositories/agenda_repository_impl.dart';
+import '../../data/repositories/class_group_repository_impl.dart';
 import '../../data/repositories/groups_repository_impl.dart';
 import '../../data/services/ads_service_stub.dart';
 import '../../data/services/agenda_transfer_service_impl.dart';
@@ -44,6 +46,7 @@ import '../../domain/repositories/i_auth_service.dart';
 import '../../domain/repositories/i_file_storage_service.dart';
 import '../../domain/repositories/i_groups_repository.dart';
 import '../../domain/repositories/i_notification_service.dart';
+import '../../domain/repositories/i_class_group_repository.dart';
 import '../../domain/repositories/i_class_schedule_datasource.dart';
 import '../../domain/repositories/i_local_to_cloud_migration_service.dart';
 import '../../domain/repositories/i_connectivity_service.dart';
@@ -59,6 +62,7 @@ import '../../presentation/controllers/billing_controller.dart';
 import '../../presentation/controllers/agenda_controller.dart';
 import '../../presentation/controllers/auth_controller.dart';
 import '../../presentation/controllers/agenda_transfer_controller.dart';
+import '../../presentation/controllers/class_group_controller.dart';
 import '../../presentation/controllers/class_schedule_controller.dart';
 import '../../presentation/controllers/notifications_controller.dart';
 import '../../presentation/controllers/sync_controller.dart';
@@ -190,6 +194,7 @@ class AppBinding extends Bindings {
               Get.find<AgendaLocalDataSource>(),
               Get.find<GroupsLocalDataSource>(),
               Get.find<ClassScheduleLocalDataSource>(),
+              Get.find<ClassGroupLocalDataSource>(),
               Get.find<AgendaSupabaseDataSource>(),
               Get.find<GroupsSupabaseDataSource>(),
               Get.find<IFileStorageService>(),
@@ -224,6 +229,19 @@ class AppBinding extends Bindings {
         Get.find<ClassScheduleLocalDataSource>(),
         Get.find<ISyncService>(),
       ),
+      fenix: true,
+    );
+
+    Get.lazyPut(() => ClassGroupLocalDataSource(Get.find()), fenix: true);
+    Get.lazyPut<IClassGroupRepository>(
+      () => ClassGroupRepositoryImpl(
+        Get.find<ClassGroupLocalDataSource>(),
+        Get.find<ISyncService>(),
+      ),
+      fenix: true,
+    );
+    Get.lazyPut(
+      () => ClassGroupController(Get.find<IClassGroupRepository>()),
       fenix: true,
     );
 

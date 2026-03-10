@@ -8,7 +8,7 @@ import 'group_chip.dart';
 
 enum AgendaCardVariant { regular, timeline }
 
-class AgendaCard extends StatelessWidget {
+class AgendaCard extends StatefulWidget {
   const AgendaCard({
     super.key,
     required this.item,
@@ -18,6 +18,7 @@ class AgendaCard extends StatelessWidget {
     this.onToggleStatus,
     this.onDelete,
     this.variant = AgendaCardVariant.regular,
+    this.initialExpanded = false,
   });
 
   final AgendaItem item;
@@ -27,9 +28,32 @@ class AgendaCard extends StatelessWidget {
   final ValueChanged<AgendaStatus>? onToggleStatus;
   final Future<bool?> Function()? onDelete;
   final AgendaCardVariant variant;
+  final bool initialExpanded;
+
+  @override
+  State<AgendaCard> createState() => _AgendaCardState();
+}
+
+class _AgendaCardState extends State<AgendaCard> {
+  late bool _expanded;
+
+  @override
+  void initState() {
+    super.initState();
+    _expanded = widget.initialExpanded;
+  }
+
+  @override
+  void didUpdateWidget(AgendaCard oldWidget) {
+    super.didUpdateWidget(oldWidget);
+    if (oldWidget.item.id != widget.item.id) {
+      _expanded = widget.initialExpanded;
+    }
+  }
 
   @override
   Widget build(BuildContext context) {
+    final item = widget.item;
     final isDone = item.status == AgendaStatus.done;
     final timeLabel =
         item.allDay ? 'Dia inteiro' : DateFormat('HH:mm').format(item.startAt);
@@ -46,16 +70,17 @@ class AgendaCard extends StatelessWidget {
         statusColor = context.semanticColors.pending;
         break;
     }
-    final padding = variant == AgendaCardVariant.timeline
+    final padding = widget.variant == AgendaCardVariant.timeline
         ? const EdgeInsets.all(12)
         : const EdgeInsets.all(14);
-    final margin = variant == AgendaCardVariant.timeline
+    final margin = widget.variant == AgendaCardVariant.timeline
         ? const EdgeInsets.symmetric(horizontal: 12, vertical: 4)
         : const EdgeInsets.symmetric(horizontal: 16, vertical: 6);
-    final radius = variant == AgendaCardVariant.timeline
+    final radius = widget.variant == AgendaCardVariant.timeline
         ? DesignTokens.radiusMd
         : DesignTokens.radiusLg;
-    final railHeight = variant == AgendaCardVariant.timeline ? 48.0 : 56.0;
+    final railHeight = widget.variant == AgendaCardVariant.timeline ? 48.0 : 56.0;
+    final compactRailHeight = 36.0;
 
     final isShared = item.ownerEmail != null;
 
@@ -83,11 +108,11 @@ class AgendaCard extends StatelessWidget {
       confirmDismiss: (direction) async {
         if (isShared) return false;
         if (direction == DismissDirection.startToEnd) {
-          onToggleStatus?.call(AgendaStatus.done);
+          widget.onToggleStatus?.call(AgendaStatus.done);
           return false;
         }
-        if (onDelete != null) {
-          return onDelete!.call();
+        if (widget.onDelete != null) {
+          return widget.onDelete!.call();
         }
         return false;
       },
@@ -108,94 +133,127 @@ class AgendaCard extends StatelessWidget {
         ),
         child: InkWell(
           borderRadius: BorderRadius.circular(radius),
-          onTap: onTap,
+          onTap: widget.onTap,
           child: Opacity(
             opacity: isDone ? 0.7 : 1,
             child: Padding(
               padding: padding,
-              child: Row(
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  Container(
-                    width: 4,
-                    height: railHeight,
-                    decoration: BoxDecoration(
-                      color: groupColor ?? statusColor,
-                      borderRadius: BorderRadius.circular(6),
-                    ),
-                  ),
-                  const SizedBox(width: 12),
-                  Expanded(
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        Row(
+                  Row(
+                    children: [
+                      Container(
+                        width: 4,
+                        height: _expanded ? railHeight : compactRailHeight,
+                        decoration: BoxDecoration(
+                          color: widget.groupColor ?? statusColor,
+                          borderRadius: BorderRadius.circular(6),
+                        ),
+                      ),
+                      const SizedBox(width: 12),
+                      Expanded(
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          mainAxisSize: MainAxisSize.min,
                           children: [
+                            Row(
+                              children: [
+                                Text(
+                                  timeLabel,
+                                  style: Theme.of(context)
+                                      .textTheme
+                                      .titleMedium
+                                      ?.copyWith(
+                                        fontWeight: FontWeight.w700,
+                                      ),
+                                ),
+                                const SizedBox(width: 10),
+                                if (widget.groupName != null && _expanded)
+                                  GroupChip(
+                                      label: widget.groupName!,
+                                      color: widget.groupColor),
+                              ],
+                            ),
+                            const SizedBox(height: 4),
                             Text(
-                              timeLabel,
+                              item.title,
                               style: Theme.of(context)
                                   .textTheme
-                                  .titleMedium
+                                  .bodyLarge
                                   ?.copyWith(
-                                    fontWeight: FontWeight.w700,
+                                    fontWeight: FontWeight.w600,
+                                    decoration:
+                                        isDone ? TextDecoration.lineThrough : null,
                                   ),
+                              maxLines: _expanded ? 3 : 1,
+                              overflow: TextOverflow.ellipsis,
                             ),
-                            const SizedBox(width: 10),
-                            if (groupName != null)
-                              GroupChip(label: groupName!, color: groupColor),
+                            if (_expanded) ...[
+                              if (isShared) ...[
+                                const SizedBox(height: 4),
+                                Text(
+                                  'Compartilhada por ${item.ownerEmail}',
+                                  style: Theme.of(context)
+                                      .textTheme
+                                      .labelSmall
+                                      ?.copyWith(
+                                        color: Theme.of(context)
+                                            .colorScheme
+                                            .primary,
+                                      ),
+                                ),
+                              ],
+                              const SizedBox(height: DesignTokens.space4),
+                              Text(
+                                '$metaLabel • ${item.status.name}',
+                                style: Theme.of(context)
+                                    .textTheme
+                                    .bodySmall
+                                    ?.copyWith(
+                                      color: Theme.of(context)
+                                          .colorScheme
+                                          .onSurfaceVariant,
+                                    ),
+                              ),
+                            ],
                           ],
                         ),
-                        if (isShared) ...[
-                          Text(
-                            'Compartilhada por ${item.ownerEmail}',
-                            style: Theme.of(context).textTheme.labelSmall?.copyWith(
-                                  color: Theme.of(context).colorScheme.primary,
-                                ),
-                          ),
-                          const SizedBox(height: 4),
-                        ],
-                        const SizedBox(height: 8),
-                        Text(
-                          item.title,
-                          style: Theme.of(context)
-                              .textTheme
-                              .bodyLarge
-                              ?.copyWith(
-                                fontWeight: FontWeight.w600,
-                                decoration:
-                                    isDone ? TextDecoration.lineThrough : null,
-                              ),
-                          maxLines: 1,
-                          overflow: TextOverflow.ellipsis,
-                        ),
-                        const SizedBox(height: DesignTokens.space4),
-                        Text(
-                          '$metaLabel • ${item.status.name}',
-                          style:
-                              Theme.of(context).textTheme.bodySmall?.copyWith(
-                                    color: Theme.of(context)
-                                        .colorScheme
-                                        .onSurfaceVariant,
-                                  ),
-                        ),
-                      ],
-                    ),
-                  ),
-                  if (!isShared)
-                    IconButton(
-                      onPressed: () {
-                        if (item.status == AgendaStatus.done) {
-                          onToggleStatus?.call(AgendaStatus.pending);
-                        } else {
-                          onToggleStatus?.call(AgendaStatus.done);
-                        }
-                      },
-                      icon: Icon(
-                        item.status == AgendaStatus.done
-                            ? Icons.check_circle
-                            : Icons.radio_button_unchecked,
-                        color: statusColor,
                       ),
-                    ),
+                      IconButton(
+                        onPressed: () => setState(() => _expanded = !_expanded),
+                        icon: Icon(
+                          _expanded
+                              ? Icons.keyboard_arrow_up
+                              : Icons.keyboard_arrow_down,
+                          color: Theme.of(context)
+                              .colorScheme
+                              .onSurfaceVariant,
+                        ),
+                        style: IconButton.styleFrom(
+                          minimumSize: const Size(36, 36),
+                          padding: EdgeInsets.zero,
+                        ),
+                      ),
+                      if (!isShared)
+                        IconButton(
+                          onPressed: () {
+                            if (item.status == AgendaStatus.done) {
+                              widget.onToggleStatus?.call(AgendaStatus.pending);
+                            } else {
+                              widget.onToggleStatus?.call(AgendaStatus.done);
+                            }
+                          },
+                          icon: Icon(
+                            item.status == AgendaStatus.done
+                                ? Icons.check_circle
+                                : Icons.radio_button_unchecked,
+                            color: statusColor,
+                          ),
+                        ),
+                    ],
+                  ),
                 ],
               ),
             ),

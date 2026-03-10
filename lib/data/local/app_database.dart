@@ -58,6 +58,33 @@ class AttachmentsTable extends Table {
   Set<Column<Object>> get primaryKey => {id};
 }
 
+class ClassGroupsTable extends Table {
+  TextColumn get id => text()();
+  TextColumn get name => text()();
+  TextColumn get description => text().nullable()();
+  DateTimeColumn get createdAt => dateTime()();
+  DateTimeColumn get updatedAt => dateTime()();
+
+  @override
+  Set<Column<Object>> get primaryKey => {id};
+}
+
+class StudentsTable extends Table {
+  TextColumn get id => text()();
+  TextColumn get groupId => text()();
+  TextColumn get name => text()();
+  TextColumn get email => text().nullable()();
+  TextColumn get phone => text().nullable()();
+  TextColumn get guardianName => text().nullable()();
+  TextColumn get guardianEmail => text().nullable()();
+  TextColumn get guardianPhone => text().nullable()();
+  DateTimeColumn get createdAt => dateTime()();
+  DateTimeColumn get updatedAt => dateTime()();
+
+  @override
+  Set<Column<Object>> get primaryKey => {id};
+}
+
 class ClassScheduleSlotsTable extends Table {
   TextColumn get id => text()();
   IntColumn get dayOfWeek => integer()();
@@ -80,6 +107,8 @@ class ClassScheduleSlotsTable extends Table {
     AgendaItemsTable,
     AgendaGroupsTable,
     AttachmentsTable,
+    ClassGroupsTable,
+    StudentsTable,
     ClassScheduleSlotsTable,
   ],
 )
@@ -87,7 +116,7 @@ class AppDatabase extends _$AppDatabase {
   AppDatabase() : super(_openConnection());
 
   @override
-  int get schemaVersion => 4;
+  int get schemaVersion => 5;
 
   @override
   MigrationStrategy get migration => MigrationStrategy(
@@ -104,6 +133,10 @@ class AppDatabase extends _$AppDatabase {
             await m.addColumn(classScheduleSlotsTable, classScheduleSlotsTable.professorName);
             await m.addColumn(classScheduleSlotsTable, classScheduleSlotsTable.professorEmail);
             await m.addColumn(classScheduleSlotsTable, classScheduleSlotsTable.professorPhone);
+          }
+          if (from < 5) {
+            await m.createTable(classGroupsTable);
+            await m.createTable(studentsTable);
           }
         },
       );

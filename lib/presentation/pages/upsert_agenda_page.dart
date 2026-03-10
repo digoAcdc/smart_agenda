@@ -6,8 +6,8 @@ import 'package:image_picker/image_picker.dart';
 import 'package:intl/intl.dart';
 import 'package:uuid/uuid.dart';
 
-import '../../core/routes/app_routes.dart';
 import '../../core/theme/design_tokens.dart';
+import '../../core/utils/form_validators.dart';
 import '../../domain/entities/agenda_enums.dart';
 import '../../domain/entities/agenda_item.dart';
 import '../../domain/entities/attachment_ref.dart';
@@ -25,6 +25,7 @@ class UpsertAgendaPage extends StatefulWidget {
 }
 
 class _UpsertAgendaPageState extends State<UpsertAgendaPage> {
+  final _formKey = GlobalKey<FormState>();
   final titleController = TextEditingController();
   final descriptionController = TextEditingController();
   final imagePicker = ImagePicker();
@@ -163,8 +164,8 @@ class _UpsertAgendaPageState extends State<UpsertAgendaPage> {
   }
 
   Future<void> _save() async {
+    if (_formKey.currentState?.validate() != true) return;
     final controller = Get.find<AgendaController>();
-    if (titleController.text.trim().isEmpty) return;
 
     final notificationId =
         editingItem?.reminder?.notificationId ?? 0;
@@ -241,6 +242,46 @@ class _UpsertAgendaPageState extends State<UpsertAgendaPage> {
     }
   }
 
+  Future<void> _openCreateGroupDialog(BuildContext context) async {
+    final formKey = GlobalKey<FormState>();
+    final nameController = TextEditingController();
+    final groupsController = Get.find<GroupsController>();
+    await Get.dialog(
+      AlertDialog(
+        title: const Text('Novo grupo'),
+        content: Form(
+          key: formKey,
+          autovalidateMode: AutovalidateMode.onUserInteraction,
+          child: TextFormField(
+            controller: nameController,
+            decoration: const InputDecoration(
+              labelText: 'Nome do grupo',
+              hintText: 'Ex: Trabalho, Pessoal',
+            ),
+            autofocus: true,
+            textCapitalization: TextCapitalization.sentences,
+            validator: (v) => requiredValidator(v, 'Nome e obrigatorio'),
+          ),
+        ),
+        actions: [
+          TextButton(onPressed: Get.back, child: const Text('Cancelar')),
+          FilledButton(
+            onPressed: () async {
+              if (formKey.currentState?.validate() != true) return;
+              final name = nameController.text.trim();
+              final newId = await groupsController.create(name);
+              Get.back();
+              if (newId != null && mounted) {
+                setState(() => groupId = newId);
+              }
+            },
+            child: const Text('Criar'),
+          ),
+        ],
+      ),
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     final groupsController = Get.find<GroupsController>();
@@ -311,6 +352,12 @@ class _UpsertAgendaPageState extends State<UpsertAgendaPage> {
               ],
             ),
             const SizedBox(height: 12),
+            Form(
+              key: _formKey,
+              autovalidateMode: AutovalidateMode.onUserInteraction,
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.stretch,
+                children: [
             _sectionCard(
               context,
               children: [
@@ -323,11 +370,12 @@ class _UpsertAgendaPageState extends State<UpsertAgendaPage> {
                       ),
                 ),
                 const SizedBox(height: 8),
-                TextField(
+                TextFormField(
                   controller: titleController,
                   decoration: const InputDecoration(
                     hintText: 'O que voce esta planejando?',
                   ),
+                  validator: (v) => requiredValidator(v, 'Titulo e obrigatorio'),
                 ),
               ],
             ),
@@ -487,7 +535,7 @@ class _UpsertAgendaPageState extends State<UpsertAgendaPage> {
                         title: 'Novo',
                         selected: false,
                         outlined: true,
-                        onTap: () => Get.toNamed(AppRoutes.groups),
+                        onTap: () => _openCreateGroupDialog(context),
                       ),
                     ],
                   ),
@@ -646,6 +694,9 @@ class _UpsertAgendaPageState extends State<UpsertAgendaPage> {
                 ),
               ],
               ),
+                ],
+              ),
+            ),
               ],
             ),
           ),
