@@ -102,6 +102,9 @@ class ClassScheduleTransferSlot extends Equatable {
     required this.startMinutes,
     required this.endMinutes,
     this.subject,
+    this.professorName,
+    this.professorEmail,
+    this.professorPhone,
     required this.createdAt,
     required this.updatedAt,
   });
@@ -111,6 +114,9 @@ class ClassScheduleTransferSlot extends Equatable {
   final int startMinutes;
   final int endMinutes;
   final String? subject;
+  final String? professorName;
+  final String? professorEmail;
+  final String? professorPhone;
   final DateTime createdAt;
   final DateTime updatedAt;
 
@@ -121,6 +127,9 @@ class ClassScheduleTransferSlot extends Equatable {
         startMinutes,
         endMinutes,
         subject,
+        professorName,
+        professorEmail,
+        professorPhone,
         createdAt,
         updatedAt,
       ];
@@ -322,6 +331,9 @@ class AgendaTransferCodec {
       'startMinutes': slot.startMinutes,
       'endMinutes': slot.endMinutes,
       'subject': slot.subject,
+      'professorName': slot.professorName,
+      'professorEmail': slot.professorEmail,
+      'professorPhone': slot.professorPhone,
       'createdAt': slot.createdAt.toIso8601String(),
       'updatedAt': slot.updatedAt.toIso8601String(),
     };
@@ -334,6 +346,9 @@ class AgendaTransferCodec {
       startMinutes: json['startMinutes'] as int? ?? 0,
       endMinutes: json['endMinutes'] as int? ?? 0,
       subject: json['subject'] as String?,
+      professorName: json['professorName'] as String?,
+      professorEmail: json['professorEmail'] as String?,
+      professorPhone: json['professorPhone'] as String?,
       createdAt: DateTime.tryParse(json['createdAt'] as String? ?? '') ??
           DateTime.now(),
       updatedAt: DateTime.tryParse(json['updatedAt'] as String? ?? '') ??

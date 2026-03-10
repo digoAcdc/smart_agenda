@@ -1,3 +1,4 @@
+import 'package:flutter/widgets.dart';
 import 'package:get/get.dart';
 import 'package:uuid/uuid.dart';
 
@@ -45,11 +46,12 @@ class AgendaController extends GetxController {
   final RxSet<DateTime> monthMarkers = <DateTime>{}.obs;
   final RxBool loading = false.obs;
   final RxnString errorMessage = RxnString();
+  int _loadByDayRequestId = 0;
 
   @override
   void onInit() {
     super.onInit();
-    loadToday();
+    WidgetsBinding.instance.addPostFrameCallback((_) => loadToday());
   }
 
   Future<void> loadToday() async {
@@ -96,8 +98,10 @@ class AgendaController extends GetxController {
   }
 
   Future<void> loadByDay(DateTime date) async {
+    final requestId = ++_loadByDayRequestId;
     selectedDate.value = date;
     final result = await getAgendaItemsByDay(date);
+    if (requestId != _loadByDayRequestId) return;
     if (result.isSuccess) {
       selectedDayItems.assignAll(result.data ?? []);
     } else {

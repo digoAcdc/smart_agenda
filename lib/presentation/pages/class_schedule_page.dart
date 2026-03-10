@@ -1,7 +1,10 @@
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
+import 'package:url_launcher/url_launcher.dart';
 
 import '../../core/theme/design_tokens.dart';
+import '../../core/utils/form_validators.dart';
+import '../../domain/entities/class_schedule_slot.dart';
 import '../controllers/class_schedule_controller.dart';
 import '../widgets/empty_state_widget.dart';
 import '../widgets/loading_placeholder_list.dart';
@@ -190,8 +193,7 @@ class ClassSchedulePage extends GetView<ClassScheduleController> {
     final cell = controller.getCell(day, start, end);
     final subject = cell?.subject;
     return InkWell(
-      onTap: () =>
-          _openSubjectDialog(context, day, start, end, cell?.id, subject),
+      onTap: () => _onCellTap(context, day, start, end, cell),
       borderRadius: BorderRadius.circular(10),
       child: Container(
         constraints: const BoxConstraints(minWidth: 90, minHeight: 64),
@@ -275,30 +277,216 @@ class ClassSchedulePage extends GetView<ClassScheduleController> {
     );
   }
 
-  Future<void> _openSubjectDialog(
+  void _onCellTap(
     BuildContext context,
     int day,
     int start,
     int end,
-    String? cellId,
-    String? current,
+    ClassScheduleSlot? cell,
+  ) {
+    if (cell == null) return;
+    final hasContent = (cell.subject?.isNotEmpty ?? false) ||
+        (cell.professorName?.isNotEmpty ?? false) ||
+        (cell.professorEmail?.isNotEmpty ?? false) ||
+        (cell.professorPhone?.isNotEmpty ?? false);
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (!context.mounted) return;
+      if (hasContent) {
+        _openSubjectViewDialog(context, day, cell);
+      } else {
+        _openSubjectEditDialog(context, day, cell);
+      }
+    });
+  }
+
+  Future<void> _openSubjectViewDialog(
+    BuildContext context,
+    int day,
+    ClassScheduleSlot cell,
   ) async {
-    if (cellId == null) return;
-    final textController = TextEditingController(text: current ?? '');
+    final items = <Widget>[];
+    if (cell.subject?.isNotEmpty == true) {
+      items.add(_detailRow(label: 'Materia', value: cell.subject!));
+    }
+    if (cell.professorName?.isNotEmpty == true) {
+      items.add(_detailRow(label: 'Professor', value: cell.professorName!));
+    }
+    if (cell.professorEmail?.isNotEmpty == true) {
+      items.add(_emailRow(context, cell.professorEmail!));
+    }
+    if (cell.professorPhone?.isNotEmpty == true) {
+      items.add(_phoneRow(context, cell.professorPhone!, formatPhoneForDisplay(cell.professorPhone)));
+    }
+    if (items.isEmpty) {
+      items.add(const Text('Nenhum detalhe cadastrado.'));
+    }
+
+    await Get.dialog(
+      AlertDialog(
+        title: Text('${dayLabels[day] ?? 'Dia'} - ${controller.formatMinutes(cell.startMinutes)}'),
+        content: Column(
+          mainAxisSize: MainAxisSize.min,
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: items,
+        ),
+        actions: [
+          TextButton(onPressed: Get.back, child: const Text('Fechar')),
+          FilledButton(
+            onPressed: () {
+              Get.back();
+              _openSubjectEditDialog(context, day, cell);
+            },
+            child: const Text('Editar'),
+          ),
+        ],
+      ),
+    );
+  }
+
+  static const String _novaMateriaValue = '__nova__';
+
+  Future<void> _openSubjectEditDialog(
+    BuildContext context,
+    int day,
+    ClassScheduleSlot cell,
+  ) async {
+    final existingSubjects = controller.existingSubjects;
+    final currentSubject = cell.subject?.trim();
+    final isExisting = currentSubject != null &&
+        currentSubject.isNotEmpty &&
+        existingSubjects.contains(currentSubject);
+
+    String? dropdownValue = isExisting
+        ? currentSubject
+        : (currentSubject?.isNotEmpty == true ? _novaMateriaValue : null);
+
+    final subjectController = TextEditingController(
+      text: dropdownValue == _novaMateriaValue || !isExisting ? (cell.subject ?? '') : '',
+    );
+    final professorController =
+        TextEditingController(text: cell.professorName ?? '');
+    final emailController = TextEditingController(text: cell.professorEmail ?? '');
+    final phoneController = TextEditingController(
+      text: formatPhoneForDisplay(cell.professorPhone),
+    );
+
+    void onDropdownChanged(String? value) {
+      dropdownValue = value;
+      if (value == null || value.isEmpty) {
+        subjectController.text = '';
+        professorController.text = '';
+        emailController.text = '';
+        phoneController.text = '';
+      } else if (value == _novaMateriaValue) {
+        subjectController.text = subjectController.text;
+        professorController.text = '';
+        emailController.text = '';
+        phoneController.text = '';
+      } else {
+        final slot = controller.getSlotForSubject(value);
+        subjectController.text = value;
+        professorController.text = slot?.professorName ?? '';
+        emailController.text = slot?.professorEmail ?? '';
+        phoneController.text = formatPhoneForDisplay(slot?.professorPhone);
+      }
+    }
+
+    final formKey = GlobalKey<FormState>();
+
     await Get.dialog(
       AlertDialog(
         title: Text(dayLabels[day] ?? 'Dia'),
-        content: TextField(
-          controller: textController,
-          decoration: const InputDecoration(
-            labelText: 'Materia (opcional)',
-            hintText: 'Ex: Matematica',
+        content: SingleChildScrollView(
+          child: Form(
+            key: formKey,
+            autovalidateMode: AutovalidateMode.onUserInteraction,
+            child: StatefulBuilder(
+              builder: (context, setState) {
+                return Column(
+                  mainAxisSize: MainAxisSize.min,
+                  crossAxisAlignment: CrossAxisAlignment.stretch,
+                  children: [
+                    DropdownButtonFormField<String?>(
+                    value: dropdownValue,
+                    decoration: const InputDecoration(
+                      labelText: 'Materia (opcional)',
+                      isDense: true,
+                      contentPadding: EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+                    ),
+                    items: [
+                      const DropdownMenuItem<String?>(
+                        value: null,
+                        child: Text('Nenhuma'),
+                      ),
+                      ...existingSubjects.map(
+                        (s) => DropdownMenuItem<String?>(value: s, child: Text(s)),
+                      ),
+                      const DropdownMenuItem<String?>(
+                        value: _novaMateriaValue,
+                        child: Text('+ Nova materia'),
+                      ),
+                    ],
+                    onChanged: (v) {
+                      setState(() => onDropdownChanged(v));
+                    },
+                  ),
+                  if (dropdownValue == _novaMateriaValue) ...[
+                    const SizedBox(height: 8),
+                    TextField(
+                      controller: subjectController,
+                      decoration: const InputDecoration(
+                        labelText: 'Nome da materia',
+                        hintText: 'Ex: Matematica',
+                        isDense: true,
+                        contentPadding: EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+                      ),
+                    ),
+                  ],
+                  const SizedBox(height: 10),
+                  TextField(
+                    controller: professorController,
+                    decoration: const InputDecoration(
+                      labelText: 'Professor (opcional)',
+                      hintText: 'Ex: Joao Silva',
+                      isDense: true,
+                      contentPadding: EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+                    ),
+                  ),
+                  const SizedBox(height: 8),
+                  TextFormField(
+                    controller: emailController,
+                    keyboardType: TextInputType.emailAddress,
+                    decoration: const InputDecoration(
+                      labelText: 'Email (opcional)',
+                      hintText: 'professor@email.com',
+                      isDense: true,
+                      contentPadding: EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+                    ),
+                    validator: (v) => emailValidator(v),
+                  ),
+                  const SizedBox(height: 8),
+                  TextFormField(
+                    controller: phoneController,
+                    keyboardType: TextInputType.phone,
+                    decoration: const InputDecoration(
+                      labelText: 'Telefone (opcional)',
+                      hintText: '(11) 99999-9999',
+                      isDense: true,
+                      contentPadding: EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+                    ),
+                    inputFormatters: phoneInputFormatters,
+                    validator: (v) => phoneValidator(v),
+                  ),
+                ],
+              );
+            },
           ),
         ),
+      ),
         actions: [
           TextButton(
             onPressed: () async {
-              await controller.updateSubject(cellId, null);
+              await controller.updateSlotDetails(cell.id);
               Get.back();
             },
             child: const Text('Limpar'),
@@ -306,7 +494,18 @@ class ClassSchedulePage extends GetView<ClassScheduleController> {
           TextButton(onPressed: Get.back, child: const Text('Cancelar')),
           FilledButton(
             onPressed: () async {
-              await controller.updateSubject(cellId, textController.text);
+              if (formKey.currentState?.validate() != true) return;
+              final subject = dropdownValue == _novaMateriaValue
+                  ? subjectController.text
+                  : (dropdownValue ?? subjectController.text);
+              final phone = unmaskPhone(phoneController.text);
+              await controller.updateSlotDetails(
+                cell.id,
+                subject: subject.trim().isEmpty ? null : subject.trim(),
+                professorName: professorController.text,
+                professorEmail: emailController.text,
+                professorPhone: phone.isEmpty ? null : phone,
+              );
               Get.back();
             },
             child: const Text('Salvar'),
@@ -314,6 +513,145 @@ class ClassSchedulePage extends GetView<ClassScheduleController> {
         ],
       ),
     );
+  }
+
+  Widget _detailRow({required String label, required String value}) {
+    return Padding(
+      padding: const EdgeInsets.only(bottom: 8),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Text(
+            label,
+            style: const TextStyle(
+              fontWeight: FontWeight.w600,
+              fontSize: 12,
+            ),
+          ),
+          const SizedBox(height: 2),
+          Text(value),
+        ],
+      ),
+    );
+  }
+
+  Widget _emailRow(BuildContext context, String email) {
+    return Padding(
+      padding: const EdgeInsets.only(bottom: 8),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Text(
+            'Email',
+            style: const TextStyle(
+              fontWeight: FontWeight.w600,
+              fontSize: 12,
+            ),
+          ),
+          const SizedBox(height: 2),
+          MenuAnchor(
+            builder: (context, controller, child) => InkWell(
+              onTap: () => controller.isOpen ? controller.close() : controller.open(),
+              child: Row(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  Text(
+                    email,
+                    style: TextStyle(
+                      color: Theme.of(context).colorScheme.primary,
+                      decoration: TextDecoration.underline,
+                    ),
+                  ),
+                  const SizedBox(width: 4),
+                  Icon(Icons.arrow_drop_down, size: 18, color: Theme.of(context).colorScheme.primary),
+                ],
+              ),
+            ),
+            menuChildren: [
+              MenuItemButton(
+                onPressed: () => _launchMailto(email),
+                leadingIcon: const Icon(Icons.email_outlined),
+                child: const Text('Enviar email'),
+              ),
+            ],
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _phoneRow(BuildContext context, String phoneRaw, String phoneDisplay) {
+    return Padding(
+      padding: const EdgeInsets.only(bottom: 8),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Text(
+            'Telefone',
+            style: const TextStyle(
+              fontWeight: FontWeight.w600,
+              fontSize: 12,
+            ),
+          ),
+          const SizedBox(height: 2),
+          MenuAnchor(
+            builder: (context, controller, child) => InkWell(
+              onTap: () => controller.isOpen ? controller.close() : controller.open(),
+              child: Row(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  Text(
+                    phoneDisplay,
+                    style: TextStyle(
+                      color: Theme.of(context).colorScheme.primary,
+                      decoration: TextDecoration.underline,
+                    ),
+                  ),
+                  const SizedBox(width: 4),
+                  Icon(Icons.arrow_drop_down, size: 18, color: Theme.of(context).colorScheme.primary),
+                ],
+              ),
+            ),
+            menuChildren: [
+              MenuItemButton(
+                onPressed: () => _launchTel(phoneRaw),
+                leadingIcon: const Icon(Icons.phone_outlined),
+                child: const Text('Ligar'),
+              ),
+              MenuItemButton(
+                onPressed: () => _launchWhatsApp(phoneRaw),
+                leadingIcon: const Icon(Icons.chat_outlined),
+                child: const Text('WhatsApp'),
+              ),
+            ],
+          ),
+        ],
+      ),
+    );
+  }
+
+  Future<void> _launchMailto(String email) async {
+    final uri = Uri.parse('mailto:$email');
+    if (await canLaunchUrl(uri)) {
+      await launchUrl(uri);
+    }
+  }
+
+  Future<void> _launchTel(String phone) async {
+    final digits = phone.replaceAll(RegExp(r'\D'), '');
+    final uri = Uri.parse('tel:$digits');
+    if (await canLaunchUrl(uri)) {
+      await launchUrl(uri);
+    }
+  }
+
+  Future<void> _launchWhatsApp(String phone) async {
+    final digits = phone.replaceAll(RegExp(r'\D'), '');
+    final number = digits.length >= 12 ? digits : '55$digits';
+    final uri = Uri.parse('https://wa.me/$number');
+    if (await canLaunchUrl(uri)) {
+      await launchUrl(uri, mode: LaunchMode.externalApplication);
+    }
   }
 
   int? _parseTime(String raw) {

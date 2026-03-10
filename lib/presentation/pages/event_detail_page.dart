@@ -44,16 +44,18 @@ class EventDetailPage extends StatelessWidget {
     final dateLabel = arg.allDay
         ? DateFormat('EEEE, dd MMM').format(arg.startAt)
         : '${startFmt.format(arg.startAt)}${arg.endAt != null ? ' - ${endFmt.format(arg.endAt!)}' : ''}';
+    final isShared = arg.ownerEmail != null;
 
     return Scaffold(
       appBar: AppBar(
         title: const Text('Detalhe do evento'),
         actions: [
-          IconButton(
-            tooltip: 'Editar',
-            onPressed: () => Get.toNamed(AppRoutes.upsertAgenda, arguments: arg),
-            icon: const Icon(Icons.edit_outlined),
-          ),
+          if (!isShared)
+            IconButton(
+              tooltip: 'Editar',
+              onPressed: () => Get.toNamed(AppRoutes.upsertAgenda, arguments: arg),
+              icon: const Icon(Icons.edit_outlined),
+            ),
         ],
       ),
       body: SafeArea(
@@ -62,6 +64,27 @@ class EventDetailPage extends StatelessWidget {
         child: ListView(
           padding: const EdgeInsets.fromLTRB(0, 10, 0, 120),
           children: [
+          if (isShared)
+            AppSurfaceCard(
+              child: Row(
+                children: [
+                  Icon(
+                    Icons.people_outline,
+                    size: 20,
+                    color: Theme.of(context).colorScheme.primary,
+                  ),
+                  const SizedBox(width: DesignTokens.spaceSm),
+                  Expanded(
+                    child: Text(
+                      'Compartilhada por ${arg.ownerEmail}',
+                      style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+                            color: Theme.of(context).colorScheme.primary,
+                          ),
+                    ),
+                  ),
+                ],
+              ),
+            ),
           AppSurfaceCard(
             child: Row(
               children: [
@@ -106,35 +129,36 @@ class EventDetailPage extends StatelessWidget {
               ],
             ),
           ),
-          AppSurfaceCard(
-            child: Row(
-              children: [
-                Expanded(
-                  child: OutlinedButton(
-                    onPressed: () async {
-                      await agendaController.toggleStatus(
-                        arg.id,
-                        AgendaStatus.canceled,
-                      );
-                      Get.back();
-                    },
-                    child: const Text('Cancelar evento'),
+          if (!isShared)
+            AppSurfaceCard(
+              child: Row(
+                children: [
+                  Expanded(
+                    child: OutlinedButton(
+                      onPressed: () async {
+                        await agendaController.toggleStatus(
+                          arg.id,
+                          AgendaStatus.canceled,
+                        );
+                        Get.back();
+                      },
+                      child: const Text('Cancelar evento'),
+                    ),
                   ),
-                ),
-                const SizedBox(width: DesignTokens.spaceSm),
-                Expanded(
-                  child: FilledButton.icon(
-                    onPressed: () async {
-                      await agendaController.toggleStatus(arg.id, AgendaStatus.done);
-                      Get.back();
-                    },
-                    icon: const Icon(Icons.check_rounded),
-                    label: const Text('Marcar concluido'),
+                  const SizedBox(width: DesignTokens.spaceSm),
+                  Expanded(
+                    child: FilledButton.icon(
+                      onPressed: () async {
+                        await agendaController.toggleStatus(arg.id, AgendaStatus.done);
+                        Get.back();
+                      },
+                      icon: const Icon(Icons.check_rounded),
+                      label: const Text('Marcar concluido'),
+                    ),
                   ),
-                ),
-              ],
+                ],
+              ),
             ),
-          ),
           if ((arg.description ?? '').trim().isNotEmpty)
             AppSurfaceCard(
               child: Column(
@@ -166,11 +190,19 @@ class EventDetailPage extends StatelessWidget {
                 else
                   Column(
                     children: arg.attachments.map((a) {
-                      final hasFile =
-                          a.localPath != null && File(a.localPath!).existsSync();
+                      final hasLocal = a.localPath != null &&
+                          File(a.localPath!).existsSync();
+                      final hasRemote = a.remoteUrl != null &&
+                          (a.remoteUrl!.startsWith('http://') ||
+                              a.remoteUrl!.startsWith('https://'));
+                      final hasImage = hasLocal || hasRemote;
                       return InkWell(
                         borderRadius: BorderRadius.circular(DesignTokens.radiusMd),
-                        onTap: () => _openAttachmentPreview(context, a.localPath),
+                        onTap: () => _openAttachmentPreview(
+                          context,
+                          localPath: a.localPath,
+                          remoteUrl: a.remoteUrl,
+                        ),
                         child: Container(
                           margin: const EdgeInsets.only(bottom: DesignTokens.spaceXs),
                           padding: const EdgeInsets.all(10),
@@ -181,15 +213,24 @@ class EventDetailPage extends StatelessWidget {
                           ),
                           child: Row(
                             children: [
-                              if (hasFile)
+                              if (hasImage)
                                 ClipRRect(
                                   borderRadius: BorderRadius.circular(10),
-                                  child: Image.file(
-                                    File(a.localPath!),
-                                    width: 42,
-                                    height: 42,
-                                    fit: BoxFit.cover,
-                                  ),
+                                  child: hasLocal
+                                      ? Image.file(
+                                          File(a.localPath!),
+                                          width: 42,
+                                          height: 42,
+                                          fit: BoxFit.cover,
+                                        )
+                                        : Image.network(
+                                            a.remoteUrl!,
+                                            width: 42,
+                                            height: 42,
+                                            fit: BoxFit.cover,
+                                            errorBuilder: (context, error, stackTrace) =>
+                                                const Icon(Icons.broken_image),
+                                          ),
                                 )
                               else
                                 const Icon(Icons.attachment_outlined),
@@ -202,7 +243,7 @@ class EventDetailPage extends StatelessWidget {
                                 ),
                               ),
                               Icon(
-                                hasFile
+                                hasImage
                                     ? Icons.open_in_full_rounded
                                     : Icons.error_outline_rounded,
                                 size: 18,
@@ -233,10 +274,16 @@ class EventDetailPage extends StatelessWidget {
   }
 
   Future<void> _openAttachmentPreview(
-    BuildContext context,
+    BuildContext context, {
     String? localPath,
-  ) async {
-    if (localPath == null || !File(localPath).existsSync()) {
+    String? remoteUrl,
+  }) async {
+    final hasLocal =
+        localPath != null && File(localPath).existsSync();
+    final hasRemote = remoteUrl != null &&
+        (remoteUrl.startsWith('http://') || remoteUrl.startsWith('https://'));
+
+    if (!hasLocal && !hasRemote) {
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(content: Text('Arquivo do anexo nao encontrado.')),
       );
@@ -258,10 +305,18 @@ class EventDetailPage extends StatelessWidget {
                   child: InteractiveViewer(
                     minScale: 0.8,
                     maxScale: 4,
-                    child: Image.file(
-                      File(localPath),
-                      fit: BoxFit.contain,
-                    ),
+                    child: hasLocal
+                        ? Image.file(
+                            File(localPath),
+                            fit: BoxFit.contain,
+                          )
+                        : Image.network(
+                            remoteUrl as String,
+                            fit: BoxFit.contain,
+                            errorBuilder: (context, error, stackTrace) => const Center(
+                              child: Icon(Icons.broken_image, size: 64),
+                            ),
+                          ),
                   ),
                 ),
                 Positioned(

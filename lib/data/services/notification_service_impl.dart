@@ -218,4 +218,29 @@ class NotificationServiceImpl implements INotificationService {
   Future<Result<void>> scheduleDailySummary() async {
     return Result.success(null);
   }
+
+  @override
+  Future<Result<void>> showPush(String title, String body, {String? payload}) async {
+    try {
+      const details = NotificationDetails(
+        android: AndroidNotificationDetails(
+          AppConstants.notificationChannelId,
+          AppConstants.notificationChannelName,
+          importance: Importance.high,
+          priority: Priority.high,
+        ),
+        iOS: DarwinNotificationDetails(),
+      );
+      await _notificationsPlugin.show(
+        DateTime.now().millisecondsSinceEpoch % 100000,
+        title,
+        body,
+        details,
+        payload: payload,
+      );
+      return Result.success(null);
+    } catch (e) {
+      return Result.failure('Erro ao exibir notificação: $e');
+    }
+  }
 }

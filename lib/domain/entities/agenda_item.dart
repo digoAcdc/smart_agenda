@@ -20,6 +20,7 @@ class AgendaItem extends Equatable {
     this.reminder,
     this.recurrence,
     this.attachments = const [],
+    this.ownerEmail,
     this.source = ItemSource.local,
     this.syncState = SyncState.pending,
     required this.createdAt,
@@ -40,6 +41,8 @@ class AgendaItem extends Equatable {
   final ReminderConfig? reminder;
   final RecurrenceRule? recurrence;
   final List<AttachmentRef> attachments;
+  /// Email do dono quando item e compartilhado (somente leitura).
+  final String? ownerEmail;
   final ItemSource source;
   final SyncState syncState;
   final DateTime createdAt;
@@ -60,6 +63,7 @@ class AgendaItem extends Equatable {
     ReminderConfig? reminder,
     RecurrenceRule? recurrence,
     List<AttachmentRef>? attachments,
+    String? ownerEmail,
     ItemSource? source,
     SyncState? syncState,
     DateTime? createdAt,
@@ -80,6 +84,7 @@ class AgendaItem extends Equatable {
       reminder: reminder ?? this.reminder,
       recurrence: recurrence ?? this.recurrence,
       attachments: attachments ?? this.attachments,
+      ownerEmail: ownerEmail ?? this.ownerEmail,
       source: source ?? this.source,
       syncState: syncState ?? this.syncState,
       createdAt: createdAt ?? this.createdAt,
@@ -103,6 +108,7 @@ class AgendaItem extends Equatable {
         reminder,
         recurrence,
         attachments,
+        ownerEmail,
         source,
         syncState,
         createdAt,
