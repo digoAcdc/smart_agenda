@@ -1,5 +1,6 @@
 import 'dart:async';
 
+import 'package:flutter/widgets.dart';
 import 'package:get/get.dart';
 
 import '../../core/config/supabase_config.dart';
@@ -22,7 +23,7 @@ class SyncController extends GetxController {
     _connectivitySub = _connectivity.onConnectivityChanged.listen((online) {
       if (online) _syncService.syncNow();
     });
-    _syncService.syncNow();
+    WidgetsBinding.instance.addPostFrameCallback((_) => _syncService.syncNow());
   }
 
   @override

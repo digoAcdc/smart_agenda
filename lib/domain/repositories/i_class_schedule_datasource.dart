@@ -6,7 +6,13 @@ abstract class IClassScheduleDataSource {
 
   Future<String?> addTimeRange(int start, int end);
 
-  Future<void> updateSubject(String id, String? subject);
+  Future<void> updateSlotDetails(
+    String id, {
+    String? subject,
+    String? professorName,
+    String? professorEmail,
+    String? professorPhone,
+  });
 
   Future<void> removeTimeRange(int start, int end);
 }

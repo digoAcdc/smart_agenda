@@ -238,6 +238,9 @@ class AgendaTransferServiceImpl implements IAgendaTransferService {
                   createdAt: incoming.createdAt,
                   updatedAt: incoming.updatedAt,
                   subject: Value(incoming.subject),
+                  professorName: Value(incoming.professorName),
+                  professorEmail: Value(incoming.professorEmail),
+                  professorPhone: Value(incoming.professorPhone),
                 ),
               );
           createdClassSlots++;
@@ -252,6 +255,9 @@ class AgendaTransferServiceImpl implements IAgendaTransferService {
               startMinutes: Value(incoming.startMinutes),
               endMinutes: Value(incoming.endMinutes),
               subject: Value(incoming.subject),
+              professorName: Value(incoming.professorName),
+              professorEmail: Value(incoming.professorEmail),
+              professorPhone: Value(incoming.professorPhone),
               updatedAt: Value(incoming.updatedAt),
             ),
           );
@@ -347,6 +353,9 @@ class AgendaTransferServiceImpl implements IAgendaTransferService {
             startMinutes: slot.startMinutes,
             endMinutes: slot.endMinutes,
             subject: slot.subject,
+            professorName: slot.professorName,
+            professorEmail: slot.professorEmail,
+            professorPhone: slot.professorPhone,
             createdAt: slot.createdAt,
             updatedAt: slot.updatedAt,
           ),

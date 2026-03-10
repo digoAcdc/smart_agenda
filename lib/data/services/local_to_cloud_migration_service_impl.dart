@@ -115,6 +115,9 @@ class LocalToCloudMigrationServiceImpl implements ILocalToCloudMigrationService 
         'start_minutes': slot.startMinutes,
         'end_minutes': slot.endMinutes,
         'subject': slot.subject,
+        'professor_name': slot.professorName,
+        'professor_email': slot.professorEmail,
+        'professor_phone': slot.professorPhone,
         'created_at': slot.createdAt.toIso8601String(),
         'updated_at': slot.updatedAt.toIso8601String(),
       }, onConflict: 'id');

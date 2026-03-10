@@ -127,6 +127,9 @@ class SyncEngineImpl implements ISyncService {
         'start_minutes': row.startMinutes,
         'end_minutes': row.endMinutes,
         'subject': row.subject,
+        'professor_name': row.professorName,
+        'professor_email': row.professorEmail,
+        'professor_phone': row.professorPhone,
         'created_at': row.createdAt.toIso8601String(),
         'updated_at': row.updatedAt.toIso8601String(),
       });

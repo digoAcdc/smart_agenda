@@ -64,6 +64,9 @@ class ClassScheduleSlotsTable extends Table {
   IntColumn get startMinutes => integer()();
   IntColumn get endMinutes => integer()();
   TextColumn get subject => text().nullable()();
+  TextColumn get professorName => text().nullable()();
+  TextColumn get professorEmail => text().nullable()();
+  TextColumn get professorPhone => text().nullable()();
   TextColumn get syncState => text().withDefault(const Constant('pending'))();
   DateTimeColumn get createdAt => dateTime()();
   DateTimeColumn get updatedAt => dateTime()();
@@ -84,7 +87,7 @@ class AppDatabase extends _$AppDatabase {
   AppDatabase() : super(_openConnection());
 
   @override
-  int get schemaVersion => 3;
+  int get schemaVersion => 4;
 
   @override
   MigrationStrategy get migration => MigrationStrategy(
@@ -96,6 +99,11 @@ class AppDatabase extends _$AppDatabase {
           if (from < 3) {
             await m.addColumn(agendaGroupsTable, agendaGroupsTable.syncState);
             await m.addColumn(classScheduleSlotsTable, classScheduleSlotsTable.syncState);
+          }
+          if (from < 4) {
+            await m.addColumn(classScheduleSlotsTable, classScheduleSlotsTable.professorName);
+            await m.addColumn(classScheduleSlotsTable, classScheduleSlotsTable.professorEmail);
+            await m.addColumn(classScheduleSlotsTable, classScheduleSlotsTable.professorPhone);
           }
         },
       );

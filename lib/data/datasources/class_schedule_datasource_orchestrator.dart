@@ -22,8 +22,20 @@ class ClassScheduleDataSourceOrchestrator implements IClassScheduleDataSource {
   }
 
   @override
-  Future<void> updateSubject(String id, String? subject) async {
-    await _local.updateSubject(id, subject);
+  Future<void> updateSlotDetails(
+    String id, {
+    String? subject,
+    String? professorName,
+    String? professorEmail,
+    String? professorPhone,
+  }) async {
+    await _local.updateSlotDetails(
+      id,
+      subject: subject,
+      professorName: professorName,
+      professorEmail: professorEmail,
+      professorPhone: professorPhone,
+    );
     _scheduleSync();
   }
 

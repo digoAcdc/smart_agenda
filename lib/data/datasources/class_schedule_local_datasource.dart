@@ -55,13 +55,24 @@ class ClassScheduleLocalDataSource implements IClassScheduleDataSource {
   }
 
   @override
-  Future<void> updateSubject(String id, String? subject) async {
+  Future<void> updateSlotDetails(
+    String id, {
+    String? subject,
+    String? professorName,
+    String? professorEmail,
+    String? professorPhone,
+  }) async {
+    String? trimOrNull(String? v) =>
+        v == null || v.trim().isEmpty ? null : v.trim();
+
     await (_db.update(_db.classScheduleSlotsTable)
           ..where((t) => t.id.equals(id)))
         .write(
       ClassScheduleSlotsTableCompanion(
-        subject: Value(
-            subject == null || subject.trim().isEmpty ? null : subject.trim()),
+        subject: Value(trimOrNull(subject)),
+        professorName: Value(trimOrNull(professorName)),
+        professorEmail: Value(trimOrNull(professorEmail)),
+        professorPhone: Value(trimOrNull(professorPhone)),
         updatedAt: Value(DateTime.now()),
         syncState: const Value('pending'),
       ),
@@ -114,6 +125,9 @@ class ClassScheduleLocalDataSource implements IClassScheduleDataSource {
       startMinutes: row.startMinutes,
       endMinutes: row.endMinutes,
       subject: row.subject,
+      professorName: row.professorName,
+      professorEmail: row.professorEmail,
+      professorPhone: row.professorPhone,
       createdAt: row.createdAt,
       updatedAt: row.updatedAt,
     );

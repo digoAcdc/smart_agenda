@@ -8,6 +8,9 @@ class ClassScheduleSlot extends Equatable {
     required this.startMinutes,
     required this.endMinutes,
     this.subject,
+    this.professorName,
+    this.professorEmail,
+    this.professorPhone,
     required this.createdAt,
     required this.updatedAt,
   });
@@ -17,10 +20,23 @@ class ClassScheduleSlot extends Equatable {
   final int startMinutes;
   final int endMinutes;
   final String? subject;
+  final String? professorName;
+  final String? professorEmail;
+  final String? professorPhone;
   final DateTime createdAt;
   final DateTime updatedAt;
 
   @override
-  List<Object?> get props =>
-      [id, dayOfWeek, startMinutes, endMinutes, subject, createdAt, updatedAt];
+  List<Object?> get props => [
+        id,
+        dayOfWeek,
+        startMinutes,
+        endMinutes,
+        subject,
+        professorName,
+        professorEmail,
+        professorPhone,
+        createdAt,
+        updatedAt,
+      ];
 }

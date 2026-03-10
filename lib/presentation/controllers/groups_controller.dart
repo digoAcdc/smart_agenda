@@ -1,3 +1,4 @@
+import 'package:flutter/widgets.dart';
 import 'package:get/get.dart';
 import 'package:uuid/uuid.dart';
 
@@ -23,7 +24,7 @@ class GroupsController extends GetxController {
   @override
   void onInit() {
     super.onInit();
-    loadGroups();
+    WidgetsBinding.instance.addPostFrameCallback((_) => loadGroups());
   }
 
   Future<void> loadGroups() async {

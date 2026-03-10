@@ -1,3 +1,4 @@
+import 'package:flutter/widgets.dart';
 import 'package:get/get.dart';
 
 import '../../domain/entities/class_schedule_slot.dart';
@@ -21,7 +22,7 @@ class ClassScheduleController extends GetxController {
   @override
   void onInit() {
     super.onInit();
-    load();
+    WidgetsBinding.instance.addPostFrameCallback((_) => load());
   }
 
   Future<void> load() async {
@@ -42,6 +43,45 @@ class ClassScheduleController extends GetxController {
     return list;
   }
 
+  /// Materias ja cadastradas na grade (unicas, ordenadas).
+  List<String> get existingSubjects {
+    final set = <String>{};
+    for (final s in slots) {
+      if (s.subject != null && s.subject!.trim().isNotEmpty) {
+        set.add(s.subject!.trim());
+      }
+    }
+    return set.toList()..sort();
+  }
+
+  /// Retorna o slot de referencia para uma materia (o que tem mais dados preenchidos).
+  ClassScheduleSlot? getSlotForSubject(String subject) {
+    final trimmed = subject.trim();
+    if (trimmed.isEmpty) return null;
+    ClassScheduleSlot? best;
+    for (final s in slots) {
+      if (s.subject?.trim() != trimmed) continue;
+      if (best == null) {
+        best = s;
+        continue;
+      }
+      final bestScore = _slotDetailScore(best);
+      final currScore = _slotDetailScore(s);
+      if (currScore > bestScore || (currScore == bestScore && s.updatedAt.isAfter(best.updatedAt))) {
+        best = s;
+      }
+    }
+    return best;
+  }
+
+  int _slotDetailScore(ClassScheduleSlot s) {
+    var n = 0;
+    if (s.professorName?.trim().isNotEmpty == true) n++;
+    if (s.professorEmail?.trim().isNotEmpty == true) n++;
+    if (s.professorPhone?.trim().isNotEmpty == true) n++;
+    return n;
+  }
+
   ClassScheduleSlot? getCell(int dayOfWeek, int start, int end) {
     for (final e in slots) {
       if (e.dayOfWeek == dayOfWeek &&
@@ -60,8 +100,20 @@ class ClassScheduleController extends GetxController {
     return null;
   }
 
-  Future<void> updateSubject(String id, String? subject) async {
-    await _dataSource.updateSubject(id, subject);
+  Future<void> updateSlotDetails(
+    String id, {
+    String? subject,
+    String? professorName,
+    String? professorEmail,
+    String? professorPhone,
+  }) async {
+    await _dataSource.updateSlotDetails(
+      id,
+      subject: subject,
+      professorName: professorName,
+      professorEmail: professorEmail,
+      professorPhone: professorPhone,
+    );
     await load();
   }
 

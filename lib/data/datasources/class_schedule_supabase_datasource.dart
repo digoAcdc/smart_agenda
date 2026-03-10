@@ -68,12 +68,24 @@ class ClassScheduleSupabaseDataSource implements IClassScheduleDataSource {
   }
 
   @override
-  Future<void> updateSubject(String id, String? subject) async {
+  Future<void> updateSlotDetails(
+    String id, {
+    String? subject,
+    String? professorName,
+    String? professorEmail,
+    String? professorPhone,
+  }) async {
     final uid = _userId;
     if (uid == null) return;
 
+    String? trimOrNull(String? v) =>
+        v == null || v.trim().isEmpty ? null : v.trim();
+
     await _client.from('class_schedule_slots').update({
-      'subject': subject == null || subject.trim().isEmpty ? null : subject.trim(),
+      'subject': trimOrNull(subject),
+      'professor_name': trimOrNull(professorName),
+      'professor_email': trimOrNull(professorEmail),
+      'professor_phone': trimOrNull(professorPhone),
       'updated_at': DateTime.now().toIso8601String(),
     }).eq('id', id).eq('user_id', uid);
   }
@@ -98,6 +110,9 @@ class ClassScheduleSupabaseDataSource implements IClassScheduleDataSource {
       startMinutes: row['start_minutes'] as int,
       endMinutes: row['end_minutes'] as int,
       subject: row['subject'] as String?,
+      professorName: row['professor_name'] as String?,
+      professorEmail: row['professor_email'] as String?,
+      professorPhone: row['professor_phone'] as String?,
       createdAt: DateTime.parse(row['created_at'] as String),
       updatedAt: DateTime.parse(row['updated_at'] as String),
     );

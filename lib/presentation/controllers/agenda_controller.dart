@@ -1,3 +1,4 @@
+import 'package:flutter/widgets.dart';
 import 'package:get/get.dart';
 import 'package:uuid/uuid.dart';
 
@@ -50,7 +51,7 @@ class AgendaController extends GetxController {
   @override
   void onInit() {
     super.onInit();
-    loadToday();
+    WidgetsBinding.instance.addPostFrameCallback((_) => loadToday());
   }
 
   Future<void> loadToday() async {

@@ -2144,6 +2144,39 @@ class $ClassScheduleSlotsTableTable extends ClassScheduleSlotsTable
     type: DriftSqlType.string,
     requiredDuringInsert: false,
   );
+  static const VerificationMeta _professorNameMeta = const VerificationMeta(
+    'professorName',
+  );
+  @override
+  late final GeneratedColumn<String> professorName = GeneratedColumn<String>(
+    'professor_name',
+    aliasedName,
+    true,
+    type: DriftSqlType.string,
+    requiredDuringInsert: false,
+  );
+  static const VerificationMeta _professorEmailMeta = const VerificationMeta(
+    'professorEmail',
+  );
+  @override
+  late final GeneratedColumn<String> professorEmail = GeneratedColumn<String>(
+    'professor_email',
+    aliasedName,
+    true,
+    type: DriftSqlType.string,
+    requiredDuringInsert: false,
+  );
+  static const VerificationMeta _professorPhoneMeta = const VerificationMeta(
+    'professorPhone',
+  );
+  @override
+  late final GeneratedColumn<String> professorPhone = GeneratedColumn<String>(
+    'professor_phone',
+    aliasedName,
+    true,
+    type: DriftSqlType.string,
+    requiredDuringInsert: false,
+  );
   static const VerificationMeta _syncStateMeta = const VerificationMeta(
     'syncState',
   );
@@ -2185,6 +2218,9 @@ class $ClassScheduleSlotsTableTable extends ClassScheduleSlotsTable
     startMinutes,
     endMinutes,
     subject,
+    professorName,
+    professorEmail,
+    professorPhone,
     syncState,
     createdAt,
     updatedAt,
@@ -2237,6 +2273,33 @@ class $ClassScheduleSlotsTableTable extends ClassScheduleSlotsTable
       context.handle(
         _subjectMeta,
         subject.isAcceptableOrUnknown(data['subject']!, _subjectMeta),
+      );
+    }
+    if (data.containsKey('professor_name')) {
+      context.handle(
+        _professorNameMeta,
+        professorName.isAcceptableOrUnknown(
+          data['professor_name']!,
+          _professorNameMeta,
+        ),
+      );
+    }
+    if (data.containsKey('professor_email')) {
+      context.handle(
+        _professorEmailMeta,
+        professorEmail.isAcceptableOrUnknown(
+          data['professor_email']!,
+          _professorEmailMeta,
+        ),
+      );
+    }
+    if (data.containsKey('professor_phone')) {
+      context.handle(
+        _professorPhoneMeta,
+        professorPhone.isAcceptableOrUnknown(
+          data['professor_phone']!,
+          _professorPhoneMeta,
+        ),
       );
     }
     if (data.containsKey('sync_state')) {
@@ -2293,6 +2356,18 @@ class $ClassScheduleSlotsTableTable extends ClassScheduleSlotsTable
         DriftSqlType.string,
         data['${effectivePrefix}subject'],
       ),
+      professorName: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}professor_name'],
+      ),
+      professorEmail: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}professor_email'],
+      ),
+      professorPhone: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}professor_phone'],
+      ),
       syncState: attachedDatabase.typeMapping.read(
         DriftSqlType.string,
         data['${effectivePrefix}sync_state'],
@@ -2321,6 +2396,9 @@ class ClassScheduleSlotsTableData extends DataClass
   final int startMinutes;
   final int endMinutes;
   final String? subject;
+  final String? professorName;
+  final String? professorEmail;
+  final String? professorPhone;
   final String syncState;
   final DateTime createdAt;
   final DateTime updatedAt;
@@ -2330,6 +2408,9 @@ class ClassScheduleSlotsTableData extends DataClass
     required this.startMinutes,
     required this.endMinutes,
     this.subject,
+    this.professorName,
+    this.professorEmail,
+    this.professorPhone,
     required this.syncState,
     required this.createdAt,
     required this.updatedAt,
@@ -2343,6 +2424,15 @@ class ClassScheduleSlotsTableData extends DataClass
     map['end_minutes'] = Variable<int>(endMinutes);
     if (!nullToAbsent || subject != null) {
       map['subject'] = Variable<String>(subject);
+    }
+    if (!nullToAbsent || professorName != null) {
+      map['professor_name'] = Variable<String>(professorName);
+    }
+    if (!nullToAbsent || professorEmail != null) {
+      map['professor_email'] = Variable<String>(professorEmail);
+    }
+    if (!nullToAbsent || professorPhone != null) {
+      map['professor_phone'] = Variable<String>(professorPhone);
     }
     map['sync_state'] = Variable<String>(syncState);
     map['created_at'] = Variable<DateTime>(createdAt);
@@ -2359,6 +2449,15 @@ class ClassScheduleSlotsTableData extends DataClass
       subject: subject == null && nullToAbsent
           ? const Value.absent()
           : Value(subject),
+      professorName: professorName == null && nullToAbsent
+          ? const Value.absent()
+          : Value(professorName),
+      professorEmail: professorEmail == null && nullToAbsent
+          ? const Value.absent()
+          : Value(professorEmail),
+      professorPhone: professorPhone == null && nullToAbsent
+          ? const Value.absent()
+          : Value(professorPhone),
       syncState: Value(syncState),
       createdAt: Value(createdAt),
       updatedAt: Value(updatedAt),
@@ -2376,6 +2475,9 @@ class ClassScheduleSlotsTableData extends DataClass
       startMinutes: serializer.fromJson<int>(json['startMinutes']),
       endMinutes: serializer.fromJson<int>(json['endMinutes']),
       subject: serializer.fromJson<String?>(json['subject']),
+      professorName: serializer.fromJson<String?>(json['professorName']),
+      professorEmail: serializer.fromJson<String?>(json['professorEmail']),
+      professorPhone: serializer.fromJson<String?>(json['professorPhone']),
       syncState: serializer.fromJson<String>(json['syncState']),
       createdAt: serializer.fromJson<DateTime>(json['createdAt']),
       updatedAt: serializer.fromJson<DateTime>(json['updatedAt']),
@@ -2390,6 +2492,9 @@ class ClassScheduleSlotsTableData extends DataClass
       'startMinutes': serializer.toJson<int>(startMinutes),
       'endMinutes': serializer.toJson<int>(endMinutes),
       'subject': serializer.toJson<String?>(subject),
+      'professorName': serializer.toJson<String?>(professorName),
+      'professorEmail': serializer.toJson<String?>(professorEmail),
+      'professorPhone': serializer.toJson<String?>(professorPhone),
       'syncState': serializer.toJson<String>(syncState),
       'createdAt': serializer.toJson<DateTime>(createdAt),
       'updatedAt': serializer.toJson<DateTime>(updatedAt),
@@ -2402,6 +2507,9 @@ class ClassScheduleSlotsTableData extends DataClass
     int? startMinutes,
     int? endMinutes,
     Value<String?> subject = const Value.absent(),
+    Value<String?> professorName = const Value.absent(),
+    Value<String?> professorEmail = const Value.absent(),
+    Value<String?> professorPhone = const Value.absent(),
     String? syncState,
     DateTime? createdAt,
     DateTime? updatedAt,
@@ -2411,6 +2519,15 @@ class ClassScheduleSlotsTableData extends DataClass
     startMinutes: startMinutes ?? this.startMinutes,
     endMinutes: endMinutes ?? this.endMinutes,
     subject: subject.present ? subject.value : this.subject,
+    professorName: professorName.present
+        ? professorName.value
+        : this.professorName,
+    professorEmail: professorEmail.present
+        ? professorEmail.value
+        : this.professorEmail,
+    professorPhone: professorPhone.present
+        ? professorPhone.value
+        : this.professorPhone,
     syncState: syncState ?? this.syncState,
     createdAt: createdAt ?? this.createdAt,
     updatedAt: updatedAt ?? this.updatedAt,
@@ -2428,6 +2545,15 @@ class ClassScheduleSlotsTableData extends DataClass
           ? data.endMinutes.value
           : this.endMinutes,
       subject: data.subject.present ? data.subject.value : this.subject,
+      professorName: data.professorName.present
+          ? data.professorName.value
+          : this.professorName,
+      professorEmail: data.professorEmail.present
+          ? data.professorEmail.value
+          : this.professorEmail,
+      professorPhone: data.professorPhone.present
+          ? data.professorPhone.value
+          : this.professorPhone,
       syncState: data.syncState.present ? data.syncState.value : this.syncState,
       createdAt: data.createdAt.present ? data.createdAt.value : this.createdAt,
       updatedAt: data.updatedAt.present ? data.updatedAt.value : this.updatedAt,
@@ -2442,6 +2568,9 @@ class ClassScheduleSlotsTableData extends DataClass
           ..write('startMinutes: $startMinutes, ')
           ..write('endMinutes: $endMinutes, ')
           ..write('subject: $subject, ')
+          ..write('professorName: $professorName, ')
+          ..write('professorEmail: $professorEmail, ')
+          ..write('professorPhone: $professorPhone, ')
           ..write('syncState: $syncState, ')
           ..write('createdAt: $createdAt, ')
           ..write('updatedAt: $updatedAt')
@@ -2456,6 +2585,9 @@ class ClassScheduleSlotsTableData extends DataClass
     startMinutes,
     endMinutes,
     subject,
+    professorName,
+    professorEmail,
+    professorPhone,
     syncState,
     createdAt,
     updatedAt,
@@ -2469,6 +2601,9 @@ class ClassScheduleSlotsTableData extends DataClass
           other.startMinutes == this.startMinutes &&
           other.endMinutes == this.endMinutes &&
           other.subject == this.subject &&
+          other.professorName == this.professorName &&
+          other.professorEmail == this.professorEmail &&
+          other.professorPhone == this.professorPhone &&
           other.syncState == this.syncState &&
           other.createdAt == this.createdAt &&
           other.updatedAt == this.updatedAt);
@@ -2481,6 +2616,9 @@ class ClassScheduleSlotsTableCompanion
   final Value<int> startMinutes;
   final Value<int> endMinutes;
   final Value<String?> subject;
+  final Value<String?> professorName;
+  final Value<String?> professorEmail;
+  final Value<String?> professorPhone;
   final Value<String> syncState;
   final Value<DateTime> createdAt;
   final Value<DateTime> updatedAt;
@@ -2491,6 +2629,9 @@ class ClassScheduleSlotsTableCompanion
     this.startMinutes = const Value.absent(),
     this.endMinutes = const Value.absent(),
     this.subject = const Value.absent(),
+    this.professorName = const Value.absent(),
+    this.professorEmail = const Value.absent(),
+    this.professorPhone = const Value.absent(),
     this.syncState = const Value.absent(),
     this.createdAt = const Value.absent(),
     this.updatedAt = const Value.absent(),
@@ -2502,6 +2643,9 @@ class ClassScheduleSlotsTableCompanion
     required int startMinutes,
     required int endMinutes,
     this.subject = const Value.absent(),
+    this.professorName = const Value.absent(),
+    this.professorEmail = const Value.absent(),
+    this.professorPhone = const Value.absent(),
     this.syncState = const Value.absent(),
     required DateTime createdAt,
     required DateTime updatedAt,
@@ -2518,6 +2662,9 @@ class ClassScheduleSlotsTableCompanion
     Expression<int>? startMinutes,
     Expression<int>? endMinutes,
     Expression<String>? subject,
+    Expression<String>? professorName,
+    Expression<String>? professorEmail,
+    Expression<String>? professorPhone,
     Expression<String>? syncState,
     Expression<DateTime>? createdAt,
     Expression<DateTime>? updatedAt,
@@ -2529,6 +2676,9 @@ class ClassScheduleSlotsTableCompanion
       if (startMinutes != null) 'start_minutes': startMinutes,
       if (endMinutes != null) 'end_minutes': endMinutes,
       if (subject != null) 'subject': subject,
+      if (professorName != null) 'professor_name': professorName,
+      if (professorEmail != null) 'professor_email': professorEmail,
+      if (professorPhone != null) 'professor_phone': professorPhone,
       if (syncState != null) 'sync_state': syncState,
       if (createdAt != null) 'created_at': createdAt,
       if (updatedAt != null) 'updated_at': updatedAt,
@@ -2542,6 +2692,9 @@ class ClassScheduleSlotsTableCompanion
     Value<int>? startMinutes,
     Value<int>? endMinutes,
     Value<String?>? subject,
+    Value<String?>? professorName,
+    Value<String?>? professorEmail,
+    Value<String?>? professorPhone,
     Value<String>? syncState,
     Value<DateTime>? createdAt,
     Value<DateTime>? updatedAt,
@@ -2553,6 +2706,9 @@ class ClassScheduleSlotsTableCompanion
       startMinutes: startMinutes ?? this.startMinutes,
       endMinutes: endMinutes ?? this.endMinutes,
       subject: subject ?? this.subject,
+      professorName: professorName ?? this.professorName,
+      professorEmail: professorEmail ?? this.professorEmail,
+      professorPhone: professorPhone ?? this.professorPhone,
       syncState: syncState ?? this.syncState,
       createdAt: createdAt ?? this.createdAt,
       updatedAt: updatedAt ?? this.updatedAt,
@@ -2578,6 +2734,15 @@ class ClassScheduleSlotsTableCompanion
     if (subject.present) {
       map['subject'] = Variable<String>(subject.value);
     }
+    if (professorName.present) {
+      map['professor_name'] = Variable<String>(professorName.value);
+    }
+    if (professorEmail.present) {
+      map['professor_email'] = Variable<String>(professorEmail.value);
+    }
+    if (professorPhone.present) {
+      map['professor_phone'] = Variable<String>(professorPhone.value);
+    }
     if (syncState.present) {
       map['sync_state'] = Variable<String>(syncState.value);
     }
@@ -2601,6 +2766,9 @@ class ClassScheduleSlotsTableCompanion
           ..write('startMinutes: $startMinutes, ')
           ..write('endMinutes: $endMinutes, ')
           ..write('subject: $subject, ')
+          ..write('professorName: $professorName, ')
+          ..write('professorEmail: $professorEmail, ')
+          ..write('professorPhone: $professorPhone, ')
           ..write('syncState: $syncState, ')
           ..write('createdAt: $createdAt, ')
           ..write('updatedAt: $updatedAt, ')
@@ -3663,6 +3831,9 @@ typedef $$ClassScheduleSlotsTableTableCreateCompanionBuilder =
       required int startMinutes,
       required int endMinutes,
       Value<String?> subject,
+      Value<String?> professorName,
+      Value<String?> professorEmail,
+      Value<String?> professorPhone,
       Value<String> syncState,
       required DateTime createdAt,
       required DateTime updatedAt,
@@ -3675,6 +3846,9 @@ typedef $$ClassScheduleSlotsTableTableUpdateCompanionBuilder =
       Value<int> startMinutes,
       Value<int> endMinutes,
       Value<String?> subject,
+      Value<String?> professorName,
+      Value<String?> professorEmail,
+      Value<String?> professorPhone,
       Value<String> syncState,
       Value<DateTime> createdAt,
       Value<DateTime> updatedAt,
@@ -3712,6 +3886,21 @@ class $$ClassScheduleSlotsTableTableFilterComposer
 
   ColumnFilters<String> get subject => $composableBuilder(
     column: $table.subject,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get professorName => $composableBuilder(
+    column: $table.professorName,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get professorEmail => $composableBuilder(
+    column: $table.professorEmail,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get professorPhone => $composableBuilder(
+    column: $table.professorPhone,
     builder: (column) => ColumnFilters(column),
   );
 
@@ -3765,6 +3954,21 @@ class $$ClassScheduleSlotsTableTableOrderingComposer
     builder: (column) => ColumnOrderings(column),
   );
 
+  ColumnOrderings<String> get professorName => $composableBuilder(
+    column: $table.professorName,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get professorEmail => $composableBuilder(
+    column: $table.professorEmail,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get professorPhone => $composableBuilder(
+    column: $table.professorPhone,
+    builder: (column) => ColumnOrderings(column),
+  );
+
   ColumnOrderings<String> get syncState => $composableBuilder(
     column: $table.syncState,
     builder: (column) => ColumnOrderings(column),
@@ -3808,6 +4012,21 @@ class $$ClassScheduleSlotsTableTableAnnotationComposer
 
   GeneratedColumn<String> get subject =>
       $composableBuilder(column: $table.subject, builder: (column) => column);
+
+  GeneratedColumn<String> get professorName => $composableBuilder(
+    column: $table.professorName,
+    builder: (column) => column,
+  );
+
+  GeneratedColumn<String> get professorEmail => $composableBuilder(
+    column: $table.professorEmail,
+    builder: (column) => column,
+  );
+
+  GeneratedColumn<String> get professorPhone => $composableBuilder(
+    column: $table.professorPhone,
+    builder: (column) => column,
+  );
 
   GeneratedColumn<String> get syncState =>
       $composableBuilder(column: $table.syncState, builder: (column) => column);
@@ -3870,6 +4089,9 @@ class $$ClassScheduleSlotsTableTableTableManager
                 Value<int> startMinutes = const Value.absent(),
                 Value<int> endMinutes = const Value.absent(),
                 Value<String?> subject = const Value.absent(),
+                Value<String?> professorName = const Value.absent(),
+                Value<String?> professorEmail = const Value.absent(),
+                Value<String?> professorPhone = const Value.absent(),
                 Value<String> syncState = const Value.absent(),
                 Value<DateTime> createdAt = const Value.absent(),
                 Value<DateTime> updatedAt = const Value.absent(),
@@ -3880,6 +4102,9 @@ class $$ClassScheduleSlotsTableTableTableManager
                 startMinutes: startMinutes,
                 endMinutes: endMinutes,
                 subject: subject,
+                professorName: professorName,
+                professorEmail: professorEmail,
+                professorPhone: professorPhone,
                 syncState: syncState,
                 createdAt: createdAt,
                 updatedAt: updatedAt,
@@ -3892,6 +4117,9 @@ class $$ClassScheduleSlotsTableTableTableManager
                 required int startMinutes,
                 required int endMinutes,
                 Value<String?> subject = const Value.absent(),
+                Value<String?> professorName = const Value.absent(),
+                Value<String?> professorEmail = const Value.absent(),
+                Value<String?> professorPhone = const Value.absent(),
                 Value<String> syncState = const Value.absent(),
                 required DateTime createdAt,
                 required DateTime updatedAt,
@@ -3902,6 +4130,9 @@ class $$ClassScheduleSlotsTableTableTableManager
                 startMinutes: startMinutes,
                 endMinutes: endMinutes,
                 subject: subject,
+                professorName: professorName,
+                professorEmail: professorEmail,
+                professorPhone: professorPhone,
                 syncState: syncState,
                 createdAt: createdAt,
                 updatedAt: updatedAt,
