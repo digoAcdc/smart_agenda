@@ -1,13 +1,11 @@
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
-import 'package:permission_handler/permission_handler.dart';
 
 import '../../core/config/supabase_config.dart';
 import '../../core/routes/app_routes.dart';
 import '../../core/theme/design_tokens.dart';
-import '../../domain/repositories/i_ad_unlock_provider.dart';
-import '../../domain/repositories/i_ads_service.dart';
 import '../../domain/repositories/i_auth_service.dart';
+import '../../domain/repositories/i_ads_service.dart';
 import '../../domain/repositories/i_plan_service.dart';
 import '../controllers/agenda_transfer_controller.dart';
 import '../controllers/auth_controller.dart';
@@ -26,16 +24,11 @@ class _ConfigPageState extends State<ConfigPage> {
   final transferController = Get.find<AgendaTransferController>();
   bool _isPremium = false;
 
-  bool loadingPermission = true;
-  bool _compartilharLoading = false;
-  bool notificationsEnabled = false;
-
   Worker? _authWorker;
 
   @override
   void initState() {
     super.initState();
-    _loadPermissionStatus();
     _checkPlanStatus();
     _authWorker =
         ever(Get.find<AuthController>().isLoggedIn, (_) => _checkPlanStatus());
@@ -67,69 +60,54 @@ class _ConfigPageState extends State<ConfigPage> {
     });
   }
 
-  Future<void> _loadPermissionStatus() async {
-    final status = await Permission.notification.status;
-    if (!mounted) return;
-    setState(() {
-      loadingPermission = false;
-      notificationsEnabled = status.isGranted;
-    });
-  }
-
-  Future<void> _handleNotificationToggle(bool enable) async {
-    if (enable) {
-      final status = await Permission.notification.request();
-      if (!mounted) return;
-      setState(() => notificationsEnabled = status.isGranted);
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          content: Text(
-            status.isGranted
-                ? 'Notificacoes ativadas.'
-                : 'Permissao de notificacoes negada.',
-          ),
-        ),
-      );
-      return;
-    }
-
-    final opened = await openAppSettings();
-    if (!mounted) return;
-    ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(
-        content: Text(
-          opened
-              ? 'Desative as notificacoes nas configuracoes do sistema.'
-              : 'Nao foi possivel abrir as configuracoes.',
-        ),
-      ),
-    );
-    await _loadPermissionStatus();
-  }
-
   void _openPrivacyPolicy() {
     Get.toNamed(AppRoutes.privacyPolicy);
   }
 
-  Future<void> _handleCompartilharAgenda() async {
+  void _handleCompartilharAgenda() {
     if (_isPremium) {
       Get.toNamed(AppRoutes.sharing);
       return;
     }
-    if (!mounted) return;
-    setState(() => _compartilharLoading = true);
-    try {
-      final adService = Get.find<IAdsService>();
-      final adUnlock = Get.find<IAdUnlockProvider>();
-      final rewarded = await adService.showRewardedAd();
-      if (!mounted) return;
-      if (rewarded) {
-        adUnlock.setShareUnlocked(true);
-        await Get.toNamed(AppRoutes.sharing);
-      }
-    } finally {
-      if (mounted) setState(() => _compartilharLoading = false);
-    }
+    _showCompartilharPremiumModal();
+  }
+
+  void _showCompartilharPremiumModal() {
+    showDialog<void>(
+      context: context,
+      builder: (context) => AlertDialog(
+        icon: Icon(
+          Icons.people_outline,
+          size: 48,
+          color: Theme.of(context).colorScheme.primary,
+        ),
+        title: const Text('Compartilhar em tempo real'),
+        content: const SingleChildScrollView(
+          child: Text(
+            'Compartilhe sua agenda com quem importa — em tempo real, na nuvem.\n\n'
+            'Convide outra pessoa que tenha o Smart Agenda instalado e faça login. '
+            'Ela verá sua agenda instantaneamente, sempre sincronizada. '
+            'Sem enviar arquivos, sem esperar. Tudo atualizado na hora.\n\n'
+            'É um recurso exclusivo Premium. Torne-se Premium e desbloqueie essa e outras funcionalidades.',
+          ),
+        ),
+        actionsAlignment: MainAxisAlignment.center,
+        actionsOverflowAlignment: OverflowBarAlignment.center,
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.of(context).pop(),
+            child: const Text('Entendi'),
+          ),
+          FilledButton(
+            onPressed: () {
+              Navigator.of(context).pop();
+              _openAreaPremium();
+            },
+            child: const Text('Tornar-se Premium'),
+          ),
+        ],
+      ),
+    );
   }
 
   void _openAreaPremium() {
@@ -210,7 +188,6 @@ class _ConfigPageState extends State<ConfigPage> {
           _buildProfileCard(),
           if (!_isPremium) _buildPremiumCard(),
           _buildGeralSection(),
-          _buildPreferenciasSection(),
           _buildFooter(),
           const AdBannerWidget(),
         ],
@@ -385,8 +362,11 @@ class _ConfigPageState extends State<ConfigPage> {
     VoidCallback? onTap,
     bool loading = false,
     bool isPremiumLocked = false,
+    double opacity = 1.0,
   }) {
-    return InkWell(
+    return Opacity(
+      opacity: opacity,
+      child: InkWell(
       onTap: onTap,
       borderRadius: BorderRadius.circular(DesignTokens.radiusMd),
       child: Padding(
@@ -477,6 +457,7 @@ class _ConfigPageState extends State<ConfigPage> {
           ],
         ),
       ),
+    ),
     );
   }
 
@@ -496,119 +477,56 @@ class _ConfigPageState extends State<ConfigPage> {
           ),
         ),
         AppSurfaceCard(
-          child: Column(
-            children: [
-              if (!_isPremium) ...[
-                _buildAgendaActionTile(
-                  icon: Icons.file_upload_outlined,
-                  iconColor: Theme.of(context).colorScheme.primary,
-                  title: 'Exportar Agenda',
-                  subtitle: 'Salvar backup local (JSON)',
-                  onTap: transferController.loading.value
-                      ? null
-                      : () => _handleShareAgenda(),
-                  loading: transferController.loading.value,
-                ),
-                const Divider(height: 1),
-                _buildAgendaActionTile(
-                  icon: Icons.file_download_outlined,
-                  iconColor: Theme.of(context).colorScheme.primary,
-                  title: 'Importar Agenda',
-                  subtitle: 'Restaurar de arquivo (JSON)',
-                  onTap: transferController.loading.value
-                      ? null
-                      : () => _handleImportAgenda(),
-                  loading: transferController.loading.value,
-                ),
-                const Divider(height: 1),
-              ],
-              _buildAgendaActionTile(
-                icon: Icons.people_outline,
-                iconColor: Theme.of(context).colorScheme.primary,
-                title: 'Compartilhar Agenda',
-                subtitle: _isPremium
-                    ? 'Convidar outros usuarios'
-                    : 'Assista um video para desbloquear',
-                onTap: _compartilharLoading ? null : () => _handleCompartilharAgenda(),
-                loading: _compartilharLoading,
-              ),
-              if (Get.find<AuthController>().isLoggedIn.value &&
-                  SupabaseConfig.isConfigured &&
-                  Get.isRegistered<NotificationsController>()) ...[
-                const Divider(height: 1),
-                _buildAgendaActionTile(
-                  icon: Icons.notifications_outlined,
-                  iconColor: Theme.of(context).colorScheme.tertiary,
-                  title: 'Resumos da agenda',
-                  subtitle: 'Notificacoes diarias e semanais',
-                  onTap: () => Get.toNamed(AppRoutes.notifications),
-                ),
-              ],
-            ],
-          ),
-        ),
-      ],
-    );
-  }
-
-  Widget _buildPreferenciasSection() {
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        Padding(
-          padding: const EdgeInsets.fromLTRB(16, 16, 16, 8),
-          child: Text(
-            'PREFERENCIAS',
-            style: Theme.of(context).textTheme.labelMedium?.copyWith(
-                  color: Theme.of(context).colorScheme.outline,
-                  fontWeight: FontWeight.w700,
-                  letterSpacing: 0.8,
-                ),
-          ),
-        ),
-        AppSurfaceCard(
-          child: Padding(
-            padding: const EdgeInsets.fromLTRB(6, 10, 6, 6),
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
+          child: Obx(() {
+            final transferLoading = transferController.loading.value;
+            return Column(
               children: [
-                ListTile(
-                  contentPadding: const EdgeInsets.symmetric(horizontal: 6),
-                  leading: Icon(
-                    notificationsEnabled
-                        ? Icons.notifications_active_outlined
-                        : Icons.notifications_off_outlined,
+                if (!_isPremium) ...[
+                  _buildAgendaActionTile(
+                    icon: Icons.file_upload_outlined,
+                    iconColor: Theme.of(context).colorScheme.primary,
+                    title: 'Exportar Agenda',
+                    subtitle: 'Salvar backup local (JSON)',
+                    onTap: transferLoading ? null : () => _handleShareAgenda(),
+                    loading: transferLoading,
                   ),
-                  title: const Text('Notificacoes'),
-                  subtitle: Text(
-                    loadingPermission
-                        ? 'Verificando...'
-                        : notificationsEnabled
-                            ? 'Ativada'
-                            : 'Desativada',
+                  const Divider(height: 1),
+                  _buildAgendaActionTile(
+                    icon: Icons.file_download_outlined,
+                    iconColor: Theme.of(context).colorScheme.primary,
+                    title: 'Importar Agenda',
+                    subtitle: 'Restaurar de arquivo (JSON)',
+                    onTap: transferLoading ? null : () => _handleImportAgenda(),
+                    loading: transferLoading,
                   ),
-                  trailing: loadingPermission
-                      ? const SizedBox(
-                          width: 20,
-                          height: 20,
-                          child: CircularProgressIndicator(strokeWidth: 2),
-                        )
-                      : Switch(
-                          value: notificationsEnabled,
-                          onChanged: _handleNotificationToggle,
-                        ),
+                  const Divider(height: 1),
+                ],
+                _buildAgendaActionTile(
+                  icon: Icons.people_outline,
+                  iconColor: Theme.of(context).colorScheme.primary,
+                  title: 'Compartilhar Agenda',
+                  subtitle: _isPremium
+                      ? 'Convidar outros usuarios'
+                      : 'Compartilhe em tempo real na nuvem',
+                  onTap: () => _handleCompartilharAgenda(),
+                  isPremiumLocked: !_isPremium,
+                  opacity: _isPremium ? 1.0 : 0.65,
                 ),
-                if (!loadingPermission && !notificationsEnabled)
-                  Padding(
-                    padding: const EdgeInsets.fromLTRB(16, 2, 16, 10),
-                    child: Text(
-                      'Para receber alertas de eventos, ative as notificacoes.',
-                      style: Theme.of(context).textTheme.bodySmall,
-                    ),
+                if (Get.find<AuthController>().isLoggedIn.value &&
+                    SupabaseConfig.isConfigured &&
+                    Get.isRegistered<NotificationsController>()) ...[
+                  const Divider(height: 1),
+                  _buildAgendaActionTile(
+                    icon: Icons.notifications_outlined,
+                    iconColor: Theme.of(context).colorScheme.tertiary,
+                    title: 'Resumos da agenda',
+                    subtitle: 'Notificacoes diarias e semanais',
+                    onTap: () => Get.toNamed(AppRoutes.notifications),
                   ),
+                ],
               ],
-            ),
-          ),
+            );
+          }),
         ),
       ],
     );

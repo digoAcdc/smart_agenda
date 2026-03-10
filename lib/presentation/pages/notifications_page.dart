@@ -1,18 +1,72 @@
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
+import 'package:permission_handler/permission_handler.dart';
 
+import '../../core/config/supabase_config.dart';
 import '../../core/routes/app_routes.dart';
-import '../../domain/entities/user_notification.dart';
+import '../controllers/auth_controller.dart';
 import '../controllers/notifications_controller.dart';
-import '../widgets/empty_state_widget.dart';
 import '../widgets/ui_primitives.dart';
 
-class NotificationsPage extends StatelessWidget {
+class NotificationsPage extends StatefulWidget {
   const NotificationsPage({super.key});
 
   @override
+  State<NotificationsPage> createState() => _NotificationsPageState();
+}
+
+class _NotificationsPageState extends State<NotificationsPage> {
+  bool _loadingPermission = true;
+  bool _notificationsEnabled = false;
+
+  @override
+  void initState() {
+    super.initState();
+    _loadPermissionStatus();
+  }
+
+  Future<void> _loadPermissionStatus() async {
+    final status = await Permission.notification.status;
+    if (!mounted) return;
+    setState(() {
+      _loadingPermission = false;
+      _notificationsEnabled = status.isGranted;
+    });
+  }
+
+  Future<void> _handleNotificationToggle(bool enable) async {
+    if (enable) {
+      final status = await Permission.notification.request();
+      if (!mounted) return;
+      setState(() => _notificationsEnabled = status.isGranted);
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text(
+            status.isGranted
+                ? 'Notificações ativadas.'
+                : 'Permissão de notificações negada.',
+          ),
+        ),
+      );
+      return;
+    }
+    final opened = await openAppSettings();
+    if (!mounted) return;
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(
+        content: Text(
+          opened
+              ? 'Desative as notificações nas configurações do sistema.'
+              : 'Não foi possível abrir as configurações.',
+        ),
+      ),
+    );
+    await _loadPermissionStatus();
+  }
+
+  @override
   Widget build(BuildContext context) {
-    if (!Get.isRegistered<NotificationsController>()) {
+    if (!SupabaseConfig.isConfigured || !Get.isRegistered<NotificationsController>()) {
       return Scaffold(
         appBar: AppBar(
           title: const Text('Notificações'),
@@ -22,7 +76,7 @@ class NotificationsPage extends StatelessWidget {
           ),
         ),
         body: const Center(
-          child: Text('Notificações disponíveis apenas para usuários premium.'),
+          child: Text('Notificações indisponíveis. Configure o Supabase.'),
         ),
       );
     }
@@ -38,44 +92,49 @@ class NotificationsPage extends StatelessWidget {
       body: SafeArea(
         top: false,
         bottom: false,
-        child: Obx(
-          () {
-            if (controller.loading.value && controller.notifications.isEmpty) {
-              return const Center(child: CircularProgressIndicator());
-            }
-            return ListView(
-              padding: const EdgeInsets.symmetric(vertical: 8),
-              children: [
-                _buildPushPreferencesSection(context, controller),
-                Padding(
-                  padding: const EdgeInsets.fromLTRB(16, 16, 16, 8),
-                  child: Text(
-                    'HISTÓRICO',
-                    style: Theme.of(context).textTheme.labelMedium?.copyWith(
-                          color: Theme.of(context).colorScheme.outline,
-                          fontWeight: FontWeight.w700,
-                          letterSpacing: 0.8,
-                        ),
-                  ),
-                ),
-                if (controller.notifications.isEmpty)
-                  EmptyStateWidget(
-                    icon: Icons.notifications_none_rounded,
-                    title: 'Nenhuma notificação',
-                    message: 'Resumos diários e semanais da sua agenda aparecerão aqui.',
-                  )
-                else
-                  ...controller.notifications.map(
-                    (n) => _NotificationTile(
-                      notification: n,
-                      onTap: () => controller.onTapNotification(n),
-                      formatDate: controller.formatDate,
-                    ),
-                  ),
-              ],
-            );
-          },
+        child: Obx(() {
+          final isPremium = Get.isRegistered<AuthController>()
+              ? Get.find<AuthController>().isPremium.value
+              : false;
+          return ListView(
+            padding: const EdgeInsets.symmetric(vertical: 8),
+            children: [
+              _buildSystemNotificationSection(),
+              _buildPushPreferencesSection(context, controller, isPremium),
+            ],
+          );
+        }),
+      ),
+    );
+  }
+
+  Widget _buildSystemNotificationSection() {
+    return AppSurfaceCard(
+      child: ListTile(
+        contentPadding: const EdgeInsets.symmetric(horizontal: 6),
+        leading: Icon(
+          _notificationsEnabled
+              ? Icons.notifications_active_outlined
+              : Icons.notifications_off_outlined,
         ),
+        title: const Text('Notificações'),
+        subtitle: Text(
+          _loadingPermission
+              ? 'Verificando...'
+              : _notificationsEnabled
+                  ? 'Ativada'
+                  : 'Desativada',
+        ),
+        trailing: _loadingPermission
+            ? const SizedBox(
+                width: 20,
+                height: 20,
+                child: CircularProgressIndicator(strokeWidth: 2),
+              )
+            : Switch(
+                value: _notificationsEnabled,
+                onChanged: _handleNotificationToggle,
+              ),
       ),
     );
   }
@@ -84,6 +143,7 @@ class NotificationsPage extends StatelessWidget {
 Widget _buildPushPreferencesSection(
   BuildContext context,
   NotificationsController controller,
+  bool isPremium,
 ) {
   return AppSurfaceCard(
     child: Column(
@@ -103,44 +163,55 @@ Widget _buildPushPreferencesSection(
           final saving = controller.savingPrefs.value;
           return Column(
             children: [
-              SwitchListTile(
-                contentPadding: EdgeInsets.zero,
-                title: const Text('Agenda do dia'),
-                subtitle: const Text('Manhã'),
-                value: controller.pushDaily.value,
-                onChanged: saving
-                    ? null
-                    : (v) => controller.updatePushPreferences(
+              _buildPremiumSwitchTile(
+                context: context,
+                title: 'Agenda do dia',
+                subtitle: 'Manhã',
+                value: isPremium ? controller.pushDaily.value : false,
+                isPremium: !isPremium,
+                saving: saving,
+                onTap: () => _showPremiumNotificationModal(context, 'dia'),
+                onChanged: isPremium && !saving
+                    ? (v) => controller.updatePushPreferences(
                           daily: v,
                           tomorrow: controller.pushTomorrow.value,
                           weekly: controller.pushWeekly.value,
-                        ),
+                        )
+                    : null,
               ),
-              SwitchListTile(
-                contentPadding: EdgeInsets.zero,
-                title: const Text('Agenda de amanhã'),
-                subtitle: const Text('Fim do dia'),
-                value: controller.pushTomorrow.value,
-                onChanged: saving
-                    ? null
-                    : (v) => controller.updatePushPreferences(
+              const Divider(height: 1),
+              _buildPremiumSwitchTile(
+                context: context,
+                title: 'Agenda de amanhã',
+                subtitle: 'Fim do dia',
+                value: isPremium ? controller.pushTomorrow.value : false,
+                isPremium: !isPremium,
+                saving: saving,
+                onTap: () => _showPremiumNotificationModal(context, 'amanhã'),
+                onChanged: isPremium && !saving
+                    ? (v) => controller.updatePushPreferences(
                           daily: controller.pushDaily.value,
                           tomorrow: v,
                           weekly: controller.pushWeekly.value,
-                        ),
+                        )
+                    : null,
               ),
-              SwitchListTile(
-                contentPadding: EdgeInsets.zero,
-                title: const Text('Agenda da semana'),
-                subtitle: const Text('Domingo'),
-                value: controller.pushWeekly.value,
-                onChanged: saving
-                    ? null
-                    : (v) => controller.updatePushPreferences(
+              const Divider(height: 1),
+              _buildPremiumSwitchTile(
+                context: context,
+                title: 'Agenda da semana',
+                subtitle: 'Domingo',
+                value: isPremium ? controller.pushWeekly.value : false,
+                isPremium: !isPremium,
+                saving: saving,
+                onTap: () => _showPremiumNotificationModal(context, 'semana'),
+                onChanged: isPremium && !saving
+                    ? (v) => controller.updatePushPreferences(
                           daily: controller.pushDaily.value,
                           tomorrow: controller.pushTomorrow.value,
                           weekly: v,
-                        ),
+                        )
+                    : null,
               ),
             ],
           );
@@ -150,75 +221,119 @@ Widget _buildPushPreferencesSection(
   );
 }
 
-class _NotificationTile extends StatelessWidget {
-  const _NotificationTile({
-    required this.notification,
-    required this.onTap,
-    required this.formatDate,
-  });
-
-  final UserNotification notification;
-  final VoidCallback onTap;
-  final String Function(DateTime) formatDate;
-
-  @override
-  Widget build(BuildContext context) {
-    final isWeekly = notification.type == 'weekly_summary';
-    final isTomorrow = notification.type == 'tomorrow_summary';
-    final iconData = isWeekly
-        ? Icons.calendar_view_week_rounded
-        : isTomorrow
-            ? Icons.schedule_rounded
-            : Icons.today_rounded;
-    final iconColor = isWeekly
-        ? Theme.of(context).colorScheme.primary
-        : Theme.of(context).colorScheme.tertiary;
-    return AppSurfaceCard(
+Widget _buildPremiumSwitchTile({
+  required BuildContext context,
+  required String title,
+  required String subtitle,
+  required bool value,
+  required bool isPremium,
+  required bool saving,
+  required VoidCallback onTap,
+  required ValueChanged<bool>? onChanged,
+}) {
+  return InkWell(
+    onTap: isPremium ? onTap : null,
+    child: Opacity(
+      opacity: isPremium ? 0.65 : 1.0,
       child: ListTile(
         contentPadding: EdgeInsets.zero,
-        leading: CircleAvatar(
-          backgroundColor: iconColor.withValues(alpha: 0.2),
-          child: Icon(iconData, color: iconColor),
-        ),
-        title: Text(
-          notification.title,
-          style: TextStyle(
-            fontWeight: notification.isRead ? FontWeight.w500 : FontWeight.w700,
-          ),
-        ),
-        subtitle: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
+        title: Row(
           children: [
-            const SizedBox(height: 4),
-            Text(
-              notification.body,
-              maxLines: 2,
-              overflow: TextOverflow.ellipsis,
-              style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                    color: Theme.of(context).colorScheme.onSurfaceVariant,
+            if (isPremium)
+              Padding(
+                padding: const EdgeInsets.only(right: 8),
+                child: Container(
+                  padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
+                  decoration: BoxDecoration(
+                    color: Theme.of(context).colorScheme.outline.withValues(alpha: 0.12),
+                    borderRadius: BorderRadius.circular(999),
                   ),
-            ),
-            const SizedBox(height: 4),
-            Text(
-              formatDate(notification.referenceDate),
-              style: Theme.of(context).textTheme.labelSmall?.copyWith(
-                    color: Theme.of(context).colorScheme.outline,
+                  child: Row(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      Icon(
+                        Icons.lock_outline,
+                        size: 14,
+                        color: Theme.of(context).colorScheme.outline,
+                      ),
+                      const SizedBox(width: 4),
+                      Text(
+                        'Premium',
+                        style: Theme.of(context).textTheme.labelSmall?.copyWith(
+                              color: Theme.of(context).colorScheme.outline,
+                              fontWeight: FontWeight.w600,
+                            ),
+                      ),
+                    ],
                   ),
-            ),
-          ],
-        ),
-        trailing: notification.isRead
-            ? null
-            : Container(
-                width: 8,
-                height: 8,
-                decoration: BoxDecoration(
-                  color: Theme.of(context).colorScheme.primary,
-                  shape: BoxShape.circle,
                 ),
               ),
-        onTap: onTap,
+            Expanded(child: Text(title)),
+          ],
+        ),
+        subtitle: Text(subtitle),
+        trailing: Switch(
+          value: value,
+          onChanged: isPremium ? null : onChanged,
+        ),
       ),
-    );
+    ),
+  );
+}
+
+void _showPremiumNotificationModal(BuildContext context, String tipo) {
+  final String content;
+  final String title;
+  switch (tipo) {
+    case 'dia':
+      title = 'Resumo do dia';
+      content = 'Receba um resumo da sua agenda pela manhã, '
+          'para começar o dia organizado.\n\n'
+          'É um recurso exclusivo Premium. Torne-se Premium e desbloqueie essa e outras funcionalidades.';
+      break;
+    case 'amanhã':
+      title = 'Resumo de amanhã';
+      content = 'Receba um resumo da sua agenda de amanhã no fim do dia, '
+          'para você se preparar com antecedência.\n\n'
+          'É um recurso exclusivo Premium. Torne-se Premium e desbloqueie essa e outras funcionalidades.';
+      break;
+    default:
+      title = 'Resumo da semana';
+      content = 'Receba um resumo semanal da sua agenda no domingo, '
+          'para planejar a semana que vem.\n\n'
+          'É um recurso exclusivo Premium. Torne-se Premium e desbloqueie essa e outras funcionalidades.';
   }
+  showDialog<void>(
+    context: context,
+    builder: (ctx) => AlertDialog(
+      icon: Icon(
+        Icons.notifications_active_outlined,
+        size: 48,
+        color: Theme.of(ctx).colorScheme.primary,
+      ),
+      title: Text(title),
+      content: Text(content),
+      actionsAlignment: MainAxisAlignment.center,
+      actionsOverflowAlignment: OverflowBarAlignment.center,
+      actions: [
+        TextButton(
+          onPressed: () => Navigator.of(ctx).pop(),
+          child: const Text('Entendi'),
+        ),
+        FilledButton(
+          onPressed: () {
+            Navigator.of(ctx).pop();
+            if (!Get.isRegistered<AuthController>()) return;
+            final authController = Get.find<AuthController>();
+            if (authController.isLoggedIn.value) {
+              Get.toNamed(AppRoutes.upgrade);
+            } else {
+              Get.toNamed(AppRoutes.login, arguments: {'from': 'premium'});
+            }
+          },
+          child: const Text('Tornar-se Premium'),
+        ),
+      ],
+    ),
+  );
 }
