@@ -12,8 +12,10 @@ import '../../presentation/pages/home_page.dart';
 import '../../presentation/pages/more_page.dart';
 import '../../presentation/pages/privacy_policy_page.dart';
 import '../../presentation/pages/notifications_page.dart';
+import '../../presentation/pages/note_list_page.dart';
 import '../../presentation/pages/sharing_page.dart';
 import '../../presentation/pages/upsert_agenda_page.dart';
+import '../../presentation/pages/upsert_note_page.dart';
 import 'app_routes.dart';
 
 class AppPages {
@@ -32,5 +34,7 @@ class AppPages {
     GetPage(name: AppRoutes.privacyPolicy, page: PrivacyPolicyPage.new),
     GetPage(name: AppRoutes.sharing, page: SharingPage.new),
     GetPage(name: AppRoutes.notifications, page: NotificationsPage.new),
+    GetPage(name: AppRoutes.notes, page: NoteListPage.new),
+    GetPage(name: AppRoutes.upsertNote, page: UpsertNotePage.new),
   ];
 }

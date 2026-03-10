@@ -38,6 +38,12 @@ class MorePage extends StatelessWidget {
                   onTap: () => Get.toNamed(AppRoutes.classGroups),
                 ),
                 _ModuleCard(
+                  icon: Icons.note_rounded,
+                  label: 'Anotacoes',
+                  subtitle: 'Notas rapidas e checklist',
+                  onTap: () => Get.toNamed(AppRoutes.notes),
+                ),
+                _ModuleCard(
                   icon: Icons.notifications_rounded,
                   label: 'Notificacoes',
                   subtitle: 'Preferencias de push',

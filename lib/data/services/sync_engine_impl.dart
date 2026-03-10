@@ -16,6 +16,8 @@ import '../datasources/class_group_local_datasource.dart';
 import '../datasources/class_schedule_local_datasource.dart';
 import '../datasources/groups_local_datasource.dart';
 import '../datasources/groups_supabase_datasource.dart';
+import '../datasources/note_local_datasource.dart';
+import '../datasources/note_supabase_datasource.dart';
 import '../models/mappers.dart';
 
 /// Motor de sincronizacao: push de dados locais pendentes para Supabase.
@@ -27,8 +29,10 @@ class SyncEngineImpl implements ISyncService {
     this._localGroups,
     this._localSchedule,
     this._localClassGroups,
+    this._localNotes,
     this._supabaseAgenda,
     this._supabaseGroups,
+    this._supabaseNotes,
     this._fileStorage,
     this._client,
   );
@@ -39,8 +43,10 @@ class SyncEngineImpl implements ISyncService {
   final GroupsLocalDataSource _localGroups;
   final ClassScheduleLocalDataSource _localSchedule;
   final ClassGroupLocalDataSource _localClassGroups;
+  final NoteLocalDataSource _localNotes;
   final AgendaSupabaseDataSource _supabaseAgenda;
   final GroupsSupabaseDataSource _supabaseGroups;
+  final NoteSupabaseDataSource _supabaseNotes;
   final IFileStorageService _fileStorage;
   final SupabaseClient _client;
 
@@ -62,6 +68,7 @@ class SyncEngineImpl implements ISyncService {
       await _pushAgendaItems();
       await _pushClassSchedule();
       await _pushClassGroups();
+      await _pushNotes();
       debugPrint('[SyncEngine] Sync concluido');
       return Result.success(null);
     } catch (e) {
@@ -184,5 +191,30 @@ class SyncEngineImpl implements ISyncService {
       }
     }
     debugPrint('[SyncEngine] ${allGroups.length} turmas sincronizadas');
+  }
+
+  Future<void> _pushNotes() async {
+    final uid = _client.auth.currentUser?.id;
+    if (uid == null) return;
+
+    final allNotes = await _localNotes.getNotes();
+    await _supabaseNotes.deleteAllForUser(uid);
+
+    for (final note in allNotes) {
+      String? imageUrl = note.imageUrl;
+      if (note.imagePath != null) {
+        final path = note.imagePath!;
+        if (await File(path).exists()) {
+          final result = await _fileStorage.copyImageToAppStorage(path);
+          if (result.isSuccess) imageUrl = result.data;
+        }
+      }
+      final noteForSync = note.copyWith(imageUrl: imageUrl);
+      await _supabaseNotes.upsertNote(noteForSync);
+      await _supabaseNotes.upsertChecklistItems(note.id, note.checklistItems);
+    }
+    if (allNotes.isNotEmpty) {
+      debugPrint('[SyncEngine] ${allNotes.length} anotacoes sincronizadas');
+    }
   }
 }

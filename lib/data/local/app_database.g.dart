@@ -3772,6 +3772,1086 @@ class ClassScheduleSlotsTableCompanion
   }
 }
 
+class $NotesTableTable extends NotesTable
+    with TableInfo<$NotesTableTable, NotesTableData> {
+  @override
+  final GeneratedDatabase attachedDatabase;
+  final String? _alias;
+  $NotesTableTable(this.attachedDatabase, [this._alias]);
+  static const VerificationMeta _idMeta = const VerificationMeta('id');
+  @override
+  late final GeneratedColumn<String> id = GeneratedColumn<String>(
+    'id',
+    aliasedName,
+    false,
+    type: DriftSqlType.string,
+    requiredDuringInsert: true,
+  );
+  static const VerificationMeta _titleMeta = const VerificationMeta('title');
+  @override
+  late final GeneratedColumn<String> title = GeneratedColumn<String>(
+    'title',
+    aliasedName,
+    false,
+    type: DriftSqlType.string,
+    requiredDuringInsert: true,
+  );
+  static const VerificationMeta _bodyMeta = const VerificationMeta('body');
+  @override
+  late final GeneratedColumn<String> body = GeneratedColumn<String>(
+    'body',
+    aliasedName,
+    true,
+    type: DriftSqlType.string,
+    requiredDuringInsert: false,
+  );
+  static const VerificationMeta _imagePathMeta = const VerificationMeta(
+    'imagePath',
+  );
+  @override
+  late final GeneratedColumn<String> imagePath = GeneratedColumn<String>(
+    'image_path',
+    aliasedName,
+    true,
+    type: DriftSqlType.string,
+    requiredDuringInsert: false,
+  );
+  static const VerificationMeta _imageUrlMeta = const VerificationMeta(
+    'imageUrl',
+  );
+  @override
+  late final GeneratedColumn<String> imageUrl = GeneratedColumn<String>(
+    'image_url',
+    aliasedName,
+    true,
+    type: DriftSqlType.string,
+    requiredDuringInsert: false,
+  );
+  static const VerificationMeta _categoryIdMeta = const VerificationMeta(
+    'categoryId',
+  );
+  @override
+  late final GeneratedColumn<String> categoryId = GeneratedColumn<String>(
+    'category_id',
+    aliasedName,
+    true,
+    type: DriftSqlType.string,
+    requiredDuringInsert: false,
+  );
+  static const VerificationMeta _isPinnedMeta = const VerificationMeta(
+    'isPinned',
+  );
+  @override
+  late final GeneratedColumn<bool> isPinned = GeneratedColumn<bool>(
+    'is_pinned',
+    aliasedName,
+    false,
+    type: DriftSqlType.bool,
+    requiredDuringInsert: false,
+    defaultConstraints: GeneratedColumn.constraintIsAlways(
+      'CHECK ("is_pinned" IN (0, 1))',
+    ),
+    defaultValue: const Constant(false),
+  );
+  static const VerificationMeta _reminderAtMeta = const VerificationMeta(
+    'reminderAt',
+  );
+  @override
+  late final GeneratedColumn<DateTime> reminderAt = GeneratedColumn<DateTime>(
+    'reminder_at',
+    aliasedName,
+    true,
+    type: DriftSqlType.dateTime,
+    requiredDuringInsert: false,
+  );
+  static const VerificationMeta _createdAtMeta = const VerificationMeta(
+    'createdAt',
+  );
+  @override
+  late final GeneratedColumn<DateTime> createdAt = GeneratedColumn<DateTime>(
+    'created_at',
+    aliasedName,
+    false,
+    type: DriftSqlType.dateTime,
+    requiredDuringInsert: true,
+  );
+  static const VerificationMeta _updatedAtMeta = const VerificationMeta(
+    'updatedAt',
+  );
+  @override
+  late final GeneratedColumn<DateTime> updatedAt = GeneratedColumn<DateTime>(
+    'updated_at',
+    aliasedName,
+    false,
+    type: DriftSqlType.dateTime,
+    requiredDuringInsert: true,
+  );
+  @override
+  List<GeneratedColumn> get $columns => [
+    id,
+    title,
+    body,
+    imagePath,
+    imageUrl,
+    categoryId,
+    isPinned,
+    reminderAt,
+    createdAt,
+    updatedAt,
+  ];
+  @override
+  String get aliasedName => _alias ?? actualTableName;
+  @override
+  String get actualTableName => $name;
+  static const String $name = 'notes_table';
+  @override
+  VerificationContext validateIntegrity(
+    Insertable<NotesTableData> instance, {
+    bool isInserting = false,
+  }) {
+    final context = VerificationContext();
+    final data = instance.toColumns(true);
+    if (data.containsKey('id')) {
+      context.handle(_idMeta, id.isAcceptableOrUnknown(data['id']!, _idMeta));
+    } else if (isInserting) {
+      context.missing(_idMeta);
+    }
+    if (data.containsKey('title')) {
+      context.handle(
+        _titleMeta,
+        title.isAcceptableOrUnknown(data['title']!, _titleMeta),
+      );
+    } else if (isInserting) {
+      context.missing(_titleMeta);
+    }
+    if (data.containsKey('body')) {
+      context.handle(
+        _bodyMeta,
+        body.isAcceptableOrUnknown(data['body']!, _bodyMeta),
+      );
+    }
+    if (data.containsKey('image_path')) {
+      context.handle(
+        _imagePathMeta,
+        imagePath.isAcceptableOrUnknown(data['image_path']!, _imagePathMeta),
+      );
+    }
+    if (data.containsKey('image_url')) {
+      context.handle(
+        _imageUrlMeta,
+        imageUrl.isAcceptableOrUnknown(data['image_url']!, _imageUrlMeta),
+      );
+    }
+    if (data.containsKey('category_id')) {
+      context.handle(
+        _categoryIdMeta,
+        categoryId.isAcceptableOrUnknown(data['category_id']!, _categoryIdMeta),
+      );
+    }
+    if (data.containsKey('is_pinned')) {
+      context.handle(
+        _isPinnedMeta,
+        isPinned.isAcceptableOrUnknown(data['is_pinned']!, _isPinnedMeta),
+      );
+    }
+    if (data.containsKey('reminder_at')) {
+      context.handle(
+        _reminderAtMeta,
+        reminderAt.isAcceptableOrUnknown(data['reminder_at']!, _reminderAtMeta),
+      );
+    }
+    if (data.containsKey('created_at')) {
+      context.handle(
+        _createdAtMeta,
+        createdAt.isAcceptableOrUnknown(data['created_at']!, _createdAtMeta),
+      );
+    } else if (isInserting) {
+      context.missing(_createdAtMeta);
+    }
+    if (data.containsKey('updated_at')) {
+      context.handle(
+        _updatedAtMeta,
+        updatedAt.isAcceptableOrUnknown(data['updated_at']!, _updatedAtMeta),
+      );
+    } else if (isInserting) {
+      context.missing(_updatedAtMeta);
+    }
+    return context;
+  }
+
+  @override
+  Set<GeneratedColumn> get $primaryKey => {id};
+  @override
+  NotesTableData map(Map<String, dynamic> data, {String? tablePrefix}) {
+    final effectivePrefix = tablePrefix != null ? '$tablePrefix.' : '';
+    return NotesTableData(
+      id: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}id'],
+      )!,
+      title: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}title'],
+      )!,
+      body: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}body'],
+      ),
+      imagePath: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}image_path'],
+      ),
+      imageUrl: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}image_url'],
+      ),
+      categoryId: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}category_id'],
+      ),
+      isPinned: attachedDatabase.typeMapping.read(
+        DriftSqlType.bool,
+        data['${effectivePrefix}is_pinned'],
+      )!,
+      reminderAt: attachedDatabase.typeMapping.read(
+        DriftSqlType.dateTime,
+        data['${effectivePrefix}reminder_at'],
+      ),
+      createdAt: attachedDatabase.typeMapping.read(
+        DriftSqlType.dateTime,
+        data['${effectivePrefix}created_at'],
+      )!,
+      updatedAt: attachedDatabase.typeMapping.read(
+        DriftSqlType.dateTime,
+        data['${effectivePrefix}updated_at'],
+      )!,
+    );
+  }
+
+  @override
+  $NotesTableTable createAlias(String alias) {
+    return $NotesTableTable(attachedDatabase, alias);
+  }
+}
+
+class NotesTableData extends DataClass implements Insertable<NotesTableData> {
+  final String id;
+  final String title;
+  final String? body;
+  final String? imagePath;
+  final String? imageUrl;
+  final String? categoryId;
+  final bool isPinned;
+  final DateTime? reminderAt;
+  final DateTime createdAt;
+  final DateTime updatedAt;
+  const NotesTableData({
+    required this.id,
+    required this.title,
+    this.body,
+    this.imagePath,
+    this.imageUrl,
+    this.categoryId,
+    required this.isPinned,
+    this.reminderAt,
+    required this.createdAt,
+    required this.updatedAt,
+  });
+  @override
+  Map<String, Expression> toColumns(bool nullToAbsent) {
+    final map = <String, Expression>{};
+    map['id'] = Variable<String>(id);
+    map['title'] = Variable<String>(title);
+    if (!nullToAbsent || body != null) {
+      map['body'] = Variable<String>(body);
+    }
+    if (!nullToAbsent || imagePath != null) {
+      map['image_path'] = Variable<String>(imagePath);
+    }
+    if (!nullToAbsent || imageUrl != null) {
+      map['image_url'] = Variable<String>(imageUrl);
+    }
+    if (!nullToAbsent || categoryId != null) {
+      map['category_id'] = Variable<String>(categoryId);
+    }
+    map['is_pinned'] = Variable<bool>(isPinned);
+    if (!nullToAbsent || reminderAt != null) {
+      map['reminder_at'] = Variable<DateTime>(reminderAt);
+    }
+    map['created_at'] = Variable<DateTime>(createdAt);
+    map['updated_at'] = Variable<DateTime>(updatedAt);
+    return map;
+  }
+
+  NotesTableCompanion toCompanion(bool nullToAbsent) {
+    return NotesTableCompanion(
+      id: Value(id),
+      title: Value(title),
+      body: body == null && nullToAbsent ? const Value.absent() : Value(body),
+      imagePath: imagePath == null && nullToAbsent
+          ? const Value.absent()
+          : Value(imagePath),
+      imageUrl: imageUrl == null && nullToAbsent
+          ? const Value.absent()
+          : Value(imageUrl),
+      categoryId: categoryId == null && nullToAbsent
+          ? const Value.absent()
+          : Value(categoryId),
+      isPinned: Value(isPinned),
+      reminderAt: reminderAt == null && nullToAbsent
+          ? const Value.absent()
+          : Value(reminderAt),
+      createdAt: Value(createdAt),
+      updatedAt: Value(updatedAt),
+    );
+  }
+
+  factory NotesTableData.fromJson(
+    Map<String, dynamic> json, {
+    ValueSerializer? serializer,
+  }) {
+    serializer ??= driftRuntimeOptions.defaultSerializer;
+    return NotesTableData(
+      id: serializer.fromJson<String>(json['id']),
+      title: serializer.fromJson<String>(json['title']),
+      body: serializer.fromJson<String?>(json['body']),
+      imagePath: serializer.fromJson<String?>(json['imagePath']),
+      imageUrl: serializer.fromJson<String?>(json['imageUrl']),
+      categoryId: serializer.fromJson<String?>(json['categoryId']),
+      isPinned: serializer.fromJson<bool>(json['isPinned']),
+      reminderAt: serializer.fromJson<DateTime?>(json['reminderAt']),
+      createdAt: serializer.fromJson<DateTime>(json['createdAt']),
+      updatedAt: serializer.fromJson<DateTime>(json['updatedAt']),
+    );
+  }
+  @override
+  Map<String, dynamic> toJson({ValueSerializer? serializer}) {
+    serializer ??= driftRuntimeOptions.defaultSerializer;
+    return <String, dynamic>{
+      'id': serializer.toJson<String>(id),
+      'title': serializer.toJson<String>(title),
+      'body': serializer.toJson<String?>(body),
+      'imagePath': serializer.toJson<String?>(imagePath),
+      'imageUrl': serializer.toJson<String?>(imageUrl),
+      'categoryId': serializer.toJson<String?>(categoryId),
+      'isPinned': serializer.toJson<bool>(isPinned),
+      'reminderAt': serializer.toJson<DateTime?>(reminderAt),
+      'createdAt': serializer.toJson<DateTime>(createdAt),
+      'updatedAt': serializer.toJson<DateTime>(updatedAt),
+    };
+  }
+
+  NotesTableData copyWith({
+    String? id,
+    String? title,
+    Value<String?> body = const Value.absent(),
+    Value<String?> imagePath = const Value.absent(),
+    Value<String?> imageUrl = const Value.absent(),
+    Value<String?> categoryId = const Value.absent(),
+    bool? isPinned,
+    Value<DateTime?> reminderAt = const Value.absent(),
+    DateTime? createdAt,
+    DateTime? updatedAt,
+  }) => NotesTableData(
+    id: id ?? this.id,
+    title: title ?? this.title,
+    body: body.present ? body.value : this.body,
+    imagePath: imagePath.present ? imagePath.value : this.imagePath,
+    imageUrl: imageUrl.present ? imageUrl.value : this.imageUrl,
+    categoryId: categoryId.present ? categoryId.value : this.categoryId,
+    isPinned: isPinned ?? this.isPinned,
+    reminderAt: reminderAt.present ? reminderAt.value : this.reminderAt,
+    createdAt: createdAt ?? this.createdAt,
+    updatedAt: updatedAt ?? this.updatedAt,
+  );
+  NotesTableData copyWithCompanion(NotesTableCompanion data) {
+    return NotesTableData(
+      id: data.id.present ? data.id.value : this.id,
+      title: data.title.present ? data.title.value : this.title,
+      body: data.body.present ? data.body.value : this.body,
+      imagePath: data.imagePath.present ? data.imagePath.value : this.imagePath,
+      imageUrl: data.imageUrl.present ? data.imageUrl.value : this.imageUrl,
+      categoryId: data.categoryId.present
+          ? data.categoryId.value
+          : this.categoryId,
+      isPinned: data.isPinned.present ? data.isPinned.value : this.isPinned,
+      reminderAt: data.reminderAt.present
+          ? data.reminderAt.value
+          : this.reminderAt,
+      createdAt: data.createdAt.present ? data.createdAt.value : this.createdAt,
+      updatedAt: data.updatedAt.present ? data.updatedAt.value : this.updatedAt,
+    );
+  }
+
+  @override
+  String toString() {
+    return (StringBuffer('NotesTableData(')
+          ..write('id: $id, ')
+          ..write('title: $title, ')
+          ..write('body: $body, ')
+          ..write('imagePath: $imagePath, ')
+          ..write('imageUrl: $imageUrl, ')
+          ..write('categoryId: $categoryId, ')
+          ..write('isPinned: $isPinned, ')
+          ..write('reminderAt: $reminderAt, ')
+          ..write('createdAt: $createdAt, ')
+          ..write('updatedAt: $updatedAt')
+          ..write(')'))
+        .toString();
+  }
+
+  @override
+  int get hashCode => Object.hash(
+    id,
+    title,
+    body,
+    imagePath,
+    imageUrl,
+    categoryId,
+    isPinned,
+    reminderAt,
+    createdAt,
+    updatedAt,
+  );
+  @override
+  bool operator ==(Object other) =>
+      identical(this, other) ||
+      (other is NotesTableData &&
+          other.id == this.id &&
+          other.title == this.title &&
+          other.body == this.body &&
+          other.imagePath == this.imagePath &&
+          other.imageUrl == this.imageUrl &&
+          other.categoryId == this.categoryId &&
+          other.isPinned == this.isPinned &&
+          other.reminderAt == this.reminderAt &&
+          other.createdAt == this.createdAt &&
+          other.updatedAt == this.updatedAt);
+}
+
+class NotesTableCompanion extends UpdateCompanion<NotesTableData> {
+  final Value<String> id;
+  final Value<String> title;
+  final Value<String?> body;
+  final Value<String?> imagePath;
+  final Value<String?> imageUrl;
+  final Value<String?> categoryId;
+  final Value<bool> isPinned;
+  final Value<DateTime?> reminderAt;
+  final Value<DateTime> createdAt;
+  final Value<DateTime> updatedAt;
+  final Value<int> rowid;
+  const NotesTableCompanion({
+    this.id = const Value.absent(),
+    this.title = const Value.absent(),
+    this.body = const Value.absent(),
+    this.imagePath = const Value.absent(),
+    this.imageUrl = const Value.absent(),
+    this.categoryId = const Value.absent(),
+    this.isPinned = const Value.absent(),
+    this.reminderAt = const Value.absent(),
+    this.createdAt = const Value.absent(),
+    this.updatedAt = const Value.absent(),
+    this.rowid = const Value.absent(),
+  });
+  NotesTableCompanion.insert({
+    required String id,
+    required String title,
+    this.body = const Value.absent(),
+    this.imagePath = const Value.absent(),
+    this.imageUrl = const Value.absent(),
+    this.categoryId = const Value.absent(),
+    this.isPinned = const Value.absent(),
+    this.reminderAt = const Value.absent(),
+    required DateTime createdAt,
+    required DateTime updatedAt,
+    this.rowid = const Value.absent(),
+  }) : id = Value(id),
+       title = Value(title),
+       createdAt = Value(createdAt),
+       updatedAt = Value(updatedAt);
+  static Insertable<NotesTableData> custom({
+    Expression<String>? id,
+    Expression<String>? title,
+    Expression<String>? body,
+    Expression<String>? imagePath,
+    Expression<String>? imageUrl,
+    Expression<String>? categoryId,
+    Expression<bool>? isPinned,
+    Expression<DateTime>? reminderAt,
+    Expression<DateTime>? createdAt,
+    Expression<DateTime>? updatedAt,
+    Expression<int>? rowid,
+  }) {
+    return RawValuesInsertable({
+      if (id != null) 'id': id,
+      if (title != null) 'title': title,
+      if (body != null) 'body': body,
+      if (imagePath != null) 'image_path': imagePath,
+      if (imageUrl != null) 'image_url': imageUrl,
+      if (categoryId != null) 'category_id': categoryId,
+      if (isPinned != null) 'is_pinned': isPinned,
+      if (reminderAt != null) 'reminder_at': reminderAt,
+      if (createdAt != null) 'created_at': createdAt,
+      if (updatedAt != null) 'updated_at': updatedAt,
+      if (rowid != null) 'rowid': rowid,
+    });
+  }
+
+  NotesTableCompanion copyWith({
+    Value<String>? id,
+    Value<String>? title,
+    Value<String?>? body,
+    Value<String?>? imagePath,
+    Value<String?>? imageUrl,
+    Value<String?>? categoryId,
+    Value<bool>? isPinned,
+    Value<DateTime?>? reminderAt,
+    Value<DateTime>? createdAt,
+    Value<DateTime>? updatedAt,
+    Value<int>? rowid,
+  }) {
+    return NotesTableCompanion(
+      id: id ?? this.id,
+      title: title ?? this.title,
+      body: body ?? this.body,
+      imagePath: imagePath ?? this.imagePath,
+      imageUrl: imageUrl ?? this.imageUrl,
+      categoryId: categoryId ?? this.categoryId,
+      isPinned: isPinned ?? this.isPinned,
+      reminderAt: reminderAt ?? this.reminderAt,
+      createdAt: createdAt ?? this.createdAt,
+      updatedAt: updatedAt ?? this.updatedAt,
+      rowid: rowid ?? this.rowid,
+    );
+  }
+
+  @override
+  Map<String, Expression> toColumns(bool nullToAbsent) {
+    final map = <String, Expression>{};
+    if (id.present) {
+      map['id'] = Variable<String>(id.value);
+    }
+    if (title.present) {
+      map['title'] = Variable<String>(title.value);
+    }
+    if (body.present) {
+      map['body'] = Variable<String>(body.value);
+    }
+    if (imagePath.present) {
+      map['image_path'] = Variable<String>(imagePath.value);
+    }
+    if (imageUrl.present) {
+      map['image_url'] = Variable<String>(imageUrl.value);
+    }
+    if (categoryId.present) {
+      map['category_id'] = Variable<String>(categoryId.value);
+    }
+    if (isPinned.present) {
+      map['is_pinned'] = Variable<bool>(isPinned.value);
+    }
+    if (reminderAt.present) {
+      map['reminder_at'] = Variable<DateTime>(reminderAt.value);
+    }
+    if (createdAt.present) {
+      map['created_at'] = Variable<DateTime>(createdAt.value);
+    }
+    if (updatedAt.present) {
+      map['updated_at'] = Variable<DateTime>(updatedAt.value);
+    }
+    if (rowid.present) {
+      map['rowid'] = Variable<int>(rowid.value);
+    }
+    return map;
+  }
+
+  @override
+  String toString() {
+    return (StringBuffer('NotesTableCompanion(')
+          ..write('id: $id, ')
+          ..write('title: $title, ')
+          ..write('body: $body, ')
+          ..write('imagePath: $imagePath, ')
+          ..write('imageUrl: $imageUrl, ')
+          ..write('categoryId: $categoryId, ')
+          ..write('isPinned: $isPinned, ')
+          ..write('reminderAt: $reminderAt, ')
+          ..write('createdAt: $createdAt, ')
+          ..write('updatedAt: $updatedAt, ')
+          ..write('rowid: $rowid')
+          ..write(')'))
+        .toString();
+  }
+}
+
+class $NoteChecklistItemsTableTable extends NoteChecklistItemsTable
+    with TableInfo<$NoteChecklistItemsTableTable, NoteChecklistItemsTableData> {
+  @override
+  final GeneratedDatabase attachedDatabase;
+  final String? _alias;
+  $NoteChecklistItemsTableTable(this.attachedDatabase, [this._alias]);
+  static const VerificationMeta _idMeta = const VerificationMeta('id');
+  @override
+  late final GeneratedColumn<String> id = GeneratedColumn<String>(
+    'id',
+    aliasedName,
+    false,
+    type: DriftSqlType.string,
+    requiredDuringInsert: true,
+  );
+  static const VerificationMeta _noteIdMeta = const VerificationMeta('noteId');
+  @override
+  late final GeneratedColumn<String> noteId = GeneratedColumn<String>(
+    'note_id',
+    aliasedName,
+    false,
+    type: DriftSqlType.string,
+    requiredDuringInsert: true,
+  );
+  static const VerificationMeta _itemTextMeta = const VerificationMeta(
+    'itemText',
+  );
+  @override
+  late final GeneratedColumn<String> itemText = GeneratedColumn<String>(
+    'text',
+    aliasedName,
+    false,
+    type: DriftSqlType.string,
+    requiredDuringInsert: true,
+  );
+  static const VerificationMeta _completedMeta = const VerificationMeta(
+    'completed',
+  );
+  @override
+  late final GeneratedColumn<bool> completed = GeneratedColumn<bool>(
+    'completed',
+    aliasedName,
+    false,
+    type: DriftSqlType.bool,
+    requiredDuringInsert: false,
+    defaultConstraints: GeneratedColumn.constraintIsAlways(
+      'CHECK ("completed" IN (0, 1))',
+    ),
+    defaultValue: const Constant(false),
+  );
+  static const VerificationMeta _sortOrderMeta = const VerificationMeta(
+    'sortOrder',
+  );
+  @override
+  late final GeneratedColumn<int> sortOrder = GeneratedColumn<int>(
+    'sort_order',
+    aliasedName,
+    false,
+    type: DriftSqlType.int,
+    requiredDuringInsert: false,
+    defaultValue: const Constant(0),
+  );
+  static const VerificationMeta _createdAtMeta = const VerificationMeta(
+    'createdAt',
+  );
+  @override
+  late final GeneratedColumn<DateTime> createdAt = GeneratedColumn<DateTime>(
+    'created_at',
+    aliasedName,
+    false,
+    type: DriftSqlType.dateTime,
+    requiredDuringInsert: true,
+  );
+  static const VerificationMeta _updatedAtMeta = const VerificationMeta(
+    'updatedAt',
+  );
+  @override
+  late final GeneratedColumn<DateTime> updatedAt = GeneratedColumn<DateTime>(
+    'updated_at',
+    aliasedName,
+    false,
+    type: DriftSqlType.dateTime,
+    requiredDuringInsert: true,
+  );
+  @override
+  List<GeneratedColumn> get $columns => [
+    id,
+    noteId,
+    itemText,
+    completed,
+    sortOrder,
+    createdAt,
+    updatedAt,
+  ];
+  @override
+  String get aliasedName => _alias ?? actualTableName;
+  @override
+  String get actualTableName => $name;
+  static const String $name = 'note_checklist_items_table';
+  @override
+  VerificationContext validateIntegrity(
+    Insertable<NoteChecklistItemsTableData> instance, {
+    bool isInserting = false,
+  }) {
+    final context = VerificationContext();
+    final data = instance.toColumns(true);
+    if (data.containsKey('id')) {
+      context.handle(_idMeta, id.isAcceptableOrUnknown(data['id']!, _idMeta));
+    } else if (isInserting) {
+      context.missing(_idMeta);
+    }
+    if (data.containsKey('note_id')) {
+      context.handle(
+        _noteIdMeta,
+        noteId.isAcceptableOrUnknown(data['note_id']!, _noteIdMeta),
+      );
+    } else if (isInserting) {
+      context.missing(_noteIdMeta);
+    }
+    if (data.containsKey('text')) {
+      context.handle(
+        _itemTextMeta,
+        itemText.isAcceptableOrUnknown(data['text']!, _itemTextMeta),
+      );
+    } else if (isInserting) {
+      context.missing(_itemTextMeta);
+    }
+    if (data.containsKey('completed')) {
+      context.handle(
+        _completedMeta,
+        completed.isAcceptableOrUnknown(data['completed']!, _completedMeta),
+      );
+    }
+    if (data.containsKey('sort_order')) {
+      context.handle(
+        _sortOrderMeta,
+        sortOrder.isAcceptableOrUnknown(data['sort_order']!, _sortOrderMeta),
+      );
+    }
+    if (data.containsKey('created_at')) {
+      context.handle(
+        _createdAtMeta,
+        createdAt.isAcceptableOrUnknown(data['created_at']!, _createdAtMeta),
+      );
+    } else if (isInserting) {
+      context.missing(_createdAtMeta);
+    }
+    if (data.containsKey('updated_at')) {
+      context.handle(
+        _updatedAtMeta,
+        updatedAt.isAcceptableOrUnknown(data['updated_at']!, _updatedAtMeta),
+      );
+    } else if (isInserting) {
+      context.missing(_updatedAtMeta);
+    }
+    return context;
+  }
+
+  @override
+  Set<GeneratedColumn> get $primaryKey => {id};
+  @override
+  NoteChecklistItemsTableData map(
+    Map<String, dynamic> data, {
+    String? tablePrefix,
+  }) {
+    final effectivePrefix = tablePrefix != null ? '$tablePrefix.' : '';
+    return NoteChecklistItemsTableData(
+      id: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}id'],
+      )!,
+      noteId: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}note_id'],
+      )!,
+      itemText: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}text'],
+      )!,
+      completed: attachedDatabase.typeMapping.read(
+        DriftSqlType.bool,
+        data['${effectivePrefix}completed'],
+      )!,
+      sortOrder: attachedDatabase.typeMapping.read(
+        DriftSqlType.int,
+        data['${effectivePrefix}sort_order'],
+      )!,
+      createdAt: attachedDatabase.typeMapping.read(
+        DriftSqlType.dateTime,
+        data['${effectivePrefix}created_at'],
+      )!,
+      updatedAt: attachedDatabase.typeMapping.read(
+        DriftSqlType.dateTime,
+        data['${effectivePrefix}updated_at'],
+      )!,
+    );
+  }
+
+  @override
+  $NoteChecklistItemsTableTable createAlias(String alias) {
+    return $NoteChecklistItemsTableTable(attachedDatabase, alias);
+  }
+}
+
+class NoteChecklistItemsTableData extends DataClass
+    implements Insertable<NoteChecklistItemsTableData> {
+  final String id;
+  final String noteId;
+  final String itemText;
+  final bool completed;
+  final int sortOrder;
+  final DateTime createdAt;
+  final DateTime updatedAt;
+  const NoteChecklistItemsTableData({
+    required this.id,
+    required this.noteId,
+    required this.itemText,
+    required this.completed,
+    required this.sortOrder,
+    required this.createdAt,
+    required this.updatedAt,
+  });
+  @override
+  Map<String, Expression> toColumns(bool nullToAbsent) {
+    final map = <String, Expression>{};
+    map['id'] = Variable<String>(id);
+    map['note_id'] = Variable<String>(noteId);
+    map['text'] = Variable<String>(itemText);
+    map['completed'] = Variable<bool>(completed);
+    map['sort_order'] = Variable<int>(sortOrder);
+    map['created_at'] = Variable<DateTime>(createdAt);
+    map['updated_at'] = Variable<DateTime>(updatedAt);
+    return map;
+  }
+
+  NoteChecklistItemsTableCompanion toCompanion(bool nullToAbsent) {
+    return NoteChecklistItemsTableCompanion(
+      id: Value(id),
+      noteId: Value(noteId),
+      itemText: Value(itemText),
+      completed: Value(completed),
+      sortOrder: Value(sortOrder),
+      createdAt: Value(createdAt),
+      updatedAt: Value(updatedAt),
+    );
+  }
+
+  factory NoteChecklistItemsTableData.fromJson(
+    Map<String, dynamic> json, {
+    ValueSerializer? serializer,
+  }) {
+    serializer ??= driftRuntimeOptions.defaultSerializer;
+    return NoteChecklistItemsTableData(
+      id: serializer.fromJson<String>(json['id']),
+      noteId: serializer.fromJson<String>(json['noteId']),
+      itemText: serializer.fromJson<String>(json['itemText']),
+      completed: serializer.fromJson<bool>(json['completed']),
+      sortOrder: serializer.fromJson<int>(json['sortOrder']),
+      createdAt: serializer.fromJson<DateTime>(json['createdAt']),
+      updatedAt: serializer.fromJson<DateTime>(json['updatedAt']),
+    );
+  }
+  @override
+  Map<String, dynamic> toJson({ValueSerializer? serializer}) {
+    serializer ??= driftRuntimeOptions.defaultSerializer;
+    return <String, dynamic>{
+      'id': serializer.toJson<String>(id),
+      'noteId': serializer.toJson<String>(noteId),
+      'itemText': serializer.toJson<String>(itemText),
+      'completed': serializer.toJson<bool>(completed),
+      'sortOrder': serializer.toJson<int>(sortOrder),
+      'createdAt': serializer.toJson<DateTime>(createdAt),
+      'updatedAt': serializer.toJson<DateTime>(updatedAt),
+    };
+  }
+
+  NoteChecklistItemsTableData copyWith({
+    String? id,
+    String? noteId,
+    String? itemText,
+    bool? completed,
+    int? sortOrder,
+    DateTime? createdAt,
+    DateTime? updatedAt,
+  }) => NoteChecklistItemsTableData(
+    id: id ?? this.id,
+    noteId: noteId ?? this.noteId,
+    itemText: itemText ?? this.itemText,
+    completed: completed ?? this.completed,
+    sortOrder: sortOrder ?? this.sortOrder,
+    createdAt: createdAt ?? this.createdAt,
+    updatedAt: updatedAt ?? this.updatedAt,
+  );
+  NoteChecklistItemsTableData copyWithCompanion(
+    NoteChecklistItemsTableCompanion data,
+  ) {
+    return NoteChecklistItemsTableData(
+      id: data.id.present ? data.id.value : this.id,
+      noteId: data.noteId.present ? data.noteId.value : this.noteId,
+      itemText: data.itemText.present ? data.itemText.value : this.itemText,
+      completed: data.completed.present ? data.completed.value : this.completed,
+      sortOrder: data.sortOrder.present ? data.sortOrder.value : this.sortOrder,
+      createdAt: data.createdAt.present ? data.createdAt.value : this.createdAt,
+      updatedAt: data.updatedAt.present ? data.updatedAt.value : this.updatedAt,
+    );
+  }
+
+  @override
+  String toString() {
+    return (StringBuffer('NoteChecklistItemsTableData(')
+          ..write('id: $id, ')
+          ..write('noteId: $noteId, ')
+          ..write('itemText: $itemText, ')
+          ..write('completed: $completed, ')
+          ..write('sortOrder: $sortOrder, ')
+          ..write('createdAt: $createdAt, ')
+          ..write('updatedAt: $updatedAt')
+          ..write(')'))
+        .toString();
+  }
+
+  @override
+  int get hashCode => Object.hash(
+    id,
+    noteId,
+    itemText,
+    completed,
+    sortOrder,
+    createdAt,
+    updatedAt,
+  );
+  @override
+  bool operator ==(Object other) =>
+      identical(this, other) ||
+      (other is NoteChecklistItemsTableData &&
+          other.id == this.id &&
+          other.noteId == this.noteId &&
+          other.itemText == this.itemText &&
+          other.completed == this.completed &&
+          other.sortOrder == this.sortOrder &&
+          other.createdAt == this.createdAt &&
+          other.updatedAt == this.updatedAt);
+}
+
+class NoteChecklistItemsTableCompanion
+    extends UpdateCompanion<NoteChecklistItemsTableData> {
+  final Value<String> id;
+  final Value<String> noteId;
+  final Value<String> itemText;
+  final Value<bool> completed;
+  final Value<int> sortOrder;
+  final Value<DateTime> createdAt;
+  final Value<DateTime> updatedAt;
+  final Value<int> rowid;
+  const NoteChecklistItemsTableCompanion({
+    this.id = const Value.absent(),
+    this.noteId = const Value.absent(),
+    this.itemText = const Value.absent(),
+    this.completed = const Value.absent(),
+    this.sortOrder = const Value.absent(),
+    this.createdAt = const Value.absent(),
+    this.updatedAt = const Value.absent(),
+    this.rowid = const Value.absent(),
+  });
+  NoteChecklistItemsTableCompanion.insert({
+    required String id,
+    required String noteId,
+    required String itemText,
+    this.completed = const Value.absent(),
+    this.sortOrder = const Value.absent(),
+    required DateTime createdAt,
+    required DateTime updatedAt,
+    this.rowid = const Value.absent(),
+  }) : id = Value(id),
+       noteId = Value(noteId),
+       itemText = Value(itemText),
+       createdAt = Value(createdAt),
+       updatedAt = Value(updatedAt);
+  static Insertable<NoteChecklistItemsTableData> custom({
+    Expression<String>? id,
+    Expression<String>? noteId,
+    Expression<String>? itemText,
+    Expression<bool>? completed,
+    Expression<int>? sortOrder,
+    Expression<DateTime>? createdAt,
+    Expression<DateTime>? updatedAt,
+    Expression<int>? rowid,
+  }) {
+    return RawValuesInsertable({
+      if (id != null) 'id': id,
+      if (noteId != null) 'note_id': noteId,
+      if (itemText != null) 'text': itemText,
+      if (completed != null) 'completed': completed,
+      if (sortOrder != null) 'sort_order': sortOrder,
+      if (createdAt != null) 'created_at': createdAt,
+      if (updatedAt != null) 'updated_at': updatedAt,
+      if (rowid != null) 'rowid': rowid,
+    });
+  }
+
+  NoteChecklistItemsTableCompanion copyWith({
+    Value<String>? id,
+    Value<String>? noteId,
+    Value<String>? itemText,
+    Value<bool>? completed,
+    Value<int>? sortOrder,
+    Value<DateTime>? createdAt,
+    Value<DateTime>? updatedAt,
+    Value<int>? rowid,
+  }) {
+    return NoteChecklistItemsTableCompanion(
+      id: id ?? this.id,
+      noteId: noteId ?? this.noteId,
+      itemText: itemText ?? this.itemText,
+      completed: completed ?? this.completed,
+      sortOrder: sortOrder ?? this.sortOrder,
+      createdAt: createdAt ?? this.createdAt,
+      updatedAt: updatedAt ?? this.updatedAt,
+      rowid: rowid ?? this.rowid,
+    );
+  }
+
+  @override
+  Map<String, Expression> toColumns(bool nullToAbsent) {
+    final map = <String, Expression>{};
+    if (id.present) {
+      map['id'] = Variable<String>(id.value);
+    }
+    if (noteId.present) {
+      map['note_id'] = Variable<String>(noteId.value);
+    }
+    if (itemText.present) {
+      map['text'] = Variable<String>(itemText.value);
+    }
+    if (completed.present) {
+      map['completed'] = Variable<bool>(completed.value);
+    }
+    if (sortOrder.present) {
+      map['sort_order'] = Variable<int>(sortOrder.value);
+    }
+    if (createdAt.present) {
+      map['created_at'] = Variable<DateTime>(createdAt.value);
+    }
+    if (updatedAt.present) {
+      map['updated_at'] = Variable<DateTime>(updatedAt.value);
+    }
+    if (rowid.present) {
+      map['rowid'] = Variable<int>(rowid.value);
+    }
+    return map;
+  }
+
+  @override
+  String toString() {
+    return (StringBuffer('NoteChecklistItemsTableCompanion(')
+          ..write('id: $id, ')
+          ..write('noteId: $noteId, ')
+          ..write('itemText: $itemText, ')
+          ..write('completed: $completed, ')
+          ..write('sortOrder: $sortOrder, ')
+          ..write('createdAt: $createdAt, ')
+          ..write('updatedAt: $updatedAt, ')
+          ..write('rowid: $rowid')
+          ..write(')'))
+        .toString();
+  }
+}
+
 abstract class _$AppDatabase extends GeneratedDatabase {
   _$AppDatabase(QueryExecutor e) : super(e);
   $AppDatabaseManager get managers => $AppDatabaseManager(this);
@@ -3789,6 +4869,9 @@ abstract class _$AppDatabase extends GeneratedDatabase {
   late final $StudentsTableTable studentsTable = $StudentsTableTable(this);
   late final $ClassScheduleSlotsTableTable classScheduleSlotsTable =
       $ClassScheduleSlotsTableTable(this);
+  late final $NotesTableTable notesTable = $NotesTableTable(this);
+  late final $NoteChecklistItemsTableTable noteChecklistItemsTable =
+      $NoteChecklistItemsTableTable(this);
   @override
   Iterable<TableInfo<Table, Object?>> get allTables =>
       allSchemaEntities.whereType<TableInfo<Table, Object?>>();
@@ -3800,6 +4883,8 @@ abstract class _$AppDatabase extends GeneratedDatabase {
     classGroupsTable,
     studentsTable,
     classScheduleSlotsTable,
+    notesTable,
+    noteChecklistItemsTable,
   ];
 }
 
@@ -5684,6 +6769,562 @@ typedef $$ClassScheduleSlotsTableTableProcessedTableManager =
       ClassScheduleSlotsTableData,
       PrefetchHooks Function()
     >;
+typedef $$NotesTableTableCreateCompanionBuilder =
+    NotesTableCompanion Function({
+      required String id,
+      required String title,
+      Value<String?> body,
+      Value<String?> imagePath,
+      Value<String?> imageUrl,
+      Value<String?> categoryId,
+      Value<bool> isPinned,
+      Value<DateTime?> reminderAt,
+      required DateTime createdAt,
+      required DateTime updatedAt,
+      Value<int> rowid,
+    });
+typedef $$NotesTableTableUpdateCompanionBuilder =
+    NotesTableCompanion Function({
+      Value<String> id,
+      Value<String> title,
+      Value<String?> body,
+      Value<String?> imagePath,
+      Value<String?> imageUrl,
+      Value<String?> categoryId,
+      Value<bool> isPinned,
+      Value<DateTime?> reminderAt,
+      Value<DateTime> createdAt,
+      Value<DateTime> updatedAt,
+      Value<int> rowid,
+    });
+
+class $$NotesTableTableFilterComposer
+    extends Composer<_$AppDatabase, $NotesTableTable> {
+  $$NotesTableTableFilterComposer({
+    required super.$db,
+    required super.$table,
+    super.joinBuilder,
+    super.$addJoinBuilderToRootComposer,
+    super.$removeJoinBuilderFromRootComposer,
+  });
+  ColumnFilters<String> get id => $composableBuilder(
+    column: $table.id,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get title => $composableBuilder(
+    column: $table.title,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get body => $composableBuilder(
+    column: $table.body,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get imagePath => $composableBuilder(
+    column: $table.imagePath,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get imageUrl => $composableBuilder(
+    column: $table.imageUrl,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get categoryId => $composableBuilder(
+    column: $table.categoryId,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<bool> get isPinned => $composableBuilder(
+    column: $table.isPinned,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<DateTime> get reminderAt => $composableBuilder(
+    column: $table.reminderAt,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<DateTime> get createdAt => $composableBuilder(
+    column: $table.createdAt,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<DateTime> get updatedAt => $composableBuilder(
+    column: $table.updatedAt,
+    builder: (column) => ColumnFilters(column),
+  );
+}
+
+class $$NotesTableTableOrderingComposer
+    extends Composer<_$AppDatabase, $NotesTableTable> {
+  $$NotesTableTableOrderingComposer({
+    required super.$db,
+    required super.$table,
+    super.joinBuilder,
+    super.$addJoinBuilderToRootComposer,
+    super.$removeJoinBuilderFromRootComposer,
+  });
+  ColumnOrderings<String> get id => $composableBuilder(
+    column: $table.id,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get title => $composableBuilder(
+    column: $table.title,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get body => $composableBuilder(
+    column: $table.body,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get imagePath => $composableBuilder(
+    column: $table.imagePath,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get imageUrl => $composableBuilder(
+    column: $table.imageUrl,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get categoryId => $composableBuilder(
+    column: $table.categoryId,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<bool> get isPinned => $composableBuilder(
+    column: $table.isPinned,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<DateTime> get reminderAt => $composableBuilder(
+    column: $table.reminderAt,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<DateTime> get createdAt => $composableBuilder(
+    column: $table.createdAt,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<DateTime> get updatedAt => $composableBuilder(
+    column: $table.updatedAt,
+    builder: (column) => ColumnOrderings(column),
+  );
+}
+
+class $$NotesTableTableAnnotationComposer
+    extends Composer<_$AppDatabase, $NotesTableTable> {
+  $$NotesTableTableAnnotationComposer({
+    required super.$db,
+    required super.$table,
+    super.joinBuilder,
+    super.$addJoinBuilderToRootComposer,
+    super.$removeJoinBuilderFromRootComposer,
+  });
+  GeneratedColumn<String> get id =>
+      $composableBuilder(column: $table.id, builder: (column) => column);
+
+  GeneratedColumn<String> get title =>
+      $composableBuilder(column: $table.title, builder: (column) => column);
+
+  GeneratedColumn<String> get body =>
+      $composableBuilder(column: $table.body, builder: (column) => column);
+
+  GeneratedColumn<String> get imagePath =>
+      $composableBuilder(column: $table.imagePath, builder: (column) => column);
+
+  GeneratedColumn<String> get imageUrl =>
+      $composableBuilder(column: $table.imageUrl, builder: (column) => column);
+
+  GeneratedColumn<String> get categoryId => $composableBuilder(
+    column: $table.categoryId,
+    builder: (column) => column,
+  );
+
+  GeneratedColumn<bool> get isPinned =>
+      $composableBuilder(column: $table.isPinned, builder: (column) => column);
+
+  GeneratedColumn<DateTime> get reminderAt => $composableBuilder(
+    column: $table.reminderAt,
+    builder: (column) => column,
+  );
+
+  GeneratedColumn<DateTime> get createdAt =>
+      $composableBuilder(column: $table.createdAt, builder: (column) => column);
+
+  GeneratedColumn<DateTime> get updatedAt =>
+      $composableBuilder(column: $table.updatedAt, builder: (column) => column);
+}
+
+class $$NotesTableTableTableManager
+    extends
+        RootTableManager<
+          _$AppDatabase,
+          $NotesTableTable,
+          NotesTableData,
+          $$NotesTableTableFilterComposer,
+          $$NotesTableTableOrderingComposer,
+          $$NotesTableTableAnnotationComposer,
+          $$NotesTableTableCreateCompanionBuilder,
+          $$NotesTableTableUpdateCompanionBuilder,
+          (
+            NotesTableData,
+            BaseReferences<_$AppDatabase, $NotesTableTable, NotesTableData>,
+          ),
+          NotesTableData,
+          PrefetchHooks Function()
+        > {
+  $$NotesTableTableTableManager(_$AppDatabase db, $NotesTableTable table)
+    : super(
+        TableManagerState(
+          db: db,
+          table: table,
+          createFilteringComposer: () =>
+              $$NotesTableTableFilterComposer($db: db, $table: table),
+          createOrderingComposer: () =>
+              $$NotesTableTableOrderingComposer($db: db, $table: table),
+          createComputedFieldComposer: () =>
+              $$NotesTableTableAnnotationComposer($db: db, $table: table),
+          updateCompanionCallback:
+              ({
+                Value<String> id = const Value.absent(),
+                Value<String> title = const Value.absent(),
+                Value<String?> body = const Value.absent(),
+                Value<String?> imagePath = const Value.absent(),
+                Value<String?> imageUrl = const Value.absent(),
+                Value<String?> categoryId = const Value.absent(),
+                Value<bool> isPinned = const Value.absent(),
+                Value<DateTime?> reminderAt = const Value.absent(),
+                Value<DateTime> createdAt = const Value.absent(),
+                Value<DateTime> updatedAt = const Value.absent(),
+                Value<int> rowid = const Value.absent(),
+              }) => NotesTableCompanion(
+                id: id,
+                title: title,
+                body: body,
+                imagePath: imagePath,
+                imageUrl: imageUrl,
+                categoryId: categoryId,
+                isPinned: isPinned,
+                reminderAt: reminderAt,
+                createdAt: createdAt,
+                updatedAt: updatedAt,
+                rowid: rowid,
+              ),
+          createCompanionCallback:
+              ({
+                required String id,
+                required String title,
+                Value<String?> body = const Value.absent(),
+                Value<String?> imagePath = const Value.absent(),
+                Value<String?> imageUrl = const Value.absent(),
+                Value<String?> categoryId = const Value.absent(),
+                Value<bool> isPinned = const Value.absent(),
+                Value<DateTime?> reminderAt = const Value.absent(),
+                required DateTime createdAt,
+                required DateTime updatedAt,
+                Value<int> rowid = const Value.absent(),
+              }) => NotesTableCompanion.insert(
+                id: id,
+                title: title,
+                body: body,
+                imagePath: imagePath,
+                imageUrl: imageUrl,
+                categoryId: categoryId,
+                isPinned: isPinned,
+                reminderAt: reminderAt,
+                createdAt: createdAt,
+                updatedAt: updatedAt,
+                rowid: rowid,
+              ),
+          withReferenceMapper: (p0) => p0
+              .map((e) => (e.readTable(table), BaseReferences(db, table, e)))
+              .toList(),
+          prefetchHooksCallback: null,
+        ),
+      );
+}
+
+typedef $$NotesTableTableProcessedTableManager =
+    ProcessedTableManager<
+      _$AppDatabase,
+      $NotesTableTable,
+      NotesTableData,
+      $$NotesTableTableFilterComposer,
+      $$NotesTableTableOrderingComposer,
+      $$NotesTableTableAnnotationComposer,
+      $$NotesTableTableCreateCompanionBuilder,
+      $$NotesTableTableUpdateCompanionBuilder,
+      (
+        NotesTableData,
+        BaseReferences<_$AppDatabase, $NotesTableTable, NotesTableData>,
+      ),
+      NotesTableData,
+      PrefetchHooks Function()
+    >;
+typedef $$NoteChecklistItemsTableTableCreateCompanionBuilder =
+    NoteChecklistItemsTableCompanion Function({
+      required String id,
+      required String noteId,
+      required String itemText,
+      Value<bool> completed,
+      Value<int> sortOrder,
+      required DateTime createdAt,
+      required DateTime updatedAt,
+      Value<int> rowid,
+    });
+typedef $$NoteChecklistItemsTableTableUpdateCompanionBuilder =
+    NoteChecklistItemsTableCompanion Function({
+      Value<String> id,
+      Value<String> noteId,
+      Value<String> itemText,
+      Value<bool> completed,
+      Value<int> sortOrder,
+      Value<DateTime> createdAt,
+      Value<DateTime> updatedAt,
+      Value<int> rowid,
+    });
+
+class $$NoteChecklistItemsTableTableFilterComposer
+    extends Composer<_$AppDatabase, $NoteChecklistItemsTableTable> {
+  $$NoteChecklistItemsTableTableFilterComposer({
+    required super.$db,
+    required super.$table,
+    super.joinBuilder,
+    super.$addJoinBuilderToRootComposer,
+    super.$removeJoinBuilderFromRootComposer,
+  });
+  ColumnFilters<String> get id => $composableBuilder(
+    column: $table.id,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get noteId => $composableBuilder(
+    column: $table.noteId,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get itemText => $composableBuilder(
+    column: $table.itemText,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<bool> get completed => $composableBuilder(
+    column: $table.completed,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<int> get sortOrder => $composableBuilder(
+    column: $table.sortOrder,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<DateTime> get createdAt => $composableBuilder(
+    column: $table.createdAt,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<DateTime> get updatedAt => $composableBuilder(
+    column: $table.updatedAt,
+    builder: (column) => ColumnFilters(column),
+  );
+}
+
+class $$NoteChecklistItemsTableTableOrderingComposer
+    extends Composer<_$AppDatabase, $NoteChecklistItemsTableTable> {
+  $$NoteChecklistItemsTableTableOrderingComposer({
+    required super.$db,
+    required super.$table,
+    super.joinBuilder,
+    super.$addJoinBuilderToRootComposer,
+    super.$removeJoinBuilderFromRootComposer,
+  });
+  ColumnOrderings<String> get id => $composableBuilder(
+    column: $table.id,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get noteId => $composableBuilder(
+    column: $table.noteId,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get itemText => $composableBuilder(
+    column: $table.itemText,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<bool> get completed => $composableBuilder(
+    column: $table.completed,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<int> get sortOrder => $composableBuilder(
+    column: $table.sortOrder,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<DateTime> get createdAt => $composableBuilder(
+    column: $table.createdAt,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<DateTime> get updatedAt => $composableBuilder(
+    column: $table.updatedAt,
+    builder: (column) => ColumnOrderings(column),
+  );
+}
+
+class $$NoteChecklistItemsTableTableAnnotationComposer
+    extends Composer<_$AppDatabase, $NoteChecklistItemsTableTable> {
+  $$NoteChecklistItemsTableTableAnnotationComposer({
+    required super.$db,
+    required super.$table,
+    super.joinBuilder,
+    super.$addJoinBuilderToRootComposer,
+    super.$removeJoinBuilderFromRootComposer,
+  });
+  GeneratedColumn<String> get id =>
+      $composableBuilder(column: $table.id, builder: (column) => column);
+
+  GeneratedColumn<String> get noteId =>
+      $composableBuilder(column: $table.noteId, builder: (column) => column);
+
+  GeneratedColumn<String> get itemText =>
+      $composableBuilder(column: $table.itemText, builder: (column) => column);
+
+  GeneratedColumn<bool> get completed =>
+      $composableBuilder(column: $table.completed, builder: (column) => column);
+
+  GeneratedColumn<int> get sortOrder =>
+      $composableBuilder(column: $table.sortOrder, builder: (column) => column);
+
+  GeneratedColumn<DateTime> get createdAt =>
+      $composableBuilder(column: $table.createdAt, builder: (column) => column);
+
+  GeneratedColumn<DateTime> get updatedAt =>
+      $composableBuilder(column: $table.updatedAt, builder: (column) => column);
+}
+
+class $$NoteChecklistItemsTableTableTableManager
+    extends
+        RootTableManager<
+          _$AppDatabase,
+          $NoteChecklistItemsTableTable,
+          NoteChecklistItemsTableData,
+          $$NoteChecklistItemsTableTableFilterComposer,
+          $$NoteChecklistItemsTableTableOrderingComposer,
+          $$NoteChecklistItemsTableTableAnnotationComposer,
+          $$NoteChecklistItemsTableTableCreateCompanionBuilder,
+          $$NoteChecklistItemsTableTableUpdateCompanionBuilder,
+          (
+            NoteChecklistItemsTableData,
+            BaseReferences<
+              _$AppDatabase,
+              $NoteChecklistItemsTableTable,
+              NoteChecklistItemsTableData
+            >,
+          ),
+          NoteChecklistItemsTableData,
+          PrefetchHooks Function()
+        > {
+  $$NoteChecklistItemsTableTableTableManager(
+    _$AppDatabase db,
+    $NoteChecklistItemsTableTable table,
+  ) : super(
+        TableManagerState(
+          db: db,
+          table: table,
+          createFilteringComposer: () =>
+              $$NoteChecklistItemsTableTableFilterComposer(
+                $db: db,
+                $table: table,
+              ),
+          createOrderingComposer: () =>
+              $$NoteChecklistItemsTableTableOrderingComposer(
+                $db: db,
+                $table: table,
+              ),
+          createComputedFieldComposer: () =>
+              $$NoteChecklistItemsTableTableAnnotationComposer(
+                $db: db,
+                $table: table,
+              ),
+          updateCompanionCallback:
+              ({
+                Value<String> id = const Value.absent(),
+                Value<String> noteId = const Value.absent(),
+                Value<String> itemText = const Value.absent(),
+                Value<bool> completed = const Value.absent(),
+                Value<int> sortOrder = const Value.absent(),
+                Value<DateTime> createdAt = const Value.absent(),
+                Value<DateTime> updatedAt = const Value.absent(),
+                Value<int> rowid = const Value.absent(),
+              }) => NoteChecklistItemsTableCompanion(
+                id: id,
+                noteId: noteId,
+                itemText: itemText,
+                completed: completed,
+                sortOrder: sortOrder,
+                createdAt: createdAt,
+                updatedAt: updatedAt,
+                rowid: rowid,
+              ),
+          createCompanionCallback:
+              ({
+                required String id,
+                required String noteId,
+                required String itemText,
+                Value<bool> completed = const Value.absent(),
+                Value<int> sortOrder = const Value.absent(),
+                required DateTime createdAt,
+                required DateTime updatedAt,
+                Value<int> rowid = const Value.absent(),
+              }) => NoteChecklistItemsTableCompanion.insert(
+                id: id,
+                noteId: noteId,
+                itemText: itemText,
+                completed: completed,
+                sortOrder: sortOrder,
+                createdAt: createdAt,
+                updatedAt: updatedAt,
+                rowid: rowid,
+              ),
+          withReferenceMapper: (p0) => p0
+              .map((e) => (e.readTable(table), BaseReferences(db, table, e)))
+              .toList(),
+          prefetchHooksCallback: null,
+        ),
+      );
+}
+
+typedef $$NoteChecklistItemsTableTableProcessedTableManager =
+    ProcessedTableManager<
+      _$AppDatabase,
+      $NoteChecklistItemsTableTable,
+      NoteChecklistItemsTableData,
+      $$NoteChecklistItemsTableTableFilterComposer,
+      $$NoteChecklistItemsTableTableOrderingComposer,
+      $$NoteChecklistItemsTableTableAnnotationComposer,
+      $$NoteChecklistItemsTableTableCreateCompanionBuilder,
+      $$NoteChecklistItemsTableTableUpdateCompanionBuilder,
+      (
+        NoteChecklistItemsTableData,
+        BaseReferences<
+          _$AppDatabase,
+          $NoteChecklistItemsTableTable,
+          NoteChecklistItemsTableData
+        >,
+      ),
+      NoteChecklistItemsTableData,
+      PrefetchHooks Function()
+    >;
 
 class $AppDatabaseManager {
   final _$AppDatabase _db;
@@ -5702,5 +7343,12 @@ class $AppDatabaseManager {
       $$ClassScheduleSlotsTableTableTableManager(
         _db,
         _db.classScheduleSlotsTable,
+      );
+  $$NotesTableTableTableManager get notesTable =>
+      $$NotesTableTableTableManager(_db, _db.notesTable);
+  $$NoteChecklistItemsTableTableTableManager get noteChecklistItemsTable =>
+      $$NoteChecklistItemsTableTableTableManager(
+        _db,
+        _db.noteChecklistItemsTable,
       );
 }

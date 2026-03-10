@@ -13,4 +13,6 @@ class AppRoutes {
   static const privacyPolicy = '/privacy-policy';
   static const sharing = '/sharing';
   static const notifications = '/notifications';
+  static const notes = '/notes';
+  static const upsertNote = '/upsert-note';
 }

@@ -20,10 +20,13 @@ import '../../data/datasources/notifications_supabase_datasource.dart';
 import '../../data/datasources/push_preferences_supabase_datasource.dart';
 import '../../data/datasources/subscription_supabase_datasource.dart';
 import '../../data/datasources/groups_supabase_datasource.dart';
+import '../../data/datasources/note_local_datasource.dart';
+import '../../data/datasources/note_supabase_datasource.dart';
 import '../../data/local/app_database.dart';
 import '../../data/repositories/agenda_repository_impl.dart';
 import '../../data/repositories/class_group_repository_impl.dart';
 import '../../data/repositories/groups_repository_impl.dart';
+import '../../data/repositories/note_repository_impl.dart';
 import '../../data/services/ads_service_stub.dart';
 import '../../data/services/agenda_transfer_service_impl.dart';
 import '../../data/services/auth_service_stub.dart';
@@ -47,6 +50,7 @@ import '../../domain/repositories/i_file_storage_service.dart';
 import '../../domain/repositories/i_groups_repository.dart';
 import '../../domain/repositories/i_notification_service.dart';
 import '../../domain/repositories/i_class_group_repository.dart';
+import '../../domain/repositories/i_note_repository.dart';
 import '../../domain/repositories/i_class_schedule_datasource.dart';
 import '../../domain/repositories/i_local_to_cloud_migration_service.dart';
 import '../../domain/repositories/i_connectivity_service.dart';
@@ -64,6 +68,7 @@ import '../../presentation/controllers/auth_controller.dart';
 import '../../presentation/controllers/agenda_transfer_controller.dart';
 import '../../presentation/controllers/class_group_controller.dart';
 import '../../presentation/controllers/class_schedule_controller.dart';
+import '../../presentation/controllers/note_controller.dart';
 import '../../presentation/controllers/notifications_controller.dart';
 import '../../presentation/controllers/sync_controller.dart';
 import '../../presentation/controllers/groups_controller.dart';
@@ -96,6 +101,10 @@ class AppBinding extends Bindings {
       );
       Get.lazyPut<GroupsSupabaseDataSource>(
         () => GroupsSupabaseDataSource(Supabase.instance.client),
+        fenix: true,
+      );
+      Get.lazyPut<NoteSupabaseDataSource>(
+        () => NoteSupabaseDataSource(Supabase.instance.client),
         fenix: true,
       );
       Get.lazyPut<AgendaSharingSupabaseDataSource>(
@@ -195,8 +204,10 @@ class AppBinding extends Bindings {
               Get.find<GroupsLocalDataSource>(),
               Get.find<ClassScheduleLocalDataSource>(),
               Get.find<ClassGroupLocalDataSource>(),
+              Get.find<NoteLocalDataSource>(),
               Get.find<AgendaSupabaseDataSource>(),
               Get.find<GroupsSupabaseDataSource>(),
+              Get.find<NoteSupabaseDataSource>(),
               Get.find<IFileStorageService>(),
               Supabase.instance.client,
             )
@@ -233,6 +244,18 @@ class AppBinding extends Bindings {
     );
 
     Get.lazyPut(() => ClassGroupLocalDataSource(Get.find()), fenix: true);
+    Get.lazyPut(() => NoteLocalDataSource(Get.find()), fenix: true);
+    Get.lazyPut<INoteRepository>(
+      () => NoteRepositoryImpl(
+        Get.find<NoteLocalDataSource>(),
+        Get.find<ISyncService>(),
+      ),
+      fenix: true,
+    );
+    Get.lazyPut(
+      () => NoteController(Get.find<INoteRepository>()),
+      fenix: true,
+    );
     Get.lazyPut<IClassGroupRepository>(
       () => ClassGroupRepositoryImpl(
         Get.find<ClassGroupLocalDataSource>(),

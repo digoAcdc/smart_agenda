@@ -102,6 +102,35 @@ class ClassScheduleSlotsTable extends Table {
   Set<Column<Object>> get primaryKey => {id};
 }
 
+class NotesTable extends Table {
+  TextColumn get id => text()();
+  TextColumn get title => text()();
+  TextColumn get body => text().nullable()();
+  TextColumn get imagePath => text().nullable()();
+  TextColumn get imageUrl => text().nullable()();
+  TextColumn get categoryId => text().nullable()();
+  BoolColumn get isPinned => boolean().withDefault(const Constant(false))();
+  DateTimeColumn get reminderAt => dateTime().nullable()();
+  DateTimeColumn get createdAt => dateTime()();
+  DateTimeColumn get updatedAt => dateTime()();
+
+  @override
+  Set<Column<Object>> get primaryKey => {id};
+}
+
+class NoteChecklistItemsTable extends Table {
+  TextColumn get id => text()();
+  TextColumn get noteId => text()();
+  TextColumn get itemText => text().named('text')();
+  BoolColumn get completed => boolean().withDefault(const Constant(false))();
+  IntColumn get sortOrder => integer().withDefault(const Constant(0))();
+  DateTimeColumn get createdAt => dateTime()();
+  DateTimeColumn get updatedAt => dateTime()();
+
+  @override
+  Set<Column<Object>> get primaryKey => {id};
+}
+
 @DriftDatabase(
   tables: [
     AgendaItemsTable,
@@ -110,13 +139,15 @@ class ClassScheduleSlotsTable extends Table {
     ClassGroupsTable,
     StudentsTable,
     ClassScheduleSlotsTable,
+    NotesTable,
+    NoteChecklistItemsTable,
   ],
 )
 class AppDatabase extends _$AppDatabase {
   AppDatabase() : super(_openConnection());
 
   @override
-  int get schemaVersion => 5;
+  int get schemaVersion => 6;
 
   @override
   MigrationStrategy get migration => MigrationStrategy(
@@ -137,6 +168,10 @@ class AppDatabase extends _$AppDatabase {
           if (from < 5) {
             await m.createTable(classGroupsTable);
             await m.createTable(studentsTable);
+          }
+          if (from < 6) {
+            await m.createTable(notesTable);
+            await m.createTable(noteChecklistItemsTable);
           }
         },
       );
