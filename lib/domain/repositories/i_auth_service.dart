@@ -7,6 +7,11 @@ abstract class IAuthService {
   Future<Result<void>> signInWithEmail(String email, String password);
   Future<Result<void>> signUp(String email, String password);
   Future<Result<void>> resetPasswordForEmail(String email);
+  Future<Result<void>> verifyRecoveryAndUpdatePassword(
+    String email,
+    String token,
+    String newPassword,
+  );
   Future<Result<void>> signInAnonymously();
   Future<Result<void>> signOut();
 }

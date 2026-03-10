@@ -22,6 +22,14 @@ class AuthServiceStub implements IAuthService {
       Result.success(null);
 
   @override
+  Future<Result<void>> verifyRecoveryAndUpdatePassword(
+    String email,
+    String token,
+    String newPassword,
+  ) async =>
+      Result.success(null);
+
+  @override
   Future<Result<void>> signInAnonymously() async => Result.success(null);
 
   @override

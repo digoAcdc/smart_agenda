@@ -202,6 +202,34 @@ class AuthController extends GetxController {
     }
   }
 
+  Future<bool> verifyRecoveryAndUpdatePassword(
+    String email,
+    String code,
+    String newPassword,
+  ) async {
+    loading.value = true;
+    errorMessage.value = null;
+    try {
+      final result = await _authService.verifyRecoveryAndUpdatePassword(
+        email,
+        code,
+        newPassword,
+      );
+      if (result.isSuccess) {
+        loading.value = false;
+        return true;
+      }
+      errorMessage.value =
+          result.errorMessage ?? 'Erro ao redefinir senha. Tente novamente.';
+      loading.value = false;
+      return false;
+    } catch (e) {
+      errorMessage.value = 'Erro inesperado. Tente novamente.';
+      loading.value = false;
+      return false;
+    }
+  }
+
   Future<void> signOut() async {
     final userId = SupabaseConfig.isConfigured
         ? Supabase.instance.client.auth.currentUser?.id

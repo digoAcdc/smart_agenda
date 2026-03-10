@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:get/get.dart';
 
 import '../../../core/theme/design_tokens.dart';
@@ -16,31 +17,96 @@ class ResetPasswordPage extends StatefulWidget {
 class _ResetPasswordPageState extends State<ResetPasswordPage> {
   final _formKey = GlobalKey<FormState>();
   final _emailController = TextEditingController();
+  final _codeController = TextEditingController();
+  final _newPasswordController = TextEditingController();
+  final _confirmPasswordController = TextEditingController();
+
+  int _step = 1;
+  String _emailSent = '';
 
   @override
   void dispose() {
     _emailController.dispose();
+    _codeController.dispose();
+    _newPasswordController.dispose();
+    _confirmPasswordController.dispose();
     super.dispose();
   }
 
-  Future<void> _handleReset() async {
+  Future<void> _handleSendCode() async {
+    if (!_formKey.currentState!.validate()) return;
+    final authController = Get.find<AuthController>();
+    final email = _emailController.text.trim();
+
+    final ok = await authController.resetPassword(email);
+    if (!mounted) return;
+    if (ok) {
+      setState(() {
+        _emailSent = email;
+        _step = 2;
+      });
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: const Text(
+            'Codigo enviado! Verifique seu e-mail e digite o codigo abaixo.',
+          ),
+          backgroundColor: Theme.of(context).colorScheme.primaryContainer,
+        ),
+      );
+    } else {
+      final msg = authController.errorMessage.value ?? 'Erro ao enviar e-mail.';
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text(msg),
+          backgroundColor: Theme.of(context).colorScheme.error,
+        ),
+      );
+    }
+  }
+
+  Future<void> _handleResetPassword() async {
     if (!_formKey.currentState!.validate()) return;
     final authController = Get.find<AuthController>();
 
-    final ok = await authController.resetPassword(_emailController.text.trim());
+    final ok = await authController.verifyRecoveryAndUpdatePassword(
+      _emailSent,
+      _codeController.text.trim(),
+      _newPasswordController.text,
+    );
     if (!mounted) return;
     if (ok) {
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
-          content: const Text(
-            'Verifique seu e-mail. Enviamos um link para redefinir sua senha.',
-          ),
+          content: const Text('Senha alterada com sucesso! Faca login.'),
           backgroundColor: Theme.of(context).colorScheme.primaryContainer,
         ),
       );
       Get.back();
     } else {
-      final msg = authController.errorMessage.value ?? 'Erro ao enviar e-mail.';
+      final msg =
+          authController.errorMessage.value ?? 'Erro ao redefinir senha.';
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text(msg),
+          backgroundColor: Theme.of(context).colorScheme.error,
+        ),
+      );
+    }
+  }
+
+  Future<void> _handleResendCode() async {
+    final authController = Get.find<AuthController>();
+    final ok = await authController.resetPassword(_emailSent);
+    if (!mounted) return;
+    if (ok) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: const Text('Novo codigo enviado! Verifique seu e-mail.'),
+          backgroundColor: Theme.of(context).colorScheme.primaryContainer,
+        ),
+      );
+    } else {
+      final msg = authController.errorMessage.value ?? 'Erro ao reenviar.';
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
           content: Text(msg),
@@ -57,6 +123,15 @@ class _ResetPasswordPageState extends State<ResetPasswordPage> {
       backgroundColor: context.palette.appBackground,
       appBar: AppBar(
         title: const Text('Recuperar senha'),
+        leading: _step == 2
+            ? IconButton(
+                icon: const Icon(Icons.arrow_back),
+                onPressed: () {
+                  authController.errorMessage.value = null;
+                  setState(() => _step = 1);
+                },
+              )
+            : null,
       ),
       body: SafeArea(
         child: SingleChildScrollView(
@@ -72,68 +147,181 @@ class _ResetPasswordPageState extends State<ResetPasswordPage> {
                   color: Theme.of(context).colorScheme.primary,
                 ),
                 const SizedBox(height: DesignTokens.spaceLg),
-                Text(
-                  'Esqueceu sua senha?',
-                  style: Theme.of(context).textTheme.titleLarge?.copyWith(
-                        fontWeight: FontWeight.w700,
-                      ),
-                  textAlign: TextAlign.center,
-                ),
-                const SizedBox(height: DesignTokens.spaceXs),
-                Text(
-                  'Informe seu e-mail e enviaremos um link para redefinir sua senha.',
-                  style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                        color: Theme.of(context).colorScheme.onSurfaceVariant,
-                      ),
-                  textAlign: TextAlign.center,
-                ),
-                const SizedBox(height: DesignTokens.spaceXl),
-                AppSurfaceCard(
-                  margin: EdgeInsets.zero,
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      TextFormField(
-                        controller: _emailController,
-                        keyboardType: TextInputType.emailAddress,
-                        autocorrect: false,
-                        decoration: const InputDecoration(
-                          labelText: 'E-mail',
-                          hintText: 'seu@email.com',
-                          prefixIcon: Icon(Icons.email_outlined),
+                if (_step == 1) ...[
+                  Text(
+                    'Esqueceu sua senha?',
+                    style: Theme.of(context).textTheme.titleLarge?.copyWith(
+                          fontWeight: FontWeight.w700,
                         ),
-                        validator: (v) {
-                          if (v == null || v.trim().isEmpty) {
-                            return 'Informe seu e-mail';
-                          }
-                          if (!RegExp(r'^[\w-\.]+@([\w-]+\.)+[\w-]{2,4}$')
-                              .hasMatch(v.trim())) {
-                            return 'E-mail invalido';
-                          }
-                          return null;
-                        },
-                      ),
-                      const SizedBox(height: DesignTokens.spaceLg),
-                      Obx(
-                        () => PrimaryButton(
-                          label: 'Enviar link de recuperacao',
-                          icon: Icons.send_rounded,
-                          loading: authController.loading.value,
-                          onPressed: _handleReset,
+                    textAlign: TextAlign.center,
+                  ),
+                  const SizedBox(height: DesignTokens.spaceXs),
+                  Text(
+                    'Informe seu e-mail e enviaremos um codigo para redefinir sua senha.',
+                    style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+                          color: Theme.of(context).colorScheme.onSurfaceVariant,
                         ),
-                      ),
-                      if (authController.errorMessage.value != null) ...[
+                    textAlign: TextAlign.center,
+                  ),
+                  const SizedBox(height: DesignTokens.spaceXl),
+                  AppSurfaceCard(
+                    margin: EdgeInsets.zero,
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        TextFormField(
+                          controller: _emailController,
+                          keyboardType: TextInputType.emailAddress,
+                          autocorrect: false,
+                          enabled: _step == 1,
+                          decoration: const InputDecoration(
+                            labelText: 'E-mail',
+                            hintText: 'seu@email.com',
+                            prefixIcon: Icon(Icons.email_outlined),
+                          ),
+                          validator: (v) {
+                            if (v == null || v.trim().isEmpty) {
+                              return 'Informe seu e-mail';
+                            }
+                            if (!RegExp(r'^[\w-\.]+@([\w-]+\.)+[\w-]{2,4}$')
+                                .hasMatch(v.trim())) {
+                              return 'E-mail invalido';
+                            }
+                            return null;
+                          },
+                        ),
+                        const SizedBox(height: DesignTokens.spaceLg),
+                        Obx(
+                          () => PrimaryButton(
+                            label: 'Enviar codigo',
+                            icon: Icons.send_rounded,
+                            loading: authController.loading.value,
+                            onPressed: _handleSendCode,
+                          ),
+                        ),
+                        if (authController.errorMessage.value != null) ...[
+                          const SizedBox(height: DesignTokens.spaceSm),
+                          Text(
+                            authController.errorMessage.value!,
+                            style: Theme.of(context)
+                                .textTheme
+                                .bodySmall
+                                ?.copyWith(
+                                  color: context.semanticColors.danger,
+                                ),
+                          ),
+                        ],
+                      ],
+                    ),
+                  ),
+                ] else ...[
+                  Text(
+                    'Digite o codigo',
+                    style: Theme.of(context).textTheme.titleLarge?.copyWith(
+                          fontWeight: FontWeight.w700,
+                        ),
+                    textAlign: TextAlign.center,
+                  ),
+                  const SizedBox(height: DesignTokens.spaceXs),
+                  Text(
+                    'Enviamos um codigo de 6 digitos para $_emailSent',
+                    style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+                          color: Theme.of(context).colorScheme.onSurfaceVariant,
+                        ),
+                    textAlign: TextAlign.center,
+                  ),
+                  const SizedBox(height: DesignTokens.spaceXl),
+                  AppSurfaceCard(
+                    margin: EdgeInsets.zero,
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        TextFormField(
+                          controller: _codeController,
+                          keyboardType: TextInputType.number,
+                          autocorrect: false,
+                          maxLength: 6,
+                          inputFormatters: [
+                            FilteringTextInputFormatter.digitsOnly,
+                          ],
+                          decoration: const InputDecoration(
+                            labelText: 'Codigo',
+                            hintText: '000000',
+                            prefixIcon: Icon(Icons.pin_rounded),
+                            counterText: '',
+                          ),
+                          validator: (v) {
+                            if (v == null || v.trim().length != 6) {
+                              return 'Digite o codigo de 6 digitos';
+                            }
+                            return null;
+                          },
+                        ),
+                        const SizedBox(height: DesignTokens.spaceLg),
+                        TextFormField(
+                          controller: _newPasswordController,
+                          obscureText: true,
+                          autocorrect: false,
+                          decoration: const InputDecoration(
+                            labelText: 'Nova senha',
+                            hintText: 'Minimo 6 caracteres',
+                            prefixIcon: Icon(Icons.lock_outline),
+                          ),
+                          validator: (v) {
+                            if (v == null || v.length < 6) {
+                              return 'A senha deve ter pelo menos 6 caracteres';
+                            }
+                            return null;
+                          },
+                        ),
+                        const SizedBox(height: DesignTokens.spaceLg),
+                        TextFormField(
+                          controller: _confirmPasswordController,
+                          obscureText: true,
+                          autocorrect: false,
+                          decoration: const InputDecoration(
+                            labelText: 'Confirmar senha',
+                            hintText: 'Repita a nova senha',
+                            prefixIcon: Icon(Icons.lock_outline),
+                          ),
+                          validator: (v) {
+                            if (v != _newPasswordController.text) {
+                              return 'As senhas nao coincidem';
+                            }
+                            return null;
+                          },
+                        ),
+                        const SizedBox(height: DesignTokens.spaceLg),
+                        Obx(
+                          () => PrimaryButton(
+                            label: 'Redefinir senha',
+                            icon: Icons.check_rounded,
+                            loading: authController.loading.value,
+                            onPressed: _handleResetPassword,
+                          ),
+                        ),
+                        if (authController.errorMessage.value != null) ...[
+                          const SizedBox(height: DesignTokens.spaceSm),
+                          Text(
+                            authController.errorMessage.value!,
+                            style: Theme.of(context)
+                                .textTheme
+                                .bodySmall
+                                ?.copyWith(
+                                  color: context.semanticColors.danger,
+                                ),
+                          ),
+                        ],
                         const SizedBox(height: DesignTokens.spaceSm),
-                        Text(
-                          authController.errorMessage.value!,
-                          style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                                color: context.semanticColors.danger,
-                              ),
+                        TextButton.icon(
+                          onPressed: _handleResendCode,
+                          icon: const Icon(Icons.refresh_rounded, size: 18),
+                          label: const Text('Reenviar codigo'),
                         ),
                       ],
-                    ],
+                    ),
                   ),
-                ),
+                ],
                 const SizedBox(height: DesignTokens.spaceLg),
                 TextButton(
                   onPressed: () => Get.back(),

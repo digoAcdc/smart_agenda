@@ -62,6 +62,25 @@ class SupabaseAuthServiceImpl implements IAuthService {
   }
 
   @override
+  Future<Result<void>> verifyRecoveryAndUpdatePassword(
+    String email,
+    String token,
+    String newPassword,
+  ) async {
+    try {
+      await _client.auth.verifyOTP(
+        type: OtpType.recovery,
+        token: token,
+        email: email,
+      );
+      await _client.auth.updateUser(UserAttributes(password: newPassword));
+      return Result.success(null);
+    } catch (e) {
+      return Result.failure(_mapError(e));
+    }
+  }
+
+  @override
   Future<Result<void>> signInAnonymously() async {
     try {
       await _client.auth.signInAnonymously();
@@ -111,9 +130,26 @@ class SupabaseAuthServiceImpl implements IAuthService {
           msg.contains('password reset')) {
         return 'SMTP nao configurado. O link de recuperacao nao pode ser enviado. Configure SMTP no Supabase (Project Settings > Auth > SMTP).';
       }
+      if (msg.contains('route') &&
+          (msg.contains('api/errors') || msg.contains('not-started'))) {
+        return 'Servico de recuperacao nao disponivel. Verifique a configuracao do Supabase (SMTP e Auth).';
+      }
+      if (msg.contains('otp_expired') ||
+          msg.contains('token has expired') ||
+          msg.contains('expired')) {
+        return 'Codigo expirado. Solicite um novo codigo.';
+      }
+      if (msg.contains('invalid_otp') ||
+          msg.contains('invalid token') ||
+          msg.contains('otp verification failed')) {
+        return 'Codigo invalido. Verifique e tente novamente.';
+      }
       return e.message;
     }
     final str = e.toString().toLowerCase();
+    if (str.contains('api/errors') || str.contains('not-started')) {
+      return 'Servico de recuperacao nao disponivel. Verifique a configuracao do Supabase (SMTP e Auth).';
+    }
     if (str.contains('connection') ||
         str.contains('socket') ||
         str.contains('network') ||
