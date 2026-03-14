@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
+import 'package:package_info_plus/package_info_plus.dart';
 
 import '../../core/config/supabase_config.dart';
 import '../../core/routes/app_routes.dart';
@@ -23,12 +24,14 @@ class ConfigPage extends StatefulWidget {
 class _ConfigPageState extends State<ConfigPage> {
   final transferController = Get.find<AgendaTransferController>();
   bool _isPremium = false;
+  String _versionText = 'Smart Agenda';
 
   Worker? _authWorker;
 
   @override
   void initState() {
     super.initState();
+    _loadVersionInfo();
     _checkPlanStatus();
     _authWorker =
         ever(Get.find<AuthController>().isLoggedIn, (_) => _checkPlanStatus());
@@ -38,6 +41,16 @@ class _ConfigPageState extends State<ConfigPage> {
   void dispose() {
     _authWorker?.dispose();
     super.dispose();
+  }
+
+  Future<void> _loadVersionInfo() async {
+    try {
+      final info = await PackageInfo.fromPlatform();
+      if (!mounted) return;
+      setState(() {
+        _versionText = 'Smart Agenda v${info.version} (${info.buildNumber})';
+      });
+    } catch (_) {}
   }
 
   Future<void> _checkPlanStatus() async {
@@ -538,7 +551,7 @@ class _ConfigPageState extends State<ConfigPage> {
       child: Column(
         children: [
           Text(
-            'Smart Agenda v1.1.0',
+            _versionText,
             style: Theme.of(context).textTheme.bodySmall?.copyWith(
                   color: Theme.of(context).colorScheme.onSurfaceVariant,
                 ),
