@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:get/get.dart';
@@ -23,9 +25,29 @@ class _ResetPasswordPageState extends State<ResetPasswordPage> {
 
   int _step = 1;
   String _emailSent = '';
+  int _cooldownSeconds = 0;
+  Timer? _cooldownTimer;
+
+  static const int _cooldownDuration = 60;
+
+  void _startCooldown() {
+    _cooldownTimer?.cancel();
+    setState(() => _cooldownSeconds = _cooldownDuration);
+    _cooldownTimer = Timer.periodic(const Duration(seconds: 1), (_) {
+      if (!mounted) return;
+      setState(() {
+        _cooldownSeconds--;
+        if (_cooldownSeconds <= 0) {
+          _cooldownTimer?.cancel();
+          _cooldownTimer = null;
+        }
+      });
+    });
+  }
 
   @override
   void dispose() {
+    _cooldownTimer?.cancel();
     _emailController.dispose();
     _codeController.dispose();
     _newPasswordController.dispose();
@@ -41,6 +63,7 @@ class _ResetPasswordPageState extends State<ResetPasswordPage> {
     final ok = await authController.resetPassword(email);
     if (!mounted) return;
     if (ok) {
+      _startCooldown();
       setState(() {
         _emailSent = email;
         _step = 2;
@@ -48,7 +71,7 @@ class _ResetPasswordPageState extends State<ResetPasswordPage> {
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
           content: const Text(
-            'Codigo enviado! Verifique seu e-mail e digite o codigo abaixo.',
+            'Codigo enviado! Use o codigo do e-mail (ignore o link).',
           ),
           backgroundColor: Theme.of(context).colorScheme.primaryContainer,
         ),
@@ -99,6 +122,7 @@ class _ResetPasswordPageState extends State<ResetPasswordPage> {
     final ok = await authController.resetPassword(_emailSent);
     if (!mounted) return;
     if (ok) {
+      _startCooldown();
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
           content: const Text('Novo codigo enviado! Verifique seu e-mail.'),
@@ -193,10 +217,14 @@ class _ResetPasswordPageState extends State<ResetPasswordPage> {
                         const SizedBox(height: DesignTokens.spaceLg),
                         Obx(
                           () => PrimaryButton(
-                            label: 'Enviar codigo',
+                            label: _cooldownSeconds > 0
+                                ? 'Aguarde $_cooldownSeconds s'
+                                : 'Enviar codigo',
                             icon: Icons.send_rounded,
                             loading: authController.loading.value,
-                            onPressed: _handleSendCode,
+                            onPressed: _cooldownSeconds > 0
+                                ? null
+                                : _handleSendCode,
                           ),
                         ),
                         if (authController.errorMessage.value != null) ...[
@@ -227,6 +255,15 @@ class _ResetPasswordPageState extends State<ResetPasswordPage> {
                     'Enviamos um codigo de 6 digitos para $_emailSent',
                     style: Theme.of(context).textTheme.bodyMedium?.copyWith(
                           color: Theme.of(context).colorScheme.onSurfaceVariant,
+                        ),
+                    textAlign: TextAlign.center,
+                  ),
+                  const SizedBox(height: DesignTokens.spaceXs),
+                  Text(
+                    'Ignore o link no e-mail e use apenas o codigo abaixo.',
+                    style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                          color: Theme.of(context).colorScheme.onSurfaceVariant,
+                          fontStyle: FontStyle.italic,
                         ),
                     textAlign: TextAlign.center,
                   ),
@@ -314,9 +351,15 @@ class _ResetPasswordPageState extends State<ResetPasswordPage> {
                         ],
                         const SizedBox(height: DesignTokens.spaceSm),
                         TextButton.icon(
-                          onPressed: _handleResendCode,
+                          onPressed: _cooldownSeconds > 0
+                              ? null
+                              : _handleResendCode,
                           icon: const Icon(Icons.refresh_rounded, size: 18),
-                          label: const Text('Reenviar codigo'),
+                          label: Text(
+                            _cooldownSeconds > 0
+                                ? 'Reenviar em $_cooldownSeconds s'
+                                : 'Reenviar codigo',
+                          ),
                         ),
                       ],
                     ),
