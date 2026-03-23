@@ -7,6 +7,7 @@ import 'package:intl/intl.dart';
 import 'package:uuid/uuid.dart';
 
 import '../../core/theme/design_tokens.dart';
+import '../../core/utils/account_prompt_utils.dart';
 import '../../core/utils/form_validators.dart';
 import '../../domain/entities/agenda_enums.dart';
 import '../../domain/entities/agenda_item.dart';
@@ -14,6 +15,7 @@ import '../../domain/entities/attachment_ref.dart';
 import '../../domain/entities/reminder_config.dart';
 import '../../domain/repositories/i_file_storage_service.dart';
 import '../../domain/repositories/i_notification_service.dart';
+import '../../domain/repositories/i_plan_service.dart';
 import '../controllers/agenda_controller.dart';
 import '../controllers/groups_controller.dart';
 
@@ -39,6 +41,7 @@ class _UpsertAgendaPageState extends State<UpsertAgendaPage> {
   int? reminderMinutes = 10;
   List<AttachmentRef> attachments = [];
   AgendaItem? editingItem;
+  bool _isPremium = false;
 
   @override
   void initState() {
@@ -57,6 +60,13 @@ class _UpsertAgendaPageState extends State<UpsertAgendaPage> {
       reminderMinutes = arg.reminder?.minutesBefore;
       attachments = [...arg.attachments];
     }
+    _loadPlanStatus();
+  }
+
+  Future<void> _loadPlanStatus() async {
+    final isPremium = await Get.find<IPlanService>().isPremium();
+    if (!mounted) return;
+    setState(() => _isPremium = isPremium);
   }
 
   Future<void> _pickStartDateTime() async {
@@ -108,6 +118,10 @@ class _UpsertAgendaPageState extends State<UpsertAgendaPage> {
   }
 
   Future<void> _addImageAttachment() async {
+    if (!_isPremium) {
+      _showSaved('Upload de imagem e uma funcionalidade Premium.');
+      return;
+    }
     final fileStorage = Get.find<IFileStorageService>();
     final picked = await imagePicker.pickImage(source: ImageSource.gallery);
     if (picked == null) return;
@@ -165,6 +179,9 @@ class _UpsertAgendaPageState extends State<UpsertAgendaPage> {
 
   Future<void> _save() async {
     if (_formKey.currentState?.validate() != true) return;
+    final canProceed = await AccountPromptUtils.confirmSaveWithoutAccount();
+    if (!canProceed) return;
+
     final controller = Get.find<AgendaController>();
 
     final notificationId =
@@ -268,6 +285,8 @@ class _UpsertAgendaPageState extends State<UpsertAgendaPage> {
           FilledButton(
             onPressed: () async {
               if (formKey.currentState?.validate() != true) return;
+              final canProceed = await AccountPromptUtils.confirmSaveWithoutAccount();
+              if (!canProceed) return;
               final name = nameController.text.trim();
               final newId = await groupsController.create(name);
               Get.back();
@@ -451,43 +470,6 @@ class _UpsertAgendaPageState extends State<UpsertAgendaPage> {
                       ),
                     ],
                   ),
-                ),
-                const SizedBox(height: 10),
-                Wrap(
-                  spacing: 2,
-                  runSpacing: 6,
-                  crossAxisAlignment: WrapCrossAlignment.center,
-                  children: [
-                    Padding(
-                      padding: const EdgeInsets.only(right: 6),
-                      child: Text(
-                        'Sugestoes',
-                        style: Theme.of(context).textTheme.labelSmall,
-                      ),
-                    ),
-                    _timeSuggestionChip(context, _suggestedTime(startAt, 0),
-                        onTap: () {
-                      setState(() => endAt = startAt.add(const Duration(minutes: 30)));
-                    }, selected: endAt != null &&
-                        endAt!.difference(startAt).inMinutes == 30),
-                    _timeSuggestionChip(context, _suggestedTime(startAt, 30),
-                        onTap: () {
-                      setState(() => endAt = startAt.add(const Duration(hours: 1)));
-                    }, selected: endAt != null &&
-                        endAt!.difference(startAt).inMinutes == 60),
-                    _timeSuggestionChip(context, _suggestedTime(startAt, 60),
-                        onTap: () {
-                      setState(() => endAt = startAt.add(const Duration(hours: 2)));
-                    }, selected: endAt != null &&
-                        endAt!.difference(startAt).inMinutes == 120),
-                    _timeSuggestionChip(context, _suggestedTime(startAt, 90),
-                        onTap: () {
-                      setState(() {
-                        endAt = startAt.add(const Duration(hours: 2, minutes: 30));
-                      });
-                    }, selected: endAt != null &&
-                        endAt!.difference(startAt).inMinutes == 150),
-                  ],
                 ),
               ],
             ),
@@ -734,8 +716,31 @@ class _UpsertAgendaPageState extends State<UpsertAgendaPage> {
                   ),
             ),
             const Spacer(),
+            if (!_isPremium)
+              Container(
+                margin: const EdgeInsets.only(right: 8),
+                padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                decoration: BoxDecoration(
+                  color: scheme.outline.withValues(alpha: 0.12),
+                  borderRadius: BorderRadius.circular(999),
+                ),
+                child: Row(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    Icon(Icons.lock_outline, size: 14, color: scheme.outline),
+                    const SizedBox(width: 4),
+                    Text(
+                      'Premium',
+                      style: Theme.of(context).textTheme.labelSmall?.copyWith(
+                            color: scheme.outline,
+                            fontWeight: FontWeight.w600,
+                          ),
+                    ),
+                  ],
+                ),
+              ),
             FilledButton.tonalIcon(
-              onPressed: _addImageAttachment,
+              onPressed: _isPremium ? _addImageAttachment : null,
               icon: const Icon(Icons.attach_file_rounded),
               label: const Text('Add Files'),
               style: FilledButton.styleFrom(
@@ -784,7 +789,7 @@ class _UpsertAgendaPageState extends State<UpsertAgendaPage> {
               itemBuilder: (context, index) {
                 if (index == attachments.length) {
                   return InkWell(
-                    onTap: _addImageAttachment,
+                    onTap: _isPremium ? _addImageAttachment : null,
                     borderRadius: BorderRadius.circular(14),
                     child: Container(
                       width: 104,
@@ -976,30 +981,6 @@ class _UpsertAgendaPageState extends State<UpsertAgendaPage> {
     );
   }
 
-  Widget _timeSuggestionChip(
-    BuildContext context,
-    String label, {
-    required VoidCallback onTap,
-    required bool selected,
-  }) {
-    return Padding(
-      padding: const EdgeInsets.only(right: 6),
-      child: ChoiceChip(
-        label: Text(label),
-        selected: selected,
-        selectedColor: Theme.of(context).colorScheme.primary,
-        backgroundColor: Theme.of(context).colorScheme.surface,
-        onSelected: (_) => onTap(),
-        labelStyle: Theme.of(context).textTheme.labelSmall?.copyWith(
-              color: selected
-                  ? Theme.of(context).colorScheme.onPrimary
-                  : Theme.of(context).colorScheme.onSurface,
-              fontWeight: FontWeight.w700,
-            ),
-      ),
-    );
-  }
-
   Widget _groupTile(
     BuildContext context, {
     required String title,
@@ -1052,7 +1033,4 @@ class _UpsertAgendaPageState extends State<UpsertAgendaPage> {
     );
   }
 
-  String _suggestedTime(DateTime date, int addMinutes) {
-    return DateFormat('HH:mm').format(date.add(Duration(minutes: addMinutes)));
-  }
 }
