@@ -161,15 +161,27 @@ class _RegisterPageState extends State<RegisterPage> {
                           onPressed: _handleRegister,
                         ),
                       ),
-                      if (authController.errorMessage.value != null) ...[
-                        const SizedBox(height: DesignTokens.spaceSm),
-                        Text(
-                          authController.errorMessage.value!,
-                          style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                                color: context.semanticColors.danger,
-                              ),
-                        ),
-                      ],
+                      Obx(
+                        () {
+                          final msg = authController.errorMessage.value;
+                          if (msg == null || msg.isEmpty) {
+                            return const SizedBox.shrink();
+                          }
+                          return Padding(
+                            padding:
+                                const EdgeInsets.only(top: DesignTokens.spaceSm),
+                            child: Text(
+                              msg,
+                              style: Theme.of(context)
+                                  .textTheme
+                                  .bodySmall
+                                  ?.copyWith(
+                                    color: context.semanticColors.danger,
+                                  ),
+                            ),
+                          );
+                        },
+                      ),
                     ],
                   ),
                 ),

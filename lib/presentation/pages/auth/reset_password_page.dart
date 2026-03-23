@@ -227,18 +227,28 @@ class _ResetPasswordPageState extends State<ResetPasswordPage> {
                                 : _handleSendCode,
                           ),
                         ),
-                        if (authController.errorMessage.value != null) ...[
-                          const SizedBox(height: DesignTokens.spaceSm),
-                          Text(
-                            authController.errorMessage.value!,
-                            style: Theme.of(context)
-                                .textTheme
-                                .bodySmall
-                                ?.copyWith(
-                                  color: context.semanticColors.danger,
-                                ),
-                          ),
-                        ],
+                        Obx(
+                          () {
+                            final msg = authController.errorMessage.value;
+                            if (msg == null || msg.isEmpty) {
+                              return const SizedBox.shrink();
+                            }
+                            return Padding(
+                              padding: const EdgeInsets.only(
+                                top: DesignTokens.spaceSm,
+                              ),
+                              child: Text(
+                                msg,
+                                style: Theme.of(context)
+                                    .textTheme
+                                    .bodySmall
+                                    ?.copyWith(
+                                      color: context.semanticColors.danger,
+                                    ),
+                              ),
+                            );
+                          },
+                        ),
                       ],
                     ),
                   ),
@@ -337,18 +347,28 @@ class _ResetPasswordPageState extends State<ResetPasswordPage> {
                             onPressed: _handleResetPassword,
                           ),
                         ),
-                        if (authController.errorMessage.value != null) ...[
-                          const SizedBox(height: DesignTokens.spaceSm),
-                          Text(
-                            authController.errorMessage.value!,
-                            style: Theme.of(context)
-                                .textTheme
-                                .bodySmall
-                                ?.copyWith(
-                                  color: context.semanticColors.danger,
-                                ),
-                          ),
-                        ],
+                        Obx(
+                          () {
+                            final msg = authController.errorMessage.value;
+                            if (msg == null || msg.isEmpty) {
+                              return const SizedBox.shrink();
+                            }
+                            return Padding(
+                              padding: const EdgeInsets.only(
+                                top: DesignTokens.spaceSm,
+                              ),
+                              child: Text(
+                                msg,
+                                style: Theme.of(context)
+                                    .textTheme
+                                    .bodySmall
+                                    ?.copyWith(
+                                      color: context.semanticColors.danger,
+                                    ),
+                              ),
+                            );
+                          },
+                        ),
                         const SizedBox(height: DesignTokens.spaceSm),
                         TextButton.icon(
                           onPressed: _cooldownSeconds > 0
