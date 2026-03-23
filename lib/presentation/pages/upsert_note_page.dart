@@ -50,7 +50,9 @@ class _UpsertNotePageState extends State<UpsertNotePage> {
   }
 
   Future<void> _loadPlanStatus() async {
-    final isPremium = await Get.find<IPlanService>().isPremium();
+    final plan = Get.find<IPlanService>();
+    await plan.refresh();
+    final isPremium = await plan.isPremium();
     if (!mounted) return;
     setState(() => _isPremium = isPremium);
   }

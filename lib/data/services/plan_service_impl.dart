@@ -61,10 +61,12 @@ class PlanServiceImpl extends GetxController implements IPlanService {
       }
 
       // 2. TEMPORÁRIO: fallback allow list para dev/admin
+      // Nao filtrar por email aqui: a RLS so expoe linhas em que
+      // LOWER(email) = LOWER(jwt email). Um .eq('email', ...) falha se a
+      // capitalizacao no banco nao bater exatamente com o filtro.
       final response = await _client
           .from('premium_allowlist')
           .select('id')
-          .eq('email', user.email.toLowerCase())
           .eq('is_active', true)
           .maybeSingle();
 

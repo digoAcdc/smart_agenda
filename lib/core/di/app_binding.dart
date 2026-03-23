@@ -44,6 +44,7 @@ import '../../data/services/sharing_service_impl.dart';
 import '../../data/services/sharing_service_stub.dart';
 import '../../data/services/sync_engine_impl.dart';
 import '../../data/services/sync_service_stub.dart';
+import '../../data/services/user_data_deletion_service_impl.dart';
 import '../../domain/repositories/i_ads_service.dart';
 import '../../domain/repositories/i_agenda_repository.dart';
 import '../../domain/repositories/i_auth_service.dart';
@@ -61,6 +62,7 @@ import '../../domain/repositories/i_premium_service.dart';
 import '../../domain/repositories/i_plan_service.dart';
 import '../../domain/repositories/i_sharing_service.dart';
 import '../../domain/repositories/i_sync_service.dart';
+import '../../domain/repositories/i_user_data_deletion_service.dart';
 import '../../domain/usecases/agenda_usecases.dart';
 import '../../domain/usecases/group_usecases.dart';
 import '../../presentation/controllers/ads_controller.dart';
@@ -79,6 +81,14 @@ class AppBinding extends Bindings {
   @override
   void dependencies() {
     Get.put(AppDatabase(), permanent: true);
+
+    Get.lazyPut<IUserDataDeletionService>(
+      () => UserDataDeletionServiceImpl(
+        Get.find<AppDatabase>(),
+        SupabaseConfig.isConfigured ? Supabase.instance.client : null,
+      ),
+      fenix: true,
+    );
 
     Get.lazyPut(() => AgendaLocalDataSource(Get.find()), fenix: true);
     Get.lazyPut(() => GroupsLocalDataSource(Get.find()), fenix: true);
