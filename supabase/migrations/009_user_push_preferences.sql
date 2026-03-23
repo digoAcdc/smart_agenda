@@ -117,7 +117,13 @@ SECURITY DEFINER
 SET search_path = public
 AS $$
 DECLARE
-  ref_date DATE := (DATE_TRUNC('week', CURRENT_DATE))::DATE;
+  ref_date DATE := (
+    CASE
+      -- No domingo, o resumo semanal deve apontar para a semana seguinte.
+      WHEN EXTRACT(DOW FROM CURRENT_DATE) = 0 THEN (CURRENT_DATE + INTERVAL '1 day')::DATE
+      ELSE (DATE_TRUNC('week', CURRENT_DATE))::DATE
+    END
+  );
 BEGIN
   RETURN QUERY
   WITH premium_users AS (
@@ -263,7 +269,13 @@ SECURITY DEFINER
 SET search_path = public
 AS $$
 DECLARE
-  ref_date DATE := (DATE_TRUNC('week', CURRENT_DATE))::DATE;
+  ref_date DATE := (
+    CASE
+      -- No domingo, o resumo semanal deve apontar para a semana seguinte.
+      WHEN EXTRACT(DOW FROM CURRENT_DATE) = 0 THEN (CURRENT_DATE + INTERVAL '1 day')::DATE
+      ELSE (DATE_TRUNC('week', CURRENT_DATE))::DATE
+    END
+  );
   week_start TIMESTAMPTZ;
   week_end TIMESTAMPTZ;
 BEGIN
