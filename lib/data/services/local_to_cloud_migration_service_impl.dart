@@ -7,7 +7,6 @@ import 'package:supabase_flutter/supabase_flutter.dart';
 import '../../domain/entities/attachment_ref.dart';
 import '../../domain/repositories/i_file_storage_service.dart';
 import '../../domain/repositories/i_local_to_cloud_migration_service.dart';
-import '../../domain/repositories/i_plan_service.dart';
 import '../datasources/agenda_local_datasource.dart';
 import '../datasources/agenda_supabase_datasource.dart';
 import '../datasources/class_schedule_local_datasource.dart';
@@ -15,10 +14,9 @@ import '../datasources/groups_local_datasource.dart';
 import '../datasources/groups_supabase_datasource.dart';
 import '../models/mappers.dart';
 
-/// Migra dados locais para Supabase quando o usuario vira premium.
+/// Migra dados locais para Supabase quando um usuario autenticado entra no app.
 class LocalToCloudMigrationServiceImpl implements ILocalToCloudMigrationService {
   LocalToCloudMigrationServiceImpl(
-    this._planService,
     this._localAgenda,
     this._localGroups,
     this._localSchedule,
@@ -28,7 +26,6 @@ class LocalToCloudMigrationServiceImpl implements ILocalToCloudMigrationService 
     this._client,
   );
 
-  final IPlanService _planService;
   final AgendaLocalDataSource _localAgenda;
   final GroupsLocalDataSource _localGroups;
   final ClassScheduleLocalDataSource _localSchedule;
@@ -39,10 +36,13 @@ class LocalToCloudMigrationServiceImpl implements ILocalToCloudMigrationService 
 
   static const _keyPrefix = 'local_migrated_';
 
+  bool _isHttpUrl(String? value) {
+    if (value == null) return false;
+    return value.startsWith('http://') || value.startsWith('https://');
+  }
+
   @override
   Future<bool> migrateIfNeeded() async {
-    if (!await _planService.isPremium()) return false;
-
     final user = _client.auth.currentUser;
     if (user == null) return false;
 
@@ -88,10 +88,25 @@ class LocalToCloudMigrationServiceImpl implements ILocalToCloudMigrationService 
           final path = att.localPath!;
           if (File(path).existsSync()) {
             final result = await _fileStorage.copyImageToAppStorage(path);
-            if (result.isSuccess) remoteUrl = result.data;
+            if (result.isSuccess && _isHttpUrl(result.data)) {
+              remoteUrl = result.data;
+            }
           }
         }
-        attachmentsWithUrls.add(att.copyWith(remoteUrl: remoteUrl));
+        attachmentsWithUrls.add(
+          AttachmentRef(
+            id: att.id,
+            itemId: att.itemId,
+            type: att.type,
+            localPath: null,
+            remoteUrl: remoteUrl,
+            thumbPath: att.thumbPath,
+            title: att.title,
+            mimeType: att.mimeType,
+            sizeBytes: att.sizeBytes,
+            createdAt: att.createdAt,
+          ),
+        );
       }
       item = item.copyWith(attachments: attachmentsWithUrls);
 

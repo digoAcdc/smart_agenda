@@ -6,9 +6,11 @@ import 'package:image_picker/image_picker.dart';
 import 'package:uuid/uuid.dart';
 
 import '../../core/theme/design_tokens.dart';
+import '../../core/utils/account_prompt_utils.dart';
 import '../../core/utils/form_validators.dart';
 import '../../domain/entities/note.dart';
 import '../../domain/repositories/i_file_storage_service.dart';
+import '../../domain/repositories/i_plan_service.dart';
 import '../controllers/note_controller.dart';
 import '../widgets/checklist_item_tile.dart';
 
@@ -30,6 +32,7 @@ class _UpsertNotePageState extends State<UpsertNotePage> {
   List<ChecklistItem> _checklistItems = [];
   String? _imagePath;
   String? _imageUrl;
+  bool _isPremium = false;
 
   @override
   void initState() {
@@ -43,6 +46,13 @@ class _UpsertNotePageState extends State<UpsertNotePage> {
       _imagePath = arg.imagePath;
       _imageUrl = arg.imageUrl;
     }
+    _loadPlanStatus();
+  }
+
+  Future<void> _loadPlanStatus() async {
+    final isPremium = await Get.find<IPlanService>().isPremium();
+    if (!mounted) return;
+    setState(() => _isPremium = isPremium);
   }
 
   @override
@@ -54,6 +64,13 @@ class _UpsertNotePageState extends State<UpsertNotePage> {
   }
 
   Future<void> _addImage() async {
+    if (!_isPremium) {
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Upload de imagem e uma funcionalidade Premium.')),
+      );
+      return;
+    }
     final picked = await _imagePicker.pickImage(source: ImageSource.gallery);
     if (picked == null) return;
     final fileStorage = Get.find<IFileStorageService>();
@@ -113,6 +130,9 @@ class _UpsertNotePageState extends State<UpsertNotePage> {
 
   Future<void> _save() async {
     if (!_formKey.currentState!.validate()) return;
+    final canProceed = await AccountPromptUtils.confirmSaveWithoutAccount();
+    if (!canProceed) return;
+
     final controller = Get.find<NoteController>();
     final now = DateTime.now();
     final noteId = _editingNote?.id ?? const Uuid().v4();
@@ -275,6 +295,34 @@ class _UpsertNotePageState extends State<UpsertNotePage> {
               'Imagem (opcional)',
               style: theme.textTheme.titleSmall,
             ),
+            if (!_isPremium) ...[
+              const SizedBox(height: DesignTokens.spaceXs),
+              Container(
+                padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                decoration: BoxDecoration(
+                  color: theme.colorScheme.outline.withValues(alpha: 0.12),
+                  borderRadius: BorderRadius.circular(999),
+                ),
+                child: Row(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    Icon(
+                      Icons.lock_outline,
+                      size: 14,
+                      color: theme.colorScheme.outline,
+                    ),
+                    const SizedBox(width: 4),
+                    Text(
+                      'Premium',
+                      style: theme.textTheme.labelSmall?.copyWith(
+                            color: theme.colorScheme.outline,
+                            fontWeight: FontWeight.w600,
+                          ),
+                    ),
+                  ],
+                ),
+              ),
+            ],
             const SizedBox(height: DesignTokens.spaceSm),
             if (_imagePath != null || _imageUrl != null) ...[
               Stack(
@@ -315,7 +363,7 @@ class _UpsertNotePageState extends State<UpsertNotePage> {
               const SizedBox(height: DesignTokens.spaceSm),
             ],
             OutlinedButton.icon(
-              onPressed: _addImage,
+              onPressed: _isPremium ? _addImage : null,
               icon: const Icon(Icons.add_photo_alternate_outlined),
               label: const Text('Adicionar imagem'),
             ),

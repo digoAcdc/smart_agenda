@@ -69,20 +69,16 @@ class MorePage extends StatelessWidget {
                   if (SupabaseConfig.isConfigured) ...[
                     const Divider(height: 1),
                     Obx(() {
-                      final isPremium = Get.isRegistered<AuthController>()
-                          ? Get.find<AuthController>().isPremium.value
-                          : false;
+                      final auth = Get.find<AuthController>();
                       return _buildActionTile(
                         context: context,
                         icon: Icons.share_rounded,
                         iconColor: primary,
                         title: 'Compartilhar',
-                        subtitle: isPremium
+                        subtitle: auth.isPremium.value
                             ? 'Compartilhe sua agenda'
-                            : 'Compartilhe em tempo real na nuvem',
-                        onTap: () => _handleCompartilhar(context, isPremium),
-                        isPremiumLocked: !isPremium,
-                        opacity: isPremium ? 1.0 : 0.65,
+                            : 'Plano free: 1 compartilhamento ativo',
+                        onTap: () => _handleCompartilhar(context, auth.isLoggedIn.value),
                       );
                     }),
                   ],
@@ -95,56 +91,12 @@ class MorePage extends StatelessWidget {
     );
   }
 
-  void _handleCompartilhar(BuildContext context, bool isPremium) {
-    if (isPremium) {
+  void _handleCompartilhar(BuildContext context, bool isLoggedIn) {
+    if (isLoggedIn) {
       Get.toNamed(AppRoutes.sharing);
       return;
     }
-    _showCompartilharPremiumModal(context);
-  }
-
-  void _showCompartilharPremiumModal(BuildContext context) {
-    showDialog<void>(
-      context: context,
-      builder: (ctx) => AlertDialog(
-        icon: Icon(
-          Icons.people_outline,
-          size: 48,
-          color: Theme.of(ctx).colorScheme.primary,
-        ),
-        title: const Text('Compartilhar em tempo real'),
-        content: const SingleChildScrollView(
-          child: Text(
-            'Compartilhe sua agenda com quem importa — em tempo real, na nuvem.\n\n'
-            'Convide outra pessoa que tenha o Smart Agenda instalado e faça login. '
-            'Ela verá sua agenda instantaneamente, sempre sincronizada. '
-            'Sem enviar arquivos, sem esperar. Tudo atualizado na hora.\n\n'
-            'É um recurso exclusivo Premium. Torne-se Premium e desbloqueie essa e outras funcionalidades.',
-          ),
-        ),
-        actionsAlignment: MainAxisAlignment.center,
-        actionsOverflowAlignment: OverflowBarAlignment.center,
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.of(ctx).pop(),
-            child: const Text('Entendi'),
-          ),
-          FilledButton(
-            onPressed: () {
-              Navigator.of(ctx).pop();
-              if (!Get.isRegistered<AuthController>()) return;
-              final authController = Get.find<AuthController>();
-              if (authController.isLoggedIn.value) {
-                Get.toNamed(AppRoutes.upgrade);
-              } else {
-                Get.toNamed(AppRoutes.login, arguments: {'from': 'premium'});
-              }
-            },
-            child: const Text('Tornar-se Premium'),
-          ),
-        ],
-      ),
-    );
+    Get.toNamed(AppRoutes.login, arguments: {'from': 'sharing'});
   }
 
   Widget _buildActionTile({

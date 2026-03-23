@@ -30,7 +30,6 @@ import '../../data/repositories/note_repository_impl.dart';
 import '../../data/services/ad_unlock_provider_impl.dart';
 import '../../data/services/admob_service_impl.dart';
 import '../../data/services/ads_service_stub.dart';
-import '../../data/services/agenda_transfer_service_impl.dart';
 import '../../data/services/auth_service_stub.dart';
 import '../../data/services/file_storage_service_orchestrator.dart';
 import '../../data/services/local_to_cloud_migration_service_impl.dart';
@@ -47,7 +46,6 @@ import '../../data/services/sync_engine_impl.dart';
 import '../../data/services/sync_service_stub.dart';
 import '../../domain/repositories/i_ads_service.dart';
 import '../../domain/repositories/i_agenda_repository.dart';
-import '../../domain/repositories/i_agenda_transfer_service.dart';
 import '../../domain/repositories/i_auth_service.dart';
 import '../../domain/repositories/i_file_storage_service.dart';
 import '../../domain/repositories/i_groups_repository.dart';
@@ -64,13 +62,11 @@ import '../../domain/repositories/i_plan_service.dart';
 import '../../domain/repositories/i_sharing_service.dart';
 import '../../domain/repositories/i_sync_service.dart';
 import '../../domain/usecases/agenda_usecases.dart';
-import '../../domain/usecases/agenda_transfer_usecases.dart';
 import '../../domain/usecases/group_usecases.dart';
 import '../../presentation/controllers/ads_controller.dart';
 import '../../presentation/controllers/billing_controller.dart';
 import '../../presentation/controllers/agenda_controller.dart';
 import '../../presentation/controllers/auth_controller.dart';
-import '../../presentation/controllers/agenda_transfer_controller.dart';
 import '../../presentation/controllers/class_group_controller.dart';
 import '../../presentation/controllers/class_schedule_controller.dart';
 import '../../presentation/controllers/note_controller.dart';
@@ -155,7 +151,6 @@ class AppBinding extends Bindings {
           ? SharingServiceImpl(
               Get.find<IPlanService>(),
               Get.find<IAuthService>(),
-              Get.find<IAdUnlockProvider>(),
               Get.find<AgendaSharingSupabaseDataSource>(),
             )
           : SharingServiceStub(),
@@ -164,7 +159,6 @@ class AppBinding extends Bindings {
     if (SupabaseConfig.isConfigured) {
       Get.lazyPut<ILocalToCloudMigrationService>(
         () => LocalToCloudMigrationServiceImpl(
-          Get.find<IPlanService>(),
           Get.find<AgendaLocalDataSource>(),
           Get.find<GroupsLocalDataSource>(),
           Get.find<ClassScheduleLocalDataSource>(),
@@ -208,7 +202,6 @@ class AppBinding extends Bindings {
     Get.lazyPut<ISyncService>(
       () => SupabaseConfig.isConfigured
           ? SyncEngineImpl(
-              Get.find<IPlanService>(),
               Get.find<IConnectivityService>(),
               Get.find<AgendaLocalDataSource>(),
               Get.find<GroupsLocalDataSource>(),
@@ -226,15 +219,6 @@ class AppBinding extends Bindings {
     );
     Get.lazyPut<INotificationService>(
       () => NotificationServiceImpl(FlutterLocalNotificationsPlugin()),
-      fenix: true,
-    );
-    Get.lazyPut<IAgendaTransferService>(
-      () => AgendaTransferServiceImpl(
-        database: Get.find(),
-        agendaRepository: Get.find(),
-        groupsRepository: Get.find(),
-        notificationService: Get.find(),
-      ),
       fenix: true,
     );
 
@@ -290,8 +274,6 @@ class AppBinding extends Bindings {
     Get.lazyPut(() => GetAgendaItemsByRange(Get.find()), fenix: true);
     Get.lazyPut(() => GetAgendaMarkersByRange(Get.find()), fenix: true);
     Get.lazyPut(() => SearchAgendaItems(Get.find()), fenix: true);
-    Get.lazyPut(() => ExportAgendaToFile(Get.find()), fenix: true);
-    Get.lazyPut(() => ImportAgendaFromFile(Get.find()), fenix: true);
 
     Get.lazyPut(() => CreateGroup(Get.find()), fenix: true);
     Get.lazyPut(() => UpdateGroup(Get.find()), fenix: true);
@@ -343,14 +325,6 @@ class AppBinding extends Bindings {
     Get.put(AdsController(Get.find<IAdsService>()), permanent: true);
     Get.put(
       BillingController(Get.find<IBillingService>(), Get.find<IPlanService>()),
-      permanent: true,
-    );
-    Get.put(
-      AgendaTransferController(
-        exportAgendaToFile: Get.find(),
-        importAgendaFromFile: Get.find(),
-        agendaController: Get.find(),
-      ),
       permanent: true,
     );
   }

@@ -6,9 +6,7 @@ import '../../core/config/supabase_config.dart';
 import '../../core/routes/app_routes.dart';
 import '../../core/theme/design_tokens.dart';
 import '../../domain/repositories/i_auth_service.dart';
-import '../../domain/repositories/i_ads_service.dart';
 import '../../domain/repositories/i_plan_service.dart';
-import '../controllers/agenda_transfer_controller.dart';
 import '../controllers/auth_controller.dart';
 import '../controllers/notifications_controller.dart';
 import '../widgets/ad_banner_widget.dart';
@@ -22,7 +20,6 @@ class ConfigPage extends StatefulWidget {
 }
 
 class _ConfigPageState extends State<ConfigPage> {
-  final transferController = Get.find<AgendaTransferController>();
   bool _isPremium = false;
   String _versionText = 'Smart Agenda';
 
@@ -78,49 +75,12 @@ class _ConfigPageState extends State<ConfigPage> {
   }
 
   void _handleCompartilharAgenda() {
-    if (_isPremium) {
+    final authController = Get.find<AuthController>();
+    if (authController.isLoggedIn.value) {
       Get.toNamed(AppRoutes.sharing);
       return;
     }
-    _showCompartilharPremiumModal();
-  }
-
-  void _showCompartilharPremiumModal() {
-    showDialog<void>(
-      context: context,
-      builder: (context) => AlertDialog(
-        icon: Icon(
-          Icons.people_outline,
-          size: 48,
-          color: Theme.of(context).colorScheme.primary,
-        ),
-        title: const Text('Compartilhar em tempo real'),
-        content: const SingleChildScrollView(
-          child: Text(
-            'Compartilhe sua agenda com quem importa — em tempo real, na nuvem.\n\n'
-            'Convide outra pessoa que tenha o Smart Agenda instalado e faça login. '
-            'Ela verá sua agenda instantaneamente, sempre sincronizada. '
-            'Sem enviar arquivos, sem esperar. Tudo atualizado na hora.\n\n'
-            'É um recurso exclusivo Premium. Torne-se Premium e desbloqueie essa e outras funcionalidades.',
-          ),
-        ),
-        actionsAlignment: MainAxisAlignment.center,
-        actionsOverflowAlignment: OverflowBarAlignment.center,
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.of(context).pop(),
-            child: const Text('Entendi'),
-          ),
-          FilledButton(
-            onPressed: () {
-              Navigator.of(context).pop();
-              _openAreaPremium();
-            },
-            child: const Text('Tornar-se Premium'),
-          ),
-        ],
-      ),
-    );
+    Get.toNamed(AppRoutes.login, arguments: {'from': 'sharing'});
   }
 
   void _openAreaPremium() {
@@ -130,65 +90,6 @@ class _ConfigPageState extends State<ConfigPage> {
     } else {
       Get.toNamed(AppRoutes.login, arguments: {'from': 'premium'});
     }
-  }
-
-  Future<void> _handleShareAgenda() async {
-    final ok = await transferController.shareAgenda();
-    if (!mounted) return;
-    ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(
-        content: Text(
-          ok
-              ? (transferController.message.value ?? 'Agenda compartilhada.')
-              : (transferController.message.value ??
-                  'Nao foi possivel compartilhar a agenda.'),
-        ),
-      ),
-    );
-  }
-
-  Future<void> _handleImportAgenda() async {
-    if (!_isPremium) {
-      final adService = Get.find<IAdsService>();
-      final rewarded = await adService.showRewardedAd();
-      if (!rewarded) return;
-    }
-    final report = await transferController.importAgenda();
-    if (!mounted) return;
-
-    if (report == null) {
-      final feedback = transferController.message.value;
-      if (feedback != null) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text(feedback)),
-        );
-      }
-      return;
-    }
-
-    await showDialog<void>(
-      context: context,
-      builder: (context) {
-        return AlertDialog(
-          title: const Text('Importacao concluida'),
-          content: Text(
-            'Grupos: +${report.createdGroups} novos, '
-            '${report.updatedGroups} atualizados, ${report.skippedGroups} ignorados.\n'
-            'Eventos: +${report.createdItems} novos, '
-            '${report.updatedItems} atualizados, ${report.skippedItems} ignorados.\n'
-            'Grade horaria: +${report.createdClassSlots} novos, '
-            '${report.updatedClassSlots} atualizados, ${report.skippedClassSlots} ignorados.\n'
-            'Lembretes reagendados: ${report.reScheduledReminders}.',
-          ),
-          actions: [
-            TextButton(
-              onPressed: () => Navigator.of(context).pop(),
-              child: const Text('Fechar'),
-            ),
-          ],
-        );
-      },
-    );
   }
 
   @override
@@ -490,56 +391,31 @@ class _ConfigPageState extends State<ConfigPage> {
           ),
         ),
         AppSurfaceCard(
-          child: Obx(() {
-            final transferLoading = transferController.loading.value;
-            return Column(
-              children: [
-                if (!_isPremium) ...[
-                  _buildAgendaActionTile(
-                    icon: Icons.file_upload_outlined,
-                    iconColor: Theme.of(context).colorScheme.primary,
-                    title: 'Exportar Agenda',
-                    subtitle: 'Salvar backup local (JSON)',
-                    onTap: transferLoading ? null : () => _handleShareAgenda(),
-                    loading: transferLoading,
-                  ),
-                  const Divider(height: 1),
-                  _buildAgendaActionTile(
-                    icon: Icons.file_download_outlined,
-                    iconColor: Theme.of(context).colorScheme.primary,
-                    title: 'Importar Agenda',
-                    subtitle: 'Restaurar de arquivo (JSON)',
-                    onTap: transferLoading ? null : () => _handleImportAgenda(),
-                    loading: transferLoading,
-                  ),
-                  const Divider(height: 1),
-                ],
-                _buildAgendaActionTile(
-                  icon: Icons.people_outline,
-                  iconColor: Theme.of(context).colorScheme.primary,
-                  title: 'Compartilhar Agenda',
+          child: Column(
+            children: [
+              _buildAgendaActionTile(
+                icon: Icons.people_outline,
+                iconColor: Theme.of(context).colorScheme.primary,
+                title: 'Compartilhar Agenda',
                   subtitle: _isPremium
                       ? 'Convidar outros usuarios'
-                      : 'Compartilhe em tempo real na nuvem',
-                  onTap: () => _handleCompartilharAgenda(),
-                  isPremiumLocked: !_isPremium,
-                  opacity: _isPremium ? 1.0 : 0.65,
+                      : 'Plano free: 1 compartilhamento ativo',
+                onTap: () => _handleCompartilharAgenda(),
+              ),
+              if (Get.find<AuthController>().isLoggedIn.value &&
+                  SupabaseConfig.isConfigured &&
+                  Get.isRegistered<NotificationsController>()) ...[
+                const Divider(height: 1),
+                _buildAgendaActionTile(
+                  icon: Icons.notifications_outlined,
+                  iconColor: Theme.of(context).colorScheme.tertiary,
+                  title: 'Resumos da agenda',
+                  subtitle: 'Notificacoes diarias e semanais',
+                  onTap: () => Get.toNamed(AppRoutes.notifications),
                 ),
-                if (Get.find<AuthController>().isLoggedIn.value &&
-                    SupabaseConfig.isConfigured &&
-                    Get.isRegistered<NotificationsController>()) ...[
-                  const Divider(height: 1),
-                  _buildAgendaActionTile(
-                    icon: Icons.notifications_outlined,
-                    iconColor: Theme.of(context).colorScheme.tertiary,
-                    title: 'Resumos da agenda',
-                    subtitle: 'Notificacoes diarias e semanais',
-                    onTap: () => Get.toNamed(AppRoutes.notifications),
-                  ),
-                ],
               ],
-            );
-          }),
+            ],
+          ),
         ),
       ],
     );

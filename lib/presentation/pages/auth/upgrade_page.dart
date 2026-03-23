@@ -28,10 +28,13 @@ class UpgradePage extends StatelessWidget {
     bool isPremium,
     BillingPurchaseStatus status,
   ) {
-
     return Scaffold(
       backgroundColor: context.palette.appBackground,
       appBar: AppBar(
+        leading: IconButton(
+          icon: const Icon(Icons.arrow_back_rounded),
+          onPressed: () => _handleBack(ctrl),
+        ),
         title: const Text('Area Premium'),
         actions: [
           IconButton(
@@ -239,10 +242,7 @@ class UpgradePage extends StatelessWidget {
               SizedBox(
                 width: double.infinity,
                 child: OutlinedButton(
-                  onPressed: () {
-                    ctrl.clearStatus();
-                    Get.back();
-                  },
+                  onPressed: () => _handleBack(ctrl),
                   child: const Text('Voltar'),
                 ),
               ),
@@ -258,5 +258,14 @@ class UpgradePage extends StatelessWidget {
         status == BillingPurchaseStatus.purchasing ||
         status == BillingPurchaseStatus.validating ||
         status == BillingPurchaseStatus.pending;
+  }
+
+  void _handleBack(BillingController ctrl) {
+    ctrl.clearStatus();
+    if (Get.key.currentState?.canPop() ?? false) {
+      Get.back();
+      return;
+    }
+    Get.offAllNamed(AppRoutes.home);
   }
 }

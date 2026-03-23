@@ -50,7 +50,7 @@ flutter run
 
 ## Autenticação (Supabase)
 
-Login, cadastro e recuperação de senha usam Supabase Auth. Sem as variáveis configuradas, o app usa um stub local e não inicializa o Supabase.
+Login, cadastro e recuperação de senha usam Supabase Auth. O app permite uso sem conta (modo local), mas para sincronização online é necessário autenticar.
 
 1. Crie um projeto em [supabase.com](https://supabase.com) e obtenha a URL e a chave anônima (anon key).
 2. Execute o app passando as variáveis:
@@ -63,7 +63,10 @@ Login, cadastro e recuperação de senha usam Supabase Auth. Sem as variáveis c
 
 ## Plano Premium (allow list temporaria)
 
-O app alterna entre persistencia local (free) e Supabase (premium) conforme o plano do usuario. Premium = autenticado + email na allow list.
+O app opera em regra híbrida:
+- Sem conta: dados locais, sem sincronização e sem compartilhamento.
+- Com conta free: sincronização online e compartilhamento com 1 pessoa ativa.
+- Com conta premium: sincronização online + compartilhamento com múltiplas pessoas + upload de imagens.
 
 ### Configuracao no Supabase
 
@@ -77,7 +80,7 @@ O app alterna entre persistencia local (free) e Supabase (premium) conforme o pl
    INSERT INTO premium_allowlist (email, is_active) VALUES ('seu@email.com', true);
    ```
 
-3. O usuario logado com e-mail na allow list passa a usar dados na nuvem e imagens no Storage.
+3. O usuario logado com e-mail na allow list passa a ter recursos premium (sem anuncios, multi-share e upload de imagens no Storage).
 
 ### Substituir por in-app purchase
 
@@ -98,17 +101,24 @@ Inclui testes unitários para:
 ## Roadmap (Free vs Premium)
 
 ### Free (atual)
-- Agenda local completa
+- Uso local sem conta (com aviso em salvamentos sobre criar conta para sincronização)
+- Uso online com conta (agenda, grupos, notas e sincronização)
 - Grupos, busca e marcadores de calendário
 - Lembretes locais
-- Anexos locais (imagens)
+- Anúncios habilitados
+- Upload de imagens desabilitado
+- Compartilhamento: 1 pessoa ativa por vez (com conta)
+
+### Premium (atual)
+- Tudo do plano free
+- Remoção de anúncios
+- Upload de imagens
+- Compartilhamento de agenda em tempo real sem limite de pessoas
 
 ### Premium (planejado)
 - Engine completa de recorrência avançada
 - Sync multi-device com resolução de conflitos
-- Login e conta cloud
 - Exportação avançada e backup cloud
-- Remoção de ads
 
 ## Pronto para Play Store (Android)
 

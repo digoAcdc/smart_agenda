@@ -7,7 +7,6 @@ import '../../domain/entities/attachment_ref.dart';
 import '../../domain/entities/student.dart';
 import '../../domain/repositories/i_connectivity_service.dart';
 import '../../domain/repositories/i_file_storage_service.dart';
-import '../../domain/repositories/i_plan_service.dart';
 import '../../domain/repositories/i_sync_service.dart';
 import '../../core/result/result.dart';
 import '../datasources/agenda_local_datasource.dart';
@@ -23,7 +22,6 @@ import '../models/mappers.dart';
 /// Motor de sincronizacao: push de dados locais pendentes para Supabase.
 class SyncEngineImpl implements ISyncService {
   SyncEngineImpl(
-    this._planService,
     this._connectivity,
     this._localAgenda,
     this._localGroups,
@@ -37,7 +35,6 @@ class SyncEngineImpl implements ISyncService {
     this._client,
   );
 
-  final IPlanService _planService;
   final IConnectivityService _connectivity;
   final AgendaLocalDataSource _localAgenda;
   final GroupsLocalDataSource _localGroups;
@@ -50,11 +47,13 @@ class SyncEngineImpl implements ISyncService {
   final IFileStorageService _fileStorage;
   final SupabaseClient _client;
 
+  bool _isHttpUrl(String? value) {
+    if (value == null) return false;
+    return value.startsWith('http://') || value.startsWith('https://');
+  }
+
   @override
   Future<Result<void>> syncNow() async {
-    if (!await _planService.isPremium()) {
-      return Result.success(null);
-    }
     if (!await _connectivity.isOnline) {
       debugPrint('[SyncEngine] Offline - sync adiado');
       return Result.success(null);
@@ -100,10 +99,25 @@ class SyncEngineImpl implements ISyncService {
           final path = att.localPath!;
           if (await File(path).exists()) {
             final result = await _fileStorage.copyImageToAppStorage(path);
-            if (result.isSuccess) remoteUrl = result.data;
+            if (result.isSuccess && _isHttpUrl(result.data)) {
+              remoteUrl = result.data;
+            }
           }
         }
-        attachmentsWithUrls.add(att.copyWith(remoteUrl: remoteUrl));
+        attachmentsWithUrls.add(
+          AttachmentRef(
+            id: att.id,
+            itemId: att.itemId,
+            type: att.type,
+            localPath: null,
+            remoteUrl: remoteUrl,
+            thumbPath: att.thumbPath,
+            title: att.title,
+            mimeType: att.mimeType,
+            sizeBytes: att.sizeBytes,
+            createdAt: att.createdAt,
+          ),
+        );
       }
       item = item.copyWith(attachments: attachmentsWithUrls);
 
@@ -206,7 +220,9 @@ class SyncEngineImpl implements ISyncService {
         final path = note.imagePath!;
         if (await File(path).exists()) {
           final result = await _fileStorage.copyImageToAppStorage(path);
-          if (result.isSuccess) imageUrl = result.data;
+          if (result.isSuccess && _isHttpUrl(result.data)) {
+            imageUrl = result.data;
+          }
         }
       }
       final noteForSync = note.copyWith(imageUrl: imageUrl);

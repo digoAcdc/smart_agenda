@@ -19,7 +19,7 @@ class AgendaShare {
   final DateTime createdAt;
 }
 
-/// Servico de compartilhamento de agenda (premium).
+/// Servico de compartilhamento de agenda com regras por plano.
 abstract class ISharingService {
   /// Compartilha a agenda com o usuario do email informado.
   Future<Result<void>> shareWith(String email);

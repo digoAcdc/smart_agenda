@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 
 import '../../core/theme/design_tokens.dart';
+import '../../core/utils/account_prompt_utils.dart';
 import '../../core/utils/form_validators.dart';
 import '../controllers/groups_controller.dart';
 import '../widgets/empty_state_widget.dart';
@@ -92,6 +93,9 @@ class GroupsPage extends StatelessWidget {
                                     FilledButton(
                                       onPressed: () async {
                                         if (formKey.currentState?.validate() != true) return;
+                                        final canProceed =
+                                            await AccountPromptUtils.confirmSaveWithoutAccount();
+                                        if (!canProceed) return;
                                         await controller.updateGroup(
                                             group, textController.text);
                                         Get.back();
@@ -158,6 +162,8 @@ class GroupsPage extends StatelessWidget {
           FilledButton(
             onPressed: () async {
               if (formKey.currentState?.validate() != true) return;
+              final canProceed = await AccountPromptUtils.confirmSaveWithoutAccount();
+              if (!canProceed) return;
               await controller.create(textController.text);
               Get.back();
             },

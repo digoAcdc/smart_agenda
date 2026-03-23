@@ -24,6 +24,7 @@ class AuthController extends GetxController {
   final RxBool loading = false.obs;
   final RxnString errorMessage = RxnString();
   final RxBool isLoggedIn = false.obs;
+  final RxBool authChecked = false.obs;
   final RxnString userEmail = RxnString();
   final RxBool isPremium = false.obs;
   final RxBool rememberMe = true.obs;
@@ -53,6 +54,7 @@ class AuthController extends GetxController {
   }
 
   Future<void> _checkAuth() async {
+    authChecked.value = false;
     final result = await _authService.isLoggedIn();
     if (result.isSuccess) {
       isLoggedIn.value = result.data ?? false;
@@ -66,6 +68,7 @@ class AuthController extends GetxController {
       }
     }
     _refreshPremiumService();
+    authChecked.value = true;
   }
 
   Future<void> _updateUserInfo() async {

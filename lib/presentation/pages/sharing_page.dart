@@ -8,7 +8,7 @@ import '../../domain/repositories/i_sharing_service.dart';
 import '../controllers/auth_controller.dart';
 import '../widgets/ui_primitives.dart';
 
-/// Tela para compartilhar agenda com outros usuarios (premium).
+/// Tela para compartilhar agenda com outros usuarios (regras por plano).
 class SharingPage extends StatefulWidget {
   const SharingPage({super.key});
 
@@ -26,11 +26,13 @@ class _SharingPageState extends State<SharingPage> {
   List<AgendaShare> _sharesByMe = [];
   bool _loading = true;
   bool _sharing = false;
+  bool _isPremium = false;
   String? _error;
 
   @override
   void initState() {
     super.initState();
+    _loadPlan();
     _loadShares();
   }
 
@@ -38,6 +40,12 @@ class _SharingPageState extends State<SharingPage> {
   void dispose() {
     _emailController.dispose();
     super.dispose();
+  }
+
+  Future<void> _loadPlan() async {
+    final isPremium = await _planService.isPremium();
+    if (!mounted) return;
+    setState(() => _isPremium = isPremium);
   }
 
   Future<void> _loadShares() async {
@@ -110,132 +118,121 @@ class _SharingPageState extends State<SharingPage> {
       appBar: AppBar(
         title: const Text('Compartilhar minha agenda'),
       ),
-      body: FutureBuilder<bool>(
-        future: _planService.isPremium(),
-        builder: (context, snapshot) {
-          if (!snapshot.hasData) {
-            return const Center(child: CircularProgressIndicator());
-          }
-          if (snapshot.data != true) {
-            return Center(
-              child: Padding(
-                padding: const EdgeInsets.all(DesignTokens.spaceLg),
-                child: Text(
-                  'Compartilhamento disponivel apenas para usuarios premium.',
-                  textAlign: TextAlign.center,
-                  style: Theme.of(context).textTheme.bodyLarge,
+      body: SafeArea(
+        child: SingleChildScrollView(
+          padding: const EdgeInsets.all(DesignTokens.spaceMd),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.stretch,
+            children: [
+              Text(
+                'Compartilhe sua agenda com outro usuario. Ele podera visualizar mas nao alterar.',
+                style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+                      color: Theme.of(context).colorScheme.onSurfaceVariant,
+                    ),
+              ),
+              if (!_isPremium) ...[
+                const SizedBox(height: DesignTokens.spaceSm),
+                Text(
+                  'Plano free: voce pode manter 1 compartilhamento ativo por vez.',
+                  style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                        color: Theme.of(context).colorScheme.primary,
+                        fontWeight: FontWeight.w600,
+                      ),
+                ),
+              ],
+              const SizedBox(height: DesignTokens.spaceLg),
+              Form(
+                key: _formKey,
+                autovalidateMode: AutovalidateMode.onUserInteraction,
+                child: TextFormField(
+                  controller: _emailController,
+                  decoration: const InputDecoration(
+                    labelText: 'Email do usuario',
+                    hintText: 'exemplo@email.com',
+                    prefixIcon: Icon(Icons.email_outlined),
+                    border: OutlineInputBorder(),
+                  ),
+                  keyboardType: TextInputType.emailAddress,
+                  textInputAction: TextInputAction.done,
+                  validator: (v) => emailValidator(v, required: true),
+                  onFieldSubmitted: (_) => _handleShare(),
                 ),
               ),
-            );
-          }
-
-          return SafeArea(
-            child: SingleChildScrollView(
-              padding: const EdgeInsets.all(DesignTokens.spaceMd),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.stretch,
-                children: [
-                  Text(
-                    'Compartilhe sua agenda com outro usuario. Ele podera visualizar mas nao alterar.',
+              const SizedBox(height: DesignTokens.spaceSm),
+              if (_error != null) ...[
+                Text(
+                  _error!,
+                  style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                        color: Theme.of(context).colorScheme.error,
+                      ),
+                ),
+                const SizedBox(height: DesignTokens.spaceSm),
+              ],
+              FilledButton(
+                onPressed: _sharing ? null : _handleShare,
+                child: _sharing
+                    ? const SizedBox(
+                        height: 20,
+                        width: 20,
+                        child: CircularProgressIndicator(strokeWidth: 2),
+                      )
+                    : const Text('Compartilhar'),
+              ),
+              const SizedBox(height: DesignTokens.spaceXl),
+              Text(
+                'Compartilhado com',
+                style: Theme.of(context).textTheme.titleMedium,
+              ),
+              const SizedBox(height: DesignTokens.spaceSm),
+              if (_loading)
+                const Center(
+                  child: Padding(
+                    padding: EdgeInsets.all(24),
+                    child: CircularProgressIndicator(),
+                  ),
+                )
+              else if (_sharesByMe.isEmpty)
+                AppSurfaceCard(
+                  margin: EdgeInsets.zero,
+                  child: Text(
+                    'Nenhum compartilhamento ativo.',
                     style: Theme.of(context).textTheme.bodyMedium?.copyWith(
                           color: Theme.of(context).colorScheme.onSurfaceVariant,
                         ),
                   ),
-                  const SizedBox(height: DesignTokens.spaceLg),
-                  Form(
-                    key: _formKey,
-                    autovalidateMode: AutovalidateMode.onUserInteraction,
-                    child: TextFormField(
-                      controller: _emailController,
-                      decoration: const InputDecoration(
-                        labelText: 'Email do usuario',
-                        hintText: 'exemplo@email.com',
-                        prefixIcon: Icon(Icons.email_outlined),
-                        border: OutlineInputBorder(),
-                      ),
-                      keyboardType: TextInputType.emailAddress,
-                      textInputAction: TextInputAction.done,
-                      validator: (v) => emailValidator(v, required: true),
-                      onFieldSubmitted: (_) => _handleShare(),
-                    ),
-                  ),
-                  const SizedBox(height: DesignTokens.spaceSm),
-                  if (_error != null) ...[
-                    Text(
-                      _error!,
-                      style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                            color: Theme.of(context).colorScheme.error,
-                          ),
-                    ),
-                    const SizedBox(height: DesignTokens.spaceSm),
-                  ],
-                  FilledButton(
-                    onPressed: _sharing ? null : _handleShare,
-                    child: _sharing
-                        ? const SizedBox(
-                            height: 20,
-                            width: 20,
-                            child: CircularProgressIndicator(strokeWidth: 2),
-                          )
-                        : const Text('Compartilhar'),
-                  ),
-                  const SizedBox(height: DesignTokens.spaceXl),
-                  Text(
-                    'Compartilhado com',
-                    style: Theme.of(context).textTheme.titleMedium,
-                  ),
-                  const SizedBox(height: DesignTokens.spaceSm),
-                  if (_loading)
-                    const Center(
-                      child: Padding(
-                        padding: EdgeInsets.all(24),
-                        child: CircularProgressIndicator(),
-                      ),
-                    )
-                  else if (_sharesByMe.isEmpty)
-                    AppSurfaceCard(
-                      margin: EdgeInsets.zero,
-                      child: Text(
-                        'Nenhum compartilhamento ativo.',
-                        style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                              color: Theme.of(context).colorScheme.onSurfaceVariant,
-                            ),
-                      ),
-                    )
-                  else
-                    ..._sharesByMe.map((share) => AppSurfaceCard(
-                        margin: const EdgeInsets.only(bottom: DesignTokens.spaceSm),
-                        child: Row(
-                          children: [
-                            Expanded(
-                              child: Column(
-                                crossAxisAlignment: CrossAxisAlignment.start,
-                                children: [
-                                  Text(
-                                    share.sharedWithEmail,
-                                    style: Theme.of(context).textTheme.titleSmall,
-                                  ),
-                                  Text(
-                                    'Compartilhado em ${_formatDate(share.createdAt)}',
-                                    style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                                          color: Theme.of(context).colorScheme.onSurfaceVariant,
-                                        ),
-                                  ),
-                                ],
+                )
+              else
+                ..._sharesByMe.map((share) => AppSurfaceCard(
+                    margin: const EdgeInsets.only(bottom: DesignTokens.spaceSm),
+                    child: Row(
+                      children: [
+                        Expanded(
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              Text(
+                                share.sharedWithEmail,
+                                style: Theme.of(context).textTheme.titleSmall,
                               ),
-                            ),
-                            TextButton(
-                              onPressed: () => _handleRevoke(share.sharedWithId),
-                              child: const Text('Remover'),
-                            ),
-                          ],
+                              Text(
+                                'Compartilhado em ${_formatDate(share.createdAt)}',
+                                style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                                      color: Theme.of(context).colorScheme.onSurfaceVariant,
+                                    ),
+                              ),
+                            ],
+                          ),
                         ),
-                      )),
-                ],
-              ),
-            ),
-          );
-        },
+                        TextButton(
+                          onPressed: () => _handleRevoke(share.sharedWithId),
+                          child: const Text('Remover'),
+                        ),
+                      ],
+                    ),
+                  )),
+            ],
+          ),
+        ),
       ),
     );
   }
