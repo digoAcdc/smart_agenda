@@ -74,6 +74,9 @@ function normalizeGoogleSubscription(data) {
   let subscriptionStatus = "expired";
   if (!isPaid) {
     subscriptionStatus = "pending";
+  } else if (expiryMs === null) {
+    // Decisao de produto: manter premium quando o provedor nao retornar expiracao.
+    subscriptionStatus = "active_unknown_expiry";
   } else if (isExpired) {
     subscriptionStatus = "expired";
   } else if (cancelReason !== null && !autoRenewing) {

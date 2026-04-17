@@ -2,8 +2,9 @@
 class BillingConstants {
   BillingConstants._();
 
-  /// Product ID da assinatura mensal premium (configurar no Play Console).
-  static const String premiumMonthlyProductId = 'smart_agenda_premium_monthly';
+  /// ID do produto de assinatura no Play Console (Subscriptions > produto).
+  /// O plano basico (ex.: premium-mensal) e interno ao Google Play; aqui vai so o product id.
+  static const String premiumMonthlyProductId = 'smart_agenda_premium';
 
   /// IDs de produtos disponiveis para carregar.
   static const Set<String> productIds = {premiumMonthlyProductId};
@@ -17,6 +18,8 @@ class BillingConstants {
     'BILLING_API_BASE_URL',
     defaultValue: '',
   );
+
+  static bool get hasBillingApiConfigured => billingApiBaseUrl.trim().isNotEmpty;
 
   /// Plataforma para envio ao backend.
   static const String platform = 'android';

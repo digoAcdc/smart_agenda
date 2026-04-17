@@ -1,4 +1,7 @@
+import 'dart:async';
+
 import 'package:flutter/foundation.dart';
+import 'package:flutter/widgets.dart';
 import 'package:get/get.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
@@ -11,11 +14,12 @@ import '../../domain/repositories/i_local_to_cloud_migration_service.dart';
 import '../../domain/repositories/i_sync_service.dart';
 import '../../domain/repositories/i_plan_service.dart';
 import '../../domain/repositories/i_premium_service.dart';
+import 'billing_controller.dart';
 
 const _keyRememberMe = 'auth_remember_me';
 const _keyRememberEmail = 'auth_remember_email';
 
-class AuthController extends GetxController {
+class AuthController extends GetxController with WidgetsBindingObserver {
   AuthController(this._authService, this._planService);
 
   final IAuthService _authService;
@@ -29,12 +33,33 @@ class AuthController extends GetxController {
   final RxBool isPremium = false.obs;
   final RxBool rememberMe = true.obs;
   final RxnString rememberedEmail = RxnString();
+  DateTime? _lastResumeRevalidation;
 
   @override
   void onInit() {
     super.onInit();
+    WidgetsBinding.instance.addObserver(this);
     _loadRememberMe();
     _checkAuth();
+  }
+
+  @override
+  void onClose() {
+    WidgetsBinding.instance.removeObserver(this);
+    super.onClose();
+  }
+
+  @override
+  void didChangeAppLifecycleState(AppLifecycleState state) {
+    if (state != AppLifecycleState.resumed) return;
+    if (!isLoggedIn.value) return;
+    final now = DateTime.now();
+    final last = _lastResumeRevalidation;
+    if (last != null && now.difference(last) < const Duration(minutes: 3)) {
+      return;
+    }
+    _lastResumeRevalidation = now;
+    unawaited(_revalidateSubscription(reason: 'app_resume', withRestore: false));
   }
 
   Future<void> _loadRememberMe() async {
@@ -60,6 +85,7 @@ class AuthController extends GetxController {
       isLoggedIn.value = result.data ?? false;
       if (isLoggedIn.value) {
         await _planService.refresh();
+        unawaited(_revalidateSubscription(reason: 'auth_check', withRestore: false));
         await _runMigrationIfNeeded();
         await _updateUserInfo();
       } else {
@@ -81,6 +107,24 @@ class AuthController extends GetxController {
     }
     isPremium.value = await _planService.isPremium();
     _refreshPremiumService();
+  }
+
+  Future<void> _revalidateSubscription({
+    required String reason,
+    required bool withRestore,
+  }) async {
+    if (!Get.isRegistered<BillingController>()) return;
+    try {
+      debugPrint('[auth_subscription_revalidation_start] reason=$reason restore=$withRestore');
+      final billing = Get.find<BillingController>();
+      await billing.revalidateInBackground(triggerRestore: withRestore, reason: reason);
+      await _planService.refresh();
+      isPremium.value = await _planService.isPremium();
+      _refreshPremiumService();
+      debugPrint('[auth_subscription_revalidation_done] reason=$reason');
+    } catch (e) {
+      debugPrint('[auth_subscription_revalidation_error] reason=$reason error=$e');
+    }
   }
 
   void _refreshPremiumService() {
@@ -136,6 +180,7 @@ class AuthController extends GetxController {
         await _planService.refresh();
         isPremium.value = await _planService.isPremium();
         _refreshPremiumService();
+        unawaited(_revalidateSubscription(reason: 'login', withRestore: true));
         await _runMigrationIfNeeded();
         if (rememberMe.value) {
           rememberedEmail.value = email;
@@ -173,6 +218,7 @@ class AuthController extends GetxController {
         await _planService.refresh();
         isPremium.value = await _planService.isPremium();
         _refreshPremiumService();
+        unawaited(_revalidateSubscription(reason: 'signup', withRestore: true));
         loading.value = false;
         return true;
       }

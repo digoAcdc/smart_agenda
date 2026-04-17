@@ -1,5 +1,6 @@
 import 'package:flutter/foundation.dart';
 import 'package:get/get.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 
 import '../../domain/repositories/i_auth_service.dart';
@@ -17,6 +18,9 @@ class PlanServiceImpl extends GetxController implements IPlanService {
   final RxnString _error = RxnString();
   bool? _cachedPremium;
   String? _cachedUserId;
+  static const _premiumConfirmedPrefix = 'premium_confirmed_at_';
+  static const _lastValidationErrorPrefix = 'premium_last_validation_error_at_';
+  static const _graceDuration = Duration(hours: 24);
 
   @override
   bool get isLoading => _isLoading.value;
@@ -55,6 +59,7 @@ class PlanServiceImpl extends GetxController implements IPlanService {
         if (isPremiumFromSub) {
           _cachedPremium = true;
           _cachedUserId = user.id;
+          await _markPremiumConfirmed(user.id);
           debugPrint('[PlanService] subscription active -> premium');
           return true;
         }
@@ -73,10 +78,23 @@ class PlanServiceImpl extends GetxController implements IPlanService {
       final isPremium = response != null;
       _cachedPremium = isPremium;
       _cachedUserId = user.id;
+      if (isPremium) {
+        await _markPremiumConfirmed(user.id);
+      } else {
+        await _clearPremiumGrace(user.id);
+      }
       debugPrint('[PlanService] email=${user.email} -> ${isPremium ? "premium (allowlist)" : "free"}');
       return isPremium;
     } catch (e) {
       debugPrint('[PlanService] Erro ao verificar allow list: $e');
+      await _markValidationError(user.id);
+      if (await _isInPremiumGrace(user.id)) {
+        _error.value = 'Atualizando assinatura...';
+        _cachedPremium = true;
+        _cachedUserId = user.id;
+        debugPrint('[premium_grace_applied] user=${user.id} window_hours=24');
+        return true;
+      }
       _error.value = 'Erro ao verificar status premium.';
       _cachedPremium = false;
       return false;
@@ -90,5 +108,36 @@ class PlanServiceImpl extends GetxController implements IPlanService {
     _cachedPremium = null;
     _cachedUserId = null;
     await isPremium();
+  }
+
+  Future<void> _markPremiumConfirmed(String userId) async {
+    final prefs = await SharedPreferences.getInstance();
+    final nowIso = DateTime.now().toIso8601String();
+    await prefs.setString('$_premiumConfirmedPrefix$userId', nowIso);
+    await prefs.remove('$_lastValidationErrorPrefix$userId');
+  }
+
+  Future<void> _markValidationError(String userId) async {
+    final prefs = await SharedPreferences.getInstance();
+    await prefs.setString(
+      '$_lastValidationErrorPrefix$userId',
+      DateTime.now().toIso8601String(),
+    );
+  }
+
+  Future<void> _clearPremiumGrace(String userId) async {
+    final prefs = await SharedPreferences.getInstance();
+    await prefs.remove('$_premiumConfirmedPrefix$userId');
+    await prefs.remove('$_lastValidationErrorPrefix$userId');
+  }
+
+  Future<bool> _isInPremiumGrace(String userId) async {
+    final prefs = await SharedPreferences.getInstance();
+    final raw = prefs.getString('$_premiumConfirmedPrefix$userId');
+    if (raw == null || raw.isEmpty) return false;
+    final confirmedAt = DateTime.tryParse(raw);
+    if (confirmedAt == null) return false;
+    final age = DateTime.now().difference(confirmedAt);
+    return age <= _graceDuration;
   }
 }

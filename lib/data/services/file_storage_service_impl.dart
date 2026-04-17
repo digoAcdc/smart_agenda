@@ -4,6 +4,7 @@ import 'package:path_provider/path_provider.dart';
 import 'package:uuid/uuid.dart';
 
 import '../../core/result/result.dart';
+import '../../core/utils/image_compress_utils.dart';
 import '../../domain/repositories/i_file_storage_service.dart';
 
 class FileStorageServiceImpl implements IFileStorageService {
@@ -13,8 +14,10 @@ class FileStorageServiceImpl implements IFileStorageService {
 
   @override
   Future<Result<String>> copyImageToAppStorage(String sourcePath) async {
+    ImagePrepareResult? prepared;
     try {
-      final source = File(sourcePath);
+      prepared = await ImageCompressUtils.prepareImageForStorage(sourcePath);
+      final source = File(prepared.path);
       if (!source.existsSync()) {
         return Result.failure('Arquivo de origem nao encontrado');
       }
@@ -32,6 +35,10 @@ class FileStorageServiceImpl implements IFileStorageService {
       return Result.success(destPath);
     } catch (e) {
       return Result.failure('Falha ao salvar imagem: $e');
+    } finally {
+      if (prepared != null) {
+        await ImageCompressUtils.deleteIfTemporary(prepared);
+      }
     }
   }
 }

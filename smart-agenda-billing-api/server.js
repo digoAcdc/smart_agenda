@@ -67,7 +67,14 @@ const allowedProductIds = new Set(
 );
 
 app.get("/health", async () => {
-  return { status: "ok" };
+  return {
+    status: "ok",
+    config_ok: true,
+    billing: {
+      android_package_name: process.env.ANDROID_PACKAGE_NAME,
+      allowed_product_ids_count: allowedProductIds.size,
+    },
+  };
 });
 
 app.post(
@@ -84,6 +91,7 @@ app.post(
   let userId = null;
   let productId = null;
   let purchaseToken = null;
+  const requestId = request.id;
 
   try {
     const authHeader = request.headers.authorization;
@@ -111,6 +119,7 @@ app.post(
     }
 
     const reqLogger = request.log.child({
+      requestId,
       userId,
       productId,
       purchaseToken: maskToken(purchaseToken),
@@ -144,25 +153,35 @@ app.post(
       updated_at: nowIso,
     });
 
-    await logPurchaseValidation(supabase, {
-      user_id: userId,
-      product_id: productId,
-      purchase_token: purchaseToken,
-      event_type: "validate_subscription",
-      request_payload: { productId, purchaseToken: maskToken(purchaseToken) },
-      response_payload: {
-        isPremium: googleValidation.isPremium,
-        subscriptionStatus: googleValidation.subscriptionStatus,
-        expiresAt: googleValidation.expiresAt,
-      },
-      status: "success",
-      error_message: null,
-    });
+    try {
+      await logPurchaseValidation(supabase, {
+        user_id: userId,
+        product_id: productId,
+        purchase_token: purchaseToken,
+        event_type: "validate_subscription",
+        request_payload: { productId, purchaseToken: maskToken(purchaseToken), requestId },
+        response_payload: {
+          isPremium: googleValidation.isPremium,
+          subscriptionStatus: googleValidation.subscriptionStatus,
+          expiresAt: googleValidation.expiresAt,
+        },
+        status: "success",
+        error_message: null,
+      });
+    } catch (logError) {
+      reqLogger.error(
+        { err: logError.message, event: "audit_log_failed", requestId },
+        "Failed to persist success audit log"
+      );
+    }
 
     reqLogger.info(
       {
+        event: "validate_subscription_success",
+        requestId,
         isPremium: googleValidation.isPremium,
         subscriptionStatus: googleValidation.subscriptionStatus,
+        expiresAt: googleValidation.expiresAt,
       },
       "Subscription validated successfully"
     );
@@ -174,10 +193,13 @@ app.post(
       expiresAt: googleValidation.expiresAt,
       productId,
       source: "billing_api",
+      requestId,
     });
   } catch (error) {
     request.log.error(
       {
+        event: "validate_subscription_failed",
+        requestId,
         err: error.message,
         userId,
         productId,
@@ -193,13 +215,16 @@ app.post(
           product_id: productId,
           purchase_token: purchaseToken,
           event_type: "validate_subscription",
-          request_payload: { productId, purchaseToken: maskToken(purchaseToken) },
+          request_payload: { productId, purchaseToken: maskToken(purchaseToken), requestId },
           response_payload: null,
           status: "error",
           error_message: error.message,
         });
       } catch (logError) {
-        request.log.error({ err: logError.message }, "Failed to persist validation error log");
+        request.log.error(
+          { err: logError.message, event: "audit_log_failed", requestId },
+          "Failed to persist validation error log"
+        );
       }
     }
 

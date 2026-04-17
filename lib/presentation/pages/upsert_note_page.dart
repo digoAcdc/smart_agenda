@@ -5,12 +5,14 @@ import 'package:get/get.dart';
 import 'package:image_picker/image_picker.dart';
 import 'package:uuid/uuid.dart';
 
+import '../../core/constants/image_upload_constants.dart';
 import '../../core/theme/design_tokens.dart';
 import '../../core/utils/account_prompt_utils.dart';
 import '../../core/utils/form_validators.dart';
 import '../../domain/entities/note.dart';
 import '../../domain/repositories/i_file_storage_service.dart';
 import '../../domain/repositories/i_plan_service.dart';
+import '../controllers/billing_controller.dart';
 import '../controllers/note_controller.dart';
 import '../widgets/checklist_item_tile.dart';
 
@@ -52,7 +54,15 @@ class _UpsertNotePageState extends State<UpsertNotePage> {
   Future<void> _loadPlanStatus() async {
     final plan = Get.find<IPlanService>();
     await plan.refresh();
-    final isPremium = await plan.isPremium();
+    var isPremium = await plan.isPremium();
+    if (!isPremium && Get.isRegistered<BillingController>()) {
+      await Get.find<BillingController>().revalidateInBackground(
+        triggerRestore: true,
+        reason: 'upsert_note_gate',
+      );
+      await plan.refresh();
+      isPremium = await plan.isPremium();
+    }
     if (!mounted) return;
     setState(() => _isPremium = isPremium);
   }
@@ -73,7 +83,12 @@ class _UpsertNotePageState extends State<UpsertNotePage> {
       );
       return;
     }
-    final picked = await _imagePicker.pickImage(source: ImageSource.gallery);
+    final picked = await _imagePicker.pickImage(
+      source: ImageSource.gallery,
+      maxWidth: ImageUploadConstants.pickImageMaxWidth,
+      maxHeight: ImageUploadConstants.pickImageMaxHeight,
+      imageQuality: ImageUploadConstants.pickImageQuality,
+    );
     if (picked == null) return;
     final fileStorage = Get.find<IFileStorageService>();
     final result = await fileStorage.copyImageToAppStorage(picked.path);

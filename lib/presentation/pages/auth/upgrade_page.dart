@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 
+import '../../../core/constants/billing_constants.dart';
 import '../../../core/routes/app_routes.dart';
 import '../../../core/theme/design_tokens.dart';
 import '../../controllers/auth_controller.dart';
@@ -15,6 +16,9 @@ class UpgradePage extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final ctrl = Get.find<BillingController>();
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      ctrl.revalidateInBackground(triggerRestore: true, reason: 'upgrade_open');
+    });
     return Obx(() {
       final isPremium = Get.find<AuthController>().isPremium.value;
       final status = ctrl.purchaseStatus.value;
@@ -76,6 +80,30 @@ class UpgradePage extends StatelessWidget {
                 textAlign: TextAlign.center,
               ),
               const SizedBox(height: DesignTokens.spaceXl),
+              if (!ctrl.isRuntimeConfigured.value && !isPremium) ...[
+                AppSurfaceCard(
+                  margin: EdgeInsets.zero,
+                  padding: const EdgeInsets.all(DesignTokens.spaceSm),
+                  child: Row(
+                    children: [
+                      Icon(
+                        Icons.info_outline,
+                        color: Theme.of(context).colorScheme.tertiary,
+                        size: 24,
+                      ),
+                      const SizedBox(width: 12),
+                      Expanded(
+                        child: Text(
+                          'Ambiente de cobrança indisponível. '
+                          'Atualize o app ou contate o suporte.',
+                          style: Theme.of(context).textTheme.bodyMedium,
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+                const SizedBox(height: DesignTokens.spaceSm),
+              ],
               if (ctrl.errorMessage.value != null && ctrl.errorMessage.value!.isNotEmpty) ...[
                 AppSurfaceCard(
                   margin: EdgeInsets.zero,
@@ -163,7 +191,9 @@ class UpgradePage extends StatelessWidget {
                 ),
                 const SizedBox(height: DesignTokens.spaceSm),
               ],
-              if (!isPremium && ctrl.isAvailable.value) ...[
+              if (!isPremium &&
+                  ctrl.isAvailable.value &&
+                  BillingConstants.hasBillingApiConfigured) ...[
                 AppSurfaceCard(
                   margin: EdgeInsets.zero,
                   child: Column(
@@ -186,7 +216,7 @@ class UpgradePage extends StatelessWidget {
                   ),
                 ),
               ],
-              if (!ctrl.isAvailable.value && !isPremium) ...[
+              if ((!ctrl.isAvailable.value || !ctrl.isRuntimeConfigured.value) && !isPremium) ...[
                 AppSurfaceCard(
                   margin: EdgeInsets.zero,
                   child: Column(
@@ -198,7 +228,9 @@ class UpgradePage extends StatelessWidget {
                       ),
                       const SizedBox(height: DesignTokens.spaceXs),
                       Text(
-                        'A compra in-app esta disponivel apenas no Android. Em breve para outras plataformas.',
+                        ctrl.isRuntimeConfigured.value
+                            ? 'A compra in-app esta disponivel apenas no Android. Em breve para outras plataformas.'
+                            : 'A cobranca in-app nao esta configurada neste build.',
                         style: Theme.of(context).textTheme.bodyMedium?.copyWith(
                               color: Theme.of(context).colorScheme.onSurfaceVariant,
                             ),
@@ -208,7 +240,9 @@ class UpgradePage extends StatelessWidget {
                 ),
               ],
               const Spacer(),
-              if (!isPremium && ctrl.isAvailable.value) ...[
+              if (!isPremium &&
+                  ctrl.isAvailable.value &&
+                  ctrl.isRuntimeConfigured.value) ...[
                 SizedBox(
                   width: double.infinity,
                   child: FilledButton(

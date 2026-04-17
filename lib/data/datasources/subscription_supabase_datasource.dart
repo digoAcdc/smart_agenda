@@ -19,16 +19,21 @@ class SubscriptionSupabaseDataSource {
   Future<SubscriptionValidationResult> validateSubscription(
     PurchasePayload payload,
   ) async {
+    debugPrint(
+      '[subscription_revalidation_started] source=app_api productId=${payload.productId}',
+    );
     final session = _client.auth.currentSession;
     if (session == null) {
+      debugPrint('[subscription_revalidation_failed] reason=no_session');
       throw StateError('Usuario nao autenticado');
     }
 
     final baseUrl = BillingConstants.billingApiBaseUrl.trim();
     if (baseUrl.isEmpty) {
+      debugPrint('[billing_config_missing] BILLING_API_BASE_URL ausente no app');
       throw Exception(
-        'BILLING_API_BASE_URL nao configurada. '
-        'Use --dart-define=BILLING_API_BASE_URL=...',
+        'Configuracao de cobranca ausente neste app. '
+        'Use --dart-define=BILLING_API_BASE_URL=... em um build configurado.',
       );
     }
     final uri = Uri.parse('$baseUrl/validate-subscription');
@@ -58,12 +63,15 @@ class SubscriptionSupabaseDataSource {
 
       if (response.statusCode != 200) {
         final err = parsed['error']?.toString();
+        debugPrint(
+          '[subscription_revalidation_failed] source=app_api statusCode=${response.statusCode} error=${err ?? 'Validacao falhou'}',
+        );
         throw Exception(err ?? 'Validacao falhou');
       }
 
       final data = parsed;
 
-      return SubscriptionValidationResult(
+      final result = SubscriptionValidationResult(
         isPremium: data['isPremium'] as bool? ?? false,
         status: (data['status'] as String?) ??
             (data['subscriptionStatus'] as String?) ??
@@ -72,6 +80,10 @@ class SubscriptionSupabaseDataSource {
         productId: data['productId'] as String?,
         source: data['source'] as String? ?? 'subscription',
       );
+      debugPrint(
+        '[subscription_revalidation_completed] source=app_api isPremium=${result.isPremium} status=${result.status} expiresAt=${result.expiresAt ?? 'null'}',
+      );
+      return result;
     } finally {
       client.close();
     }

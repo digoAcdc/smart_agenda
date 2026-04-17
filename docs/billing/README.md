@@ -11,7 +11,7 @@
 ### Flutter
 
 - **Pacote**: `in_app_purchase: ^3.2.3`
-- **Product ID**: `smart_agenda_premium_monthly` (criar no Play Console)
+- **Product ID** (assinatura no Play Console): `smart_agenda_premium` (plano basico ex.: `premium-mensal` e so no Console; o app usa apenas o product id)
 - **Package**: `com.digo.smartagenda`
 - **Build**: `--dart-define=BILLING_API_BASE_URL=https://sua-api.easypanel.host`
 
@@ -24,7 +24,7 @@
 
 Variáveis de ambiente (ver `env.example`):
 
-- `BILLING_ALLOWED_PRODUCT_IDS`: IDs permitidos (ex: `smart_agenda_premium_monthly`)
+- `BILLING_ALLOWED_PRODUCT_IDS`: IDs permitidos (ex: `smart_agenda_premium`)
 - `GOOGLE_PLAY_SERVICE_ACCOUNT_JSON`: JSON da service account
 - `SUPABASE_URL`, `SUPABASE_SERVICE_ROLE_KEY`
 - `SUPABASE_JWT_ISSUER`, `SUPABASE_JWT_AUDIENCE`
@@ -32,7 +32,7 @@ Variáveis de ambiente (ver `env.example`):
 ### Google Play
 
 1. **Play Console** → Monetização → Produtos → Assinaturas
-2. Criar assinatura com ID: `smart_agenda_premium_monthly`
+2. Criar assinatura com ID de produto: `smart_agenda_premium` (e um plano basico ativo, ex.: `premium-mensal`)
 3. **Google Cloud Console** → Service Account com permissão "Administrador da API Android"
 4. Vincular service account ao projeto no Play Console
 5. Baixar JSON da service account → configurar na API Node

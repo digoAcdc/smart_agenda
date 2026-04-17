@@ -6,6 +6,7 @@ import 'package:image_picker/image_picker.dart';
 import 'package:intl/intl.dart';
 import 'package:uuid/uuid.dart';
 
+import '../../core/constants/image_upload_constants.dart';
 import '../../core/theme/design_tokens.dart';
 import '../../core/utils/account_prompt_utils.dart';
 import '../../core/utils/form_validators.dart';
@@ -17,6 +18,7 @@ import '../../domain/repositories/i_file_storage_service.dart';
 import '../../domain/repositories/i_notification_service.dart';
 import '../../domain/repositories/i_plan_service.dart';
 import '../controllers/agenda_controller.dart';
+import '../controllers/billing_controller.dart';
 import '../controllers/groups_controller.dart';
 
 class UpsertAgendaPage extends StatefulWidget {
@@ -66,7 +68,15 @@ class _UpsertAgendaPageState extends State<UpsertAgendaPage> {
   Future<void> _loadPlanStatus() async {
     final plan = Get.find<IPlanService>();
     await plan.refresh();
-    final isPremium = await plan.isPremium();
+    var isPremium = await plan.isPremium();
+    if (!isPremium && Get.isRegistered<BillingController>()) {
+      await Get.find<BillingController>().revalidateInBackground(
+        triggerRestore: true,
+        reason: 'upsert_agenda_gate',
+      );
+      await plan.refresh();
+      isPremium = await plan.isPremium();
+    }
     if (!mounted) return;
     setState(() => _isPremium = isPremium);
   }
@@ -125,7 +135,12 @@ class _UpsertAgendaPageState extends State<UpsertAgendaPage> {
       return;
     }
     final fileStorage = Get.find<IFileStorageService>();
-    final picked = await imagePicker.pickImage(source: ImageSource.gallery);
+    final picked = await imagePicker.pickImage(
+      source: ImageSource.gallery,
+      maxWidth: ImageUploadConstants.pickImageMaxWidth,
+      maxHeight: ImageUploadConstants.pickImageMaxHeight,
+      imageQuality: ImageUploadConstants.pickImageQuality,
+    );
     if (picked == null) return;
     final stored = await fileStorage.copyImageToAppStorage(picked.path);
     if (!stored.isSuccess || stored.data == null) return;
