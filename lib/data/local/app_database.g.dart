@@ -3747,6 +3747,39 @@ class $ClassScheduleSlotsTableTable extends ClassScheduleSlotsTable
     requiredDuringInsert: false,
     defaultValue: const Constant('pending'),
   );
+  static const VerificationMeta _familyIdMeta = const VerificationMeta(
+    'familyId',
+  );
+  @override
+  late final GeneratedColumn<String> familyId = GeneratedColumn<String>(
+    'family_id',
+    aliasedName,
+    true,
+    type: DriftSqlType.string,
+    requiredDuringInsert: false,
+  );
+  static const VerificationMeta _childIdMeta = const VerificationMeta(
+    'childId',
+  );
+  @override
+  late final GeneratedColumn<String> childId = GeneratedColumn<String>(
+    'child_id',
+    aliasedName,
+    true,
+    type: DriftSqlType.string,
+    requiredDuringInsert: false,
+  );
+  static const VerificationMeta _deletedAtMeta = const VerificationMeta(
+    'deletedAt',
+  );
+  @override
+  late final GeneratedColumn<DateTime> deletedAt = GeneratedColumn<DateTime>(
+    'deleted_at',
+    aliasedName,
+    true,
+    type: DriftSqlType.dateTime,
+    requiredDuringInsert: false,
+  );
   static const VerificationMeta _createdAtMeta = const VerificationMeta(
     'createdAt',
   );
@@ -3780,6 +3813,9 @@ class $ClassScheduleSlotsTableTable extends ClassScheduleSlotsTable
     professorEmail,
     professorPhone,
     syncState,
+    familyId,
+    childId,
+    deletedAt,
     createdAt,
     updatedAt,
   ];
@@ -3866,6 +3902,24 @@ class $ClassScheduleSlotsTableTable extends ClassScheduleSlotsTable
         syncState.isAcceptableOrUnknown(data['sync_state']!, _syncStateMeta),
       );
     }
+    if (data.containsKey('family_id')) {
+      context.handle(
+        _familyIdMeta,
+        familyId.isAcceptableOrUnknown(data['family_id']!, _familyIdMeta),
+      );
+    }
+    if (data.containsKey('child_id')) {
+      context.handle(
+        _childIdMeta,
+        childId.isAcceptableOrUnknown(data['child_id']!, _childIdMeta),
+      );
+    }
+    if (data.containsKey('deleted_at')) {
+      context.handle(
+        _deletedAtMeta,
+        deletedAt.isAcceptableOrUnknown(data['deleted_at']!, _deletedAtMeta),
+      );
+    }
     if (data.containsKey('created_at')) {
       context.handle(
         _createdAtMeta,
@@ -3930,6 +3984,18 @@ class $ClassScheduleSlotsTableTable extends ClassScheduleSlotsTable
         DriftSqlType.string,
         data['${effectivePrefix}sync_state'],
       )!,
+      familyId: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}family_id'],
+      ),
+      childId: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}child_id'],
+      ),
+      deletedAt: attachedDatabase.typeMapping.read(
+        DriftSqlType.dateTime,
+        data['${effectivePrefix}deleted_at'],
+      ),
       createdAt: attachedDatabase.typeMapping.read(
         DriftSqlType.dateTime,
         data['${effectivePrefix}created_at'],
@@ -3958,6 +4024,9 @@ class ClassScheduleSlotsTableData extends DataClass
   final String? professorEmail;
   final String? professorPhone;
   final String syncState;
+  final String? familyId;
+  final String? childId;
+  final DateTime? deletedAt;
   final DateTime createdAt;
   final DateTime updatedAt;
   const ClassScheduleSlotsTableData({
@@ -3970,6 +4039,9 @@ class ClassScheduleSlotsTableData extends DataClass
     this.professorEmail,
     this.professorPhone,
     required this.syncState,
+    this.familyId,
+    this.childId,
+    this.deletedAt,
     required this.createdAt,
     required this.updatedAt,
   });
@@ -3993,6 +4065,15 @@ class ClassScheduleSlotsTableData extends DataClass
       map['professor_phone'] = Variable<String>(professorPhone);
     }
     map['sync_state'] = Variable<String>(syncState);
+    if (!nullToAbsent || familyId != null) {
+      map['family_id'] = Variable<String>(familyId);
+    }
+    if (!nullToAbsent || childId != null) {
+      map['child_id'] = Variable<String>(childId);
+    }
+    if (!nullToAbsent || deletedAt != null) {
+      map['deleted_at'] = Variable<DateTime>(deletedAt);
+    }
     map['created_at'] = Variable<DateTime>(createdAt);
     map['updated_at'] = Variable<DateTime>(updatedAt);
     return map;
@@ -4017,6 +4098,15 @@ class ClassScheduleSlotsTableData extends DataClass
           ? const Value.absent()
           : Value(professorPhone),
       syncState: Value(syncState),
+      familyId: familyId == null && nullToAbsent
+          ? const Value.absent()
+          : Value(familyId),
+      childId: childId == null && nullToAbsent
+          ? const Value.absent()
+          : Value(childId),
+      deletedAt: deletedAt == null && nullToAbsent
+          ? const Value.absent()
+          : Value(deletedAt),
       createdAt: Value(createdAt),
       updatedAt: Value(updatedAt),
     );
@@ -4037,6 +4127,9 @@ class ClassScheduleSlotsTableData extends DataClass
       professorEmail: serializer.fromJson<String?>(json['professorEmail']),
       professorPhone: serializer.fromJson<String?>(json['professorPhone']),
       syncState: serializer.fromJson<String>(json['syncState']),
+      familyId: serializer.fromJson<String?>(json['familyId']),
+      childId: serializer.fromJson<String?>(json['childId']),
+      deletedAt: serializer.fromJson<DateTime?>(json['deletedAt']),
       createdAt: serializer.fromJson<DateTime>(json['createdAt']),
       updatedAt: serializer.fromJson<DateTime>(json['updatedAt']),
     );
@@ -4054,6 +4147,9 @@ class ClassScheduleSlotsTableData extends DataClass
       'professorEmail': serializer.toJson<String?>(professorEmail),
       'professorPhone': serializer.toJson<String?>(professorPhone),
       'syncState': serializer.toJson<String>(syncState),
+      'familyId': serializer.toJson<String?>(familyId),
+      'childId': serializer.toJson<String?>(childId),
+      'deletedAt': serializer.toJson<DateTime?>(deletedAt),
       'createdAt': serializer.toJson<DateTime>(createdAt),
       'updatedAt': serializer.toJson<DateTime>(updatedAt),
     };
@@ -4069,6 +4165,9 @@ class ClassScheduleSlotsTableData extends DataClass
     Value<String?> professorEmail = const Value.absent(),
     Value<String?> professorPhone = const Value.absent(),
     String? syncState,
+    Value<String?> familyId = const Value.absent(),
+    Value<String?> childId = const Value.absent(),
+    Value<DateTime?> deletedAt = const Value.absent(),
     DateTime? createdAt,
     DateTime? updatedAt,
   }) => ClassScheduleSlotsTableData(
@@ -4087,6 +4186,9 @@ class ClassScheduleSlotsTableData extends DataClass
         ? professorPhone.value
         : this.professorPhone,
     syncState: syncState ?? this.syncState,
+    familyId: familyId.present ? familyId.value : this.familyId,
+    childId: childId.present ? childId.value : this.childId,
+    deletedAt: deletedAt.present ? deletedAt.value : this.deletedAt,
     createdAt: createdAt ?? this.createdAt,
     updatedAt: updatedAt ?? this.updatedAt,
   );
@@ -4113,6 +4215,9 @@ class ClassScheduleSlotsTableData extends DataClass
           ? data.professorPhone.value
           : this.professorPhone,
       syncState: data.syncState.present ? data.syncState.value : this.syncState,
+      familyId: data.familyId.present ? data.familyId.value : this.familyId,
+      childId: data.childId.present ? data.childId.value : this.childId,
+      deletedAt: data.deletedAt.present ? data.deletedAt.value : this.deletedAt,
       createdAt: data.createdAt.present ? data.createdAt.value : this.createdAt,
       updatedAt: data.updatedAt.present ? data.updatedAt.value : this.updatedAt,
     );
@@ -4130,6 +4235,9 @@ class ClassScheduleSlotsTableData extends DataClass
           ..write('professorEmail: $professorEmail, ')
           ..write('professorPhone: $professorPhone, ')
           ..write('syncState: $syncState, ')
+          ..write('familyId: $familyId, ')
+          ..write('childId: $childId, ')
+          ..write('deletedAt: $deletedAt, ')
           ..write('createdAt: $createdAt, ')
           ..write('updatedAt: $updatedAt')
           ..write(')'))
@@ -4147,6 +4255,9 @@ class ClassScheduleSlotsTableData extends DataClass
     professorEmail,
     professorPhone,
     syncState,
+    familyId,
+    childId,
+    deletedAt,
     createdAt,
     updatedAt,
   );
@@ -4163,6 +4274,9 @@ class ClassScheduleSlotsTableData extends DataClass
           other.professorEmail == this.professorEmail &&
           other.professorPhone == this.professorPhone &&
           other.syncState == this.syncState &&
+          other.familyId == this.familyId &&
+          other.childId == this.childId &&
+          other.deletedAt == this.deletedAt &&
           other.createdAt == this.createdAt &&
           other.updatedAt == this.updatedAt);
 }
@@ -4178,6 +4292,9 @@ class ClassScheduleSlotsTableCompanion
   final Value<String?> professorEmail;
   final Value<String?> professorPhone;
   final Value<String> syncState;
+  final Value<String?> familyId;
+  final Value<String?> childId;
+  final Value<DateTime?> deletedAt;
   final Value<DateTime> createdAt;
   final Value<DateTime> updatedAt;
   final Value<int> rowid;
@@ -4191,6 +4308,9 @@ class ClassScheduleSlotsTableCompanion
     this.professorEmail = const Value.absent(),
     this.professorPhone = const Value.absent(),
     this.syncState = const Value.absent(),
+    this.familyId = const Value.absent(),
+    this.childId = const Value.absent(),
+    this.deletedAt = const Value.absent(),
     this.createdAt = const Value.absent(),
     this.updatedAt = const Value.absent(),
     this.rowid = const Value.absent(),
@@ -4205,6 +4325,9 @@ class ClassScheduleSlotsTableCompanion
     this.professorEmail = const Value.absent(),
     this.professorPhone = const Value.absent(),
     this.syncState = const Value.absent(),
+    this.familyId = const Value.absent(),
+    this.childId = const Value.absent(),
+    this.deletedAt = const Value.absent(),
     required DateTime createdAt,
     required DateTime updatedAt,
     this.rowid = const Value.absent(),
@@ -4224,6 +4347,9 @@ class ClassScheduleSlotsTableCompanion
     Expression<String>? professorEmail,
     Expression<String>? professorPhone,
     Expression<String>? syncState,
+    Expression<String>? familyId,
+    Expression<String>? childId,
+    Expression<DateTime>? deletedAt,
     Expression<DateTime>? createdAt,
     Expression<DateTime>? updatedAt,
     Expression<int>? rowid,
@@ -4238,6 +4364,9 @@ class ClassScheduleSlotsTableCompanion
       if (professorEmail != null) 'professor_email': professorEmail,
       if (professorPhone != null) 'professor_phone': professorPhone,
       if (syncState != null) 'sync_state': syncState,
+      if (familyId != null) 'family_id': familyId,
+      if (childId != null) 'child_id': childId,
+      if (deletedAt != null) 'deleted_at': deletedAt,
       if (createdAt != null) 'created_at': createdAt,
       if (updatedAt != null) 'updated_at': updatedAt,
       if (rowid != null) 'rowid': rowid,
@@ -4254,6 +4383,9 @@ class ClassScheduleSlotsTableCompanion
     Value<String?>? professorEmail,
     Value<String?>? professorPhone,
     Value<String>? syncState,
+    Value<String?>? familyId,
+    Value<String?>? childId,
+    Value<DateTime?>? deletedAt,
     Value<DateTime>? createdAt,
     Value<DateTime>? updatedAt,
     Value<int>? rowid,
@@ -4268,6 +4400,9 @@ class ClassScheduleSlotsTableCompanion
       professorEmail: professorEmail ?? this.professorEmail,
       professorPhone: professorPhone ?? this.professorPhone,
       syncState: syncState ?? this.syncState,
+      familyId: familyId ?? this.familyId,
+      childId: childId ?? this.childId,
+      deletedAt: deletedAt ?? this.deletedAt,
       createdAt: createdAt ?? this.createdAt,
       updatedAt: updatedAt ?? this.updatedAt,
       rowid: rowid ?? this.rowid,
@@ -4304,6 +4439,15 @@ class ClassScheduleSlotsTableCompanion
     if (syncState.present) {
       map['sync_state'] = Variable<String>(syncState.value);
     }
+    if (familyId.present) {
+      map['family_id'] = Variable<String>(familyId.value);
+    }
+    if (childId.present) {
+      map['child_id'] = Variable<String>(childId.value);
+    }
+    if (deletedAt.present) {
+      map['deleted_at'] = Variable<DateTime>(deletedAt.value);
+    }
     if (createdAt.present) {
       map['created_at'] = Variable<DateTime>(createdAt.value);
     }
@@ -4328,6 +4472,9 @@ class ClassScheduleSlotsTableCompanion
           ..write('professorEmail: $professorEmail, ')
           ..write('professorPhone: $professorPhone, ')
           ..write('syncState: $syncState, ')
+          ..write('familyId: $familyId, ')
+          ..write('childId: $childId, ')
+          ..write('deletedAt: $deletedAt, ')
           ..write('createdAt: $createdAt, ')
           ..write('updatedAt: $updatedAt, ')
           ..write('rowid: $rowid')
@@ -7222,6 +7369,9 @@ typedef $$ClassScheduleSlotsTableTableCreateCompanionBuilder =
       Value<String?> professorEmail,
       Value<String?> professorPhone,
       Value<String> syncState,
+      Value<String?> familyId,
+      Value<String?> childId,
+      Value<DateTime?> deletedAt,
       required DateTime createdAt,
       required DateTime updatedAt,
       Value<int> rowid,
@@ -7237,6 +7387,9 @@ typedef $$ClassScheduleSlotsTableTableUpdateCompanionBuilder =
       Value<String?> professorEmail,
       Value<String?> professorPhone,
       Value<String> syncState,
+      Value<String?> familyId,
+      Value<String?> childId,
+      Value<DateTime?> deletedAt,
       Value<DateTime> createdAt,
       Value<DateTime> updatedAt,
       Value<int> rowid,
@@ -7293,6 +7446,21 @@ class $$ClassScheduleSlotsTableTableFilterComposer
 
   ColumnFilters<String> get syncState => $composableBuilder(
     column: $table.syncState,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get familyId => $composableBuilder(
+    column: $table.familyId,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get childId => $composableBuilder(
+    column: $table.childId,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<DateTime> get deletedAt => $composableBuilder(
+    column: $table.deletedAt,
     builder: (column) => ColumnFilters(column),
   );
 
@@ -7361,6 +7529,21 @@ class $$ClassScheduleSlotsTableTableOrderingComposer
     builder: (column) => ColumnOrderings(column),
   );
 
+  ColumnOrderings<String> get familyId => $composableBuilder(
+    column: $table.familyId,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get childId => $composableBuilder(
+    column: $table.childId,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<DateTime> get deletedAt => $composableBuilder(
+    column: $table.deletedAt,
+    builder: (column) => ColumnOrderings(column),
+  );
+
   ColumnOrderings<DateTime> get createdAt => $composableBuilder(
     column: $table.createdAt,
     builder: (column) => ColumnOrderings(column),
@@ -7417,6 +7600,15 @@ class $$ClassScheduleSlotsTableTableAnnotationComposer
 
   GeneratedColumn<String> get syncState =>
       $composableBuilder(column: $table.syncState, builder: (column) => column);
+
+  GeneratedColumn<String> get familyId =>
+      $composableBuilder(column: $table.familyId, builder: (column) => column);
+
+  GeneratedColumn<String> get childId =>
+      $composableBuilder(column: $table.childId, builder: (column) => column);
+
+  GeneratedColumn<DateTime> get deletedAt =>
+      $composableBuilder(column: $table.deletedAt, builder: (column) => column);
 
   GeneratedColumn<DateTime> get createdAt =>
       $composableBuilder(column: $table.createdAt, builder: (column) => column);
@@ -7480,6 +7672,9 @@ class $$ClassScheduleSlotsTableTableTableManager
                 Value<String?> professorEmail = const Value.absent(),
                 Value<String?> professorPhone = const Value.absent(),
                 Value<String> syncState = const Value.absent(),
+                Value<String?> familyId = const Value.absent(),
+                Value<String?> childId = const Value.absent(),
+                Value<DateTime?> deletedAt = const Value.absent(),
                 Value<DateTime> createdAt = const Value.absent(),
                 Value<DateTime> updatedAt = const Value.absent(),
                 Value<int> rowid = const Value.absent(),
@@ -7493,6 +7688,9 @@ class $$ClassScheduleSlotsTableTableTableManager
                 professorEmail: professorEmail,
                 professorPhone: professorPhone,
                 syncState: syncState,
+                familyId: familyId,
+                childId: childId,
+                deletedAt: deletedAt,
                 createdAt: createdAt,
                 updatedAt: updatedAt,
                 rowid: rowid,
@@ -7508,6 +7706,9 @@ class $$ClassScheduleSlotsTableTableTableManager
                 Value<String?> professorEmail = const Value.absent(),
                 Value<String?> professorPhone = const Value.absent(),
                 Value<String> syncState = const Value.absent(),
+                Value<String?> familyId = const Value.absent(),
+                Value<String?> childId = const Value.absent(),
+                Value<DateTime?> deletedAt = const Value.absent(),
                 required DateTime createdAt,
                 required DateTime updatedAt,
                 Value<int> rowid = const Value.absent(),
@@ -7521,6 +7722,9 @@ class $$ClassScheduleSlotsTableTableTableManager
                 professorEmail: professorEmail,
                 professorPhone: professorPhone,
                 syncState: syncState,
+                familyId: familyId,
+                childId: childId,
+                deletedAt: deletedAt,
                 createdAt: createdAt,
                 updatedAt: updatedAt,
                 rowid: rowid,

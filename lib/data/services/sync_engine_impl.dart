@@ -1,6 +1,7 @@
 import 'dart:async';
 import 'dart:io';
 
+import 'package:drift/drift.dart' show Value;
 import 'package:flutter/foundation.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
@@ -22,6 +23,7 @@ import '../datasources/class_schedule_local_datasource.dart';
 import '../datasources/groups_local_datasource.dart';
 import '../datasources/note_local_datasource.dart';
 import '../datasources/note_supabase_datasource.dart';
+import '../local/app_database.dart';
 import '../models/mappers.dart';
 
 /// Sincronizacao da agenda:
@@ -113,7 +115,9 @@ class SyncEngineImpl implements ISyncService {
       changed |= await _pullItems(uid, SyncScope.personal(uid));
       changed |= await _pullGroups(uid, SyncScope.personal(uid));
       if (ctx.familyId != null) {
+        changed |= await _pushFamilySlots(uid, ctx);
         changed |= await _pullItems(uid, SyncScope.family(ctx.familyId!));
+        changed |= await _pullFamilySlots(uid, ctx.familyId!);
       }
 
       if (hasPro) {
@@ -137,6 +141,7 @@ class SyncEngineImpl implements ISyncService {
     _unsubscribe();
     await _localAgenda.clearFamilyCache();
     await _localGroups.clearFamilyCache();
+    await _localSchedule.clearFamilySlots();
     final prefs = await SharedPreferences.getInstance();
     for (final key
         in prefs.getKeys().where((k) => k.startsWith(_cursorPrefix)).toList()) {
@@ -264,6 +269,7 @@ class SyncEngineImpl implements ISyncService {
 
     await _localAgenda.clearFamilyCache(keepFamilyId: familyId);
     await _localGroups.clearFamilyCache(keepFamilyId: familyId);
+    await _localSchedule.clearFamilySlots(keepFamilyId: familyId);
     for (final k
         in prefs.getKeys().where((k) => k.contains('_family_')).toList()) {
       if (k.startsWith(_cursorPrefix)) await prefs.remove(k);
@@ -274,6 +280,87 @@ class SyncEngineImpl implements ISyncService {
       await prefs.setString(key, familyId);
     }
     return true;
+  }
+
+  // ---------------------------------------------------------------------------
+  // Grade dos filhos (Familia)
+  // ---------------------------------------------------------------------------
+
+  String _slotsCursorKey(String uid, String familyId) =>
+      '$_cursorPrefix${uid}_slots_family_$familyId';
+
+  Future<bool> _pushFamilySlots(String uid, FamilyContext ctx) async {
+    final pending = await _localSchedule.getPendingFamilySlots();
+    var changed = false;
+    var resetCursor = false;
+    for (final row in pending) {
+      if (row.familyId != ctx.familyId || !ctx.canEditAgenda) {
+        // Sem permissao: descarta e baixa de novo a versao do servidor.
+        await _localSchedule.deleteLocalSlot(row.id);
+        resetCursor = changed = true;
+        continue;
+      }
+      try {
+        await _remoteAgenda.upsertFamilySlot({
+          'id': row.id,
+          'family_id': row.familyId,
+          'child_id': row.childId,
+          'day_of_week': row.dayOfWeek,
+          'start_minutes': row.startMinutes,
+          'end_minutes': row.endMinutes,
+          'subject': row.subject,
+          'professor_name': row.professorName,
+          'professor_email': row.professorEmail,
+          'professor_phone': row.professorPhone,
+          'created_at': row.createdAt.toUtc().toIso8601String(),
+          'deleted_at': row.deletedAt?.toUtc().toIso8601String(),
+        });
+        await _localSchedule.markSlotSynced(row.id);
+      } on PostgrestException catch (e) {
+        debugPrint('[SyncEngine] slot ${row.id} recusado: ${e.code} ${e.message}');
+        if (e.code == '42501') {
+          await _localSchedule.deleteLocalSlot(row.id);
+          resetCursor = changed = true;
+        }
+      }
+    }
+    if (resetCursor && ctx.familyId != null) {
+      final prefs = await SharedPreferences.getInstance();
+      await prefs.remove(_slotsCursorKey(uid, ctx.familyId!));
+    }
+    return changed;
+  }
+
+  Future<bool> _pullFamilySlots(String uid, String familyId) async {
+    final prefs = await SharedPreferences.getInstance();
+    final key = _slotsCursorKey(uid, familyId);
+    final since = prefs.getString(key);
+    final changes = await _remoteAgenda.fetchFamilySlotChanges(familyId, since: since);
+    for (final r in changes.rows) {
+      DateTime? parse(Object? v) => v == null ? null : DateTime.parse(v as String).toLocal();
+      await _localSchedule.applyRemoteFamilySlot(
+        ClassScheduleSlotsTableCompanion(
+          id: Value(r['id'] as String),
+          familyId: Value(r['family_id'] as String?),
+          childId: Value(r['child_id'] as String?),
+          dayOfWeek: Value(r['day_of_week'] as int),
+          startMinutes: Value(r['start_minutes'] as int),
+          endMinutes: Value(r['end_minutes'] as int),
+          subject: Value(r['subject'] as String?),
+          professorName: Value(r['professor_name'] as String?),
+          professorEmail: Value(r['professor_email'] as String?),
+          professorPhone: Value(r['professor_phone'] as String?),
+          createdAt: Value(parse(r['created_at'])!),
+          updatedAt: Value(parse(r['updated_at'])!),
+          deletedAt: Value(parse(r['deleted_at'])),
+        ),
+        deleted: r['deleted_at'] != null,
+      );
+    }
+    if (changes.maxUpdatedAt != null && changes.maxUpdatedAt != since) {
+      await prefs.setString(key, changes.maxUpdatedAt!);
+    }
+    return changes.rows.isNotEmpty;
   }
 
   // ---------------------------------------------------------------------------
@@ -323,17 +410,19 @@ class SyncEngineImpl implements ISyncService {
     }
 
     if (familyId != null) {
-      channel.onPostgresChanges(
-        event: PostgresChangeEvent.all,
-        schema: 'public',
-        table: 'agenda_items',
-        filter: PostgresChangeFilter(
-          type: PostgresChangeFilterType.eq,
-          column: 'family_id',
-          value: familyId,
-        ),
-        callback: onChange,
-      );
+      for (final table in ['agenda_items', 'class_schedule_slots']) {
+        channel.onPostgresChanges(
+          event: PostgresChangeEvent.all,
+          schema: 'public',
+          table: table,
+          filter: PostgresChangeFilter(
+            type: PostgresChangeFilterType.eq,
+            column: 'family_id',
+            value: familyId,
+          ),
+          callback: onChange,
+        );
+      }
     }
     if (hasPro) {
       channel.onPostgresChanges(
@@ -366,7 +455,7 @@ class SyncEngineImpl implements ISyncService {
   // ---------------------------------------------------------------------------
 
   Future<void> _pushClassSchedule(String uid) async {
-    final allSlots = await _localSchedule.getAllSlots();
+    final allSlots = await _localSchedule.getAllPersonalSlots();
     final pending = await _localSchedule.getPendingSlots();
     if (allSlots.isEmpty || pending.isEmpty) return;
 

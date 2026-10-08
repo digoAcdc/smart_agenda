@@ -1,8 +1,11 @@
+import 'dart:async';
+
 import 'package:flutter/widgets.dart';
 import 'package:get/get.dart';
 
 import '../../domain/entities/class_schedule_slot.dart';
 import '../../domain/repositories/i_class_schedule_datasource.dart';
+import '../../domain/repositories/i_sync_service.dart';
 
 class TimeRange {
   const TimeRange({required this.start, required this.end});
@@ -11,10 +14,19 @@ class TimeRange {
 }
 
 class ClassScheduleController extends GetxController {
-  ClassScheduleController(this._dataSource);
+  ClassScheduleController(this._dataSource, {ISyncService? syncService})
+      : _syncService = syncService;
 
   final IClassScheduleDataSource _dataSource;
+  final ISyncService? _syncService;
+  StreamSubscription<void>? _remoteChangesSub;
+
+  /// Grade exibida na tela (pessoal ou de um filho).
+  final Rx<ScheduleOwner> owner = const ScheduleOwner.mine().obs;
   final RxList<ClassScheduleSlot> slots = <ClassScheduleSlot>[].obs;
+
+  /// Todas as grades (pessoal e dos filhos), usadas na Home.
+  final RxList<ClassScheduleSlot> allSlots = <ClassScheduleSlot>[].obs;
   final RxBool loading = false.obs;
 
   static const weekdays = [1, 2, 3, 4, 5];
@@ -23,13 +35,30 @@ class ClassScheduleController extends GetxController {
   void onInit() {
     super.onInit();
     WidgetsBinding.instance.addPostFrameCallback((_) => load());
+    // Grades dos filhos editadas por outros membros chegam pelo sync.
+    _remoteChangesSub = _syncService?.onDataChanged.listen((_) => load(silent: true));
   }
 
-  Future<void> load() async {
-    loading.value = true;
-    final data = await _dataSource.getSlots();
-    slots.assignAll(data);
+  @override
+  void onClose() {
+    _remoteChangesSub?.cancel();
+    super.onClose();
+  }
+
+  Future<void> load({bool silent = false}) async {
+    if (!silent) loading.value = true;
+    final current = owner.value;
+    final data = await _dataSource.getSlots(current);
+    if (owner.value == current) slots.assignAll(data);
+    allSlots.assignAll(await _dataSource.getAllSlots());
     loading.value = false;
+  }
+
+  Future<void> selectOwner(ScheduleOwner value) async {
+    if (owner.value == value) return;
+    owner.value = value;
+    slots.clear();
+    await load();
   }
 
   List<TimeRange> get timeRanges {
@@ -94,7 +123,7 @@ class ClassScheduleController extends GetxController {
   }
 
   Future<String?> addTimeRange(int start, int end) async {
-    final err = await _dataSource.addTimeRange(start, end);
+    final err = await _dataSource.addTimeRange(owner.value, start, end);
     if (err != null) return err;
     await load();
     return null;
@@ -118,7 +147,7 @@ class ClassScheduleController extends GetxController {
   }
 
   Future<void> removeTimeRange(int start, int end) async {
-    await _dataSource.removeTimeRange(start, end);
+    await _dataSource.removeTimeRange(owner.value, start, end);
     await load();
   }
 

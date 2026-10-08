@@ -5,6 +5,8 @@ import 'package:url_launcher/url_launcher.dart';
 import '../../core/theme/design_tokens.dart';
 import '../../core/utils/form_validators.dart';
 import '../../domain/entities/class_schedule_slot.dart';
+import '../../domain/entities/family.dart';
+import '../../domain/repositories/i_family_service.dart';
 import '../controllers/class_schedule_controller.dart';
 import '../widgets/empty_state_widget.dart';
 import '../widgets/loading_placeholder_list.dart';
@@ -24,6 +26,21 @@ class ClassSchedulePage extends GetView<ClassScheduleController> {
     5: 'Sexta',
   };
 
+  IFamilyService? get _family =>
+      Get.isRegistered<IFamilyService>() ? Get.find<IFamilyService>() : null;
+
+  /// Grade pessoal sempre editavel; a de filho segue o papel na Familia.
+  bool get _canEdit {
+    if (!controller.owner.value.isChild) return true;
+    return _family?.context.canEditAgenda ?? false;
+  }
+
+  String get _ownerLabel {
+    final owner = controller.owner.value;
+    if (!owner.isChild) return 'sua semana';
+    return 'a semana de ${_family?.childById(owner.childId)?.name ?? 'seu filho'}';
+  }
+
   @override
   Widget build(BuildContext context) {
     final palette = context.palette;
@@ -33,15 +50,22 @@ class ClassSchedulePage extends GetView<ClassScheduleController> {
         color: palette.appBackground,
         child: Column(
           children: [
-            SectionHeader(
-              title: 'Grade horaria',
-              subtitle: 'Monte sua semana de aulas por horario',
-              trailing: IconButton(
-                onPressed: () => _openAddTimeRangeDialog(context),
-                icon: const Icon(Icons.add),
-                tooltip: 'Adicionar horario',
+            Obx(
+              () => SectionHeader(
+                title: 'Grade horaria',
+                subtitle: _canEdit
+                    ? 'Monte $_ownerLabel de aulas por horario'
+                    : 'Grade de ${_ownerLabel.replaceFirst('a semana de ', '')} (somente leitura)',
+                trailing: IconButton(
+                  onPressed: _canEdit
+                      ? () => _openAddTimeRangeDialog(context)
+                      : null,
+                  icon: const Icon(Icons.add),
+                  tooltip: 'Adicionar horario',
+                ),
               ),
             ),
+            _buildOwnerSelector(context),
             Expanded(
               child: Obx(() {
                 if (controller.loading.value) {
@@ -54,8 +78,10 @@ class ClassSchedulePage extends GetView<ClassScheduleController> {
                     title: 'Sem grade ainda',
                     message:
                         'Adicione horarios e depois toque nas celulas para inserir materias.',
-                    ctaLabel: 'Adicionar horario',
-                    onTapCta: () => _openAddTimeRangeDialog(context),
+                    ctaLabel: _canEdit ? 'Adicionar horario' : null,
+                    onTapCta: _canEdit
+                        ? () => _openAddTimeRangeDialog(context)
+                        : null,
                   );
                 }
 
@@ -64,15 +90,17 @@ class ClassSchedulePage extends GetView<ClassScheduleController> {
                     final compact = constraints.maxWidth < 420;
                     final minContentWidth = compact
                         ? (_timeColWidth +
-                            (_dayColWidth *
-                                ClassScheduleController.weekdays.length))
+                              (_dayColWidth *
+                                  ClassScheduleController.weekdays.length))
                         : constraints.maxWidth;
                     return SingleChildScrollView(
                       padding: const EdgeInsets.fromLTRB(12, 6, 12, 120),
                       child: SingleChildScrollView(
                         scrollDirection: Axis.horizontal,
                         child: ConstrainedBox(
-                          constraints: BoxConstraints(minWidth: minContentWidth),
+                          constraints: BoxConstraints(
+                            minWidth: minContentWidth,
+                          ),
                           child: Column(
                             children: [
                               _buildHeaderRow(context),
@@ -95,6 +123,68 @@ class ClassSchedulePage extends GetView<ClassScheduleController> {
         ),
       ),
     );
+  }
+
+  /// "Minha grade" + um chip por filho (so aparece se houver filhos).
+  Widget _buildOwnerSelector(BuildContext context) {
+    return Obx(() {
+      final family = _family;
+      final ctx = family?.context;
+      final kids = family?.children ?? const <FamilyChild>[];
+      final current = controller.owner.value;
+
+      // Filho arquivado ou saiu da Familia: volta para a grade pessoal.
+      final stillValid =
+          !current.isChild ||
+          (ctx?.familyId == current.familyId &&
+              kids.any((c) => c.id == current.childId));
+      if (!stillValid) {
+        WidgetsBinding.instance.addPostFrameCallback(
+          (_) => controller.selectOwner(const ScheduleOwner.mine()),
+        );
+      }
+      if (ctx == null || !ctx.hasFamily || kids.isEmpty) {
+        return const SizedBox.shrink();
+      }
+
+      Widget chip(String label, ScheduleOwner owner, {Color? color}) {
+        final selected = current == owner;
+        return Padding(
+          padding: const EdgeInsets.only(right: 8),
+          child: ChoiceChip(
+            label: Text(label),
+            selected: selected,
+            avatar: color == null
+                ? null
+                : CircleAvatar(backgroundColor: color, radius: 6),
+            onSelected: (_) => controller.selectOwner(owner),
+          ),
+        );
+      }
+
+      return SingleChildScrollView(
+        scrollDirection: Axis.horizontal,
+        padding: const EdgeInsets.fromLTRB(12, 0, 12, 8),
+        child: Row(
+          children: [
+            chip('Minha grade', const ScheduleOwner.mine()),
+            for (final c in kids)
+              chip(
+                c.name,
+                ScheduleOwner.child(familyId: ctx.familyId!, childId: c.id),
+                color: _parseHexColor(c.colorHex),
+              ),
+          ],
+        ),
+      );
+    });
+  }
+
+  Color? _parseHexColor(String? hex) {
+    if (hex == null || hex.isEmpty) return null;
+    final h = hex.replaceFirst('#', '');
+    final v = int.tryParse(h.length == 6 ? 'FF$h' : h, radix: 16);
+    return v == null ? null : Color(v);
   }
 
   Widget _buildHeaderRow(BuildContext context) {
@@ -155,23 +245,24 @@ class ClassSchedulePage extends GetView<ClassScheduleController> {
               children: [
                 Text(
                   controller.formatMinutes(start),
-                  style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                        fontWeight: FontWeight.w700,
-                      ),
+                  style: Theme.of(
+                    context,
+                  ).textTheme.bodyMedium?.copyWith(fontWeight: FontWeight.w700),
                 ),
                 Text(
                   controller.formatMinutes(end),
                   style: Theme.of(context).textTheme.bodySmall,
                 ),
                 const SizedBox(height: 6),
-                InkWell(
-                  onTap: () => controller.removeTimeRange(start, end),
-                  borderRadius: BorderRadius.circular(20),
-                  child: const Padding(
-                    padding: EdgeInsets.symmetric(horizontal: 8, vertical: 2),
-                    child: Icon(Icons.delete_outline, size: 16),
+                if (_canEdit)
+                  InkWell(
+                    onTap: () => controller.removeTimeRange(start, end),
+                    borderRadius: BorderRadius.circular(20),
+                    child: const Padding(
+                      padding: EdgeInsets.symmetric(horizontal: 8, vertical: 2),
+                      child: Icon(Icons.delete_outline, size: 16),
+                    ),
                   ),
-                ),
               ],
             ),
           ),
@@ -209,10 +300,10 @@ class ClassSchedulePage extends GetView<ClassScheduleController> {
           subject?.isNotEmpty == true ? subject! : '+ adicionar',
           textAlign: TextAlign.center,
           style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                fontWeight: subject?.isNotEmpty == true
-                    ? FontWeight.w600
-                    : FontWeight.w400,
-              ),
+            fontWeight: subject?.isNotEmpty == true
+                ? FontWeight.w600
+                : FontWeight.w400,
+          ),
         ),
       ),
     );
@@ -263,8 +354,9 @@ class ClassSchedulePage extends GetView<ClassScheduleController> {
               final error = await controller.addTimeRange(start, end);
               if (error != null) {
                 if (context.mounted) {
-                  ScaffoldMessenger.of(context)
-                      .showSnackBar(SnackBar(content: Text(error)));
+                  ScaffoldMessenger.of(
+                    context,
+                  ).showSnackBar(SnackBar(content: Text(error)));
                 }
                 return;
               }
@@ -285,7 +377,8 @@ class ClassSchedulePage extends GetView<ClassScheduleController> {
     ClassScheduleSlot? cell,
   ) {
     if (cell == null) return;
-    final hasContent = (cell.subject?.isNotEmpty ?? false) ||
+    final hasContent =
+        (cell.subject?.isNotEmpty ?? false) ||
         (cell.professorName?.isNotEmpty ?? false) ||
         (cell.professorEmail?.isNotEmpty ?? false) ||
         (cell.professorPhone?.isNotEmpty ?? false);
@@ -293,7 +386,7 @@ class ClassSchedulePage extends GetView<ClassScheduleController> {
       if (!context.mounted) return;
       if (hasContent) {
         _openSubjectViewDialog(context, day, cell);
-      } else {
+      } else if (_canEdit) {
         _openSubjectEditDialog(context, day, cell);
       }
     });
@@ -315,7 +408,13 @@ class ClassSchedulePage extends GetView<ClassScheduleController> {
       items.add(_emailRow(context, cell.professorEmail!));
     }
     if (cell.professorPhone?.isNotEmpty == true) {
-      items.add(_phoneRow(context, cell.professorPhone!, formatPhoneForDisplay(cell.professorPhone)));
+      items.add(
+        _phoneRow(
+          context,
+          cell.professorPhone!,
+          formatPhoneForDisplay(cell.professorPhone),
+        ),
+      );
     }
     if (items.isEmpty) {
       items.add(const Text('Nenhum detalhe cadastrado.'));
@@ -323,7 +422,9 @@ class ClassSchedulePage extends GetView<ClassScheduleController> {
 
     await Get.dialog(
       AlertDialog(
-        title: Text('${dayLabels[day] ?? 'Dia'} - ${controller.formatMinutes(cell.startMinutes)}'),
+        title: Text(
+          '${dayLabels[day] ?? 'Dia'} - ${controller.formatMinutes(cell.startMinutes)}',
+        ),
         content: Column(
           mainAxisSize: MainAxisSize.min,
           crossAxisAlignment: CrossAxisAlignment.start,
@@ -331,13 +432,14 @@ class ClassSchedulePage extends GetView<ClassScheduleController> {
         ),
         actions: [
           TextButton(onPressed: Get.back, child: const Text('Fechar')),
-          FilledButton(
-            onPressed: () {
-              Get.back();
-              _openSubjectEditDialog(context, day, cell);
-            },
-            child: const Text('Editar'),
-          ),
+          if (_canEdit)
+            FilledButton(
+              onPressed: () {
+                Get.back();
+                _openSubjectEditDialog(context, day, cell);
+              },
+              child: const Text('Editar'),
+            ),
         ],
       ),
     );
@@ -352,7 +454,8 @@ class ClassSchedulePage extends GetView<ClassScheduleController> {
   ) async {
     final existingSubjects = controller.existingSubjects;
     final currentSubject = cell.subject?.trim();
-    final isExisting = currentSubject != null &&
+    final isExisting =
+        currentSubject != null &&
         currentSubject.isNotEmpty &&
         existingSubjects.contains(currentSubject);
 
@@ -361,11 +464,16 @@ class ClassSchedulePage extends GetView<ClassScheduleController> {
         : (currentSubject?.isNotEmpty == true ? _novaMateriaValue : null);
 
     final subjectController = TextEditingController(
-      text: dropdownValue == _novaMateriaValue || !isExisting ? (cell.subject ?? '') : '',
+      text: dropdownValue == _novaMateriaValue || !isExisting
+          ? (cell.subject ?? '')
+          : '',
     );
-    final professorController =
-        TextEditingController(text: cell.professorName ?? '');
-    final emailController = TextEditingController(text: cell.professorEmail ?? '');
+    final professorController = TextEditingController(
+      text: cell.professorName ?? '',
+    );
+    final emailController = TextEditingController(
+      text: cell.professorEmail ?? '',
+    );
     final phoneController = TextEditingController(
       text: formatPhoneForDisplay(cell.professorPhone),
     );
@@ -407,82 +515,100 @@ class ClassSchedulePage extends GetView<ClassScheduleController> {
                   crossAxisAlignment: CrossAxisAlignment.stretch,
                   children: [
                     DropdownButtonFormField<String?>(
-                    value: dropdownValue,
-                    decoration: const InputDecoration(
-                      labelText: 'Materia (opcional)',
-                      isDense: true,
-                      contentPadding: EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+                      value: dropdownValue,
+                      decoration: const InputDecoration(
+                        labelText: 'Materia (opcional)',
+                        isDense: true,
+                        contentPadding: EdgeInsets.symmetric(
+                          horizontal: 12,
+                          vertical: 8,
+                        ),
+                      ),
+                      items: [
+                        const DropdownMenuItem<String?>(
+                          value: null,
+                          child: Text('Nenhuma'),
+                        ),
+                        ...existingSubjects.map(
+                          (s) => DropdownMenuItem<String?>(
+                            value: s,
+                            child: Text(s),
+                          ),
+                        ),
+                        const DropdownMenuItem<String?>(
+                          value: _novaMateriaValue,
+                          child: Text('+ Nova materia'),
+                        ),
+                      ],
+                      onChanged: (v) {
+                        setState(() => onDropdownChanged(v));
+                      },
                     ),
-                    items: [
-                      const DropdownMenuItem<String?>(
-                        value: null,
-                        child: Text('Nenhuma'),
-                      ),
-                      ...existingSubjects.map(
-                        (s) => DropdownMenuItem<String?>(value: s, child: Text(s)),
-                      ),
-                      const DropdownMenuItem<String?>(
-                        value: _novaMateriaValue,
-                        child: Text('+ Nova materia'),
+                    if (dropdownValue == _novaMateriaValue) ...[
+                      const SizedBox(height: 8),
+                      TextField(
+                        controller: subjectController,
+                        decoration: const InputDecoration(
+                          labelText: 'Nome da materia',
+                          hintText: 'Ex: Matematica',
+                          isDense: true,
+                          contentPadding: EdgeInsets.symmetric(
+                            horizontal: 12,
+                            vertical: 8,
+                          ),
+                        ),
                       ),
                     ],
-                    onChanged: (v) {
-                      setState(() => onDropdownChanged(v));
-                    },
-                  ),
-                  if (dropdownValue == _novaMateriaValue) ...[
-                    const SizedBox(height: 8),
+                    const SizedBox(height: 10),
                     TextField(
-                      controller: subjectController,
+                      controller: professorController,
                       decoration: const InputDecoration(
-                        labelText: 'Nome da materia',
-                        hintText: 'Ex: Matematica',
+                        labelText: 'Professor (opcional)',
+                        hintText: 'Ex: Joao Silva',
                         isDense: true,
-                        contentPadding: EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+                        contentPadding: EdgeInsets.symmetric(
+                          horizontal: 12,
+                          vertical: 8,
+                        ),
                       ),
                     ),
+                    const SizedBox(height: 8),
+                    TextFormField(
+                      controller: emailController,
+                      keyboardType: TextInputType.emailAddress,
+                      decoration: const InputDecoration(
+                        labelText: 'Email (opcional)',
+                        hintText: 'professor@email.com',
+                        isDense: true,
+                        contentPadding: EdgeInsets.symmetric(
+                          horizontal: 12,
+                          vertical: 8,
+                        ),
+                      ),
+                      validator: (v) => emailValidator(v),
+                    ),
+                    const SizedBox(height: 8),
+                    TextFormField(
+                      controller: phoneController,
+                      keyboardType: TextInputType.phone,
+                      decoration: const InputDecoration(
+                        labelText: 'Telefone (opcional)',
+                        hintText: '(11) 99999-9999',
+                        isDense: true,
+                        contentPadding: EdgeInsets.symmetric(
+                          horizontal: 12,
+                          vertical: 8,
+                        ),
+                      ),
+                      inputFormatters: phoneInputFormatters,
+                      validator: (v) => phoneValidator(v),
+                    ),
                   ],
-                  const SizedBox(height: 10),
-                  TextField(
-                    controller: professorController,
-                    decoration: const InputDecoration(
-                      labelText: 'Professor (opcional)',
-                      hintText: 'Ex: Joao Silva',
-                      isDense: true,
-                      contentPadding: EdgeInsets.symmetric(horizontal: 12, vertical: 8),
-                    ),
-                  ),
-                  const SizedBox(height: 8),
-                  TextFormField(
-                    controller: emailController,
-                    keyboardType: TextInputType.emailAddress,
-                    decoration: const InputDecoration(
-                      labelText: 'Email (opcional)',
-                      hintText: 'professor@email.com',
-                      isDense: true,
-                      contentPadding: EdgeInsets.symmetric(horizontal: 12, vertical: 8),
-                    ),
-                    validator: (v) => emailValidator(v),
-                  ),
-                  const SizedBox(height: 8),
-                  TextFormField(
-                    controller: phoneController,
-                    keyboardType: TextInputType.phone,
-                    decoration: const InputDecoration(
-                      labelText: 'Telefone (opcional)',
-                      hintText: '(11) 99999-9999',
-                      isDense: true,
-                      contentPadding: EdgeInsets.symmetric(horizontal: 12, vertical: 8),
-                    ),
-                    inputFormatters: phoneInputFormatters,
-                    validator: (v) => phoneValidator(v),
-                  ),
-                ],
-              );
-            },
+                );
+              },
+            ),
           ),
         ),
-      ),
         actions: [
           TextButton(
             onPressed: () async {
@@ -523,10 +649,7 @@ class ClassSchedulePage extends GetView<ClassScheduleController> {
         children: [
           Text(
             label,
-            style: const TextStyle(
-              fontWeight: FontWeight.w600,
-              fontSize: 12,
-            ),
+            style: const TextStyle(fontWeight: FontWeight.w600, fontSize: 12),
           ),
           const SizedBox(height: 2),
           Text(value),
@@ -543,15 +666,13 @@ class ClassSchedulePage extends GetView<ClassScheduleController> {
         children: [
           Text(
             'Email',
-            style: const TextStyle(
-              fontWeight: FontWeight.w600,
-              fontSize: 12,
-            ),
+            style: const TextStyle(fontWeight: FontWeight.w600, fontSize: 12),
           ),
           const SizedBox(height: 2),
           MenuAnchor(
             builder: (context, controller, child) => InkWell(
-              onTap: () => controller.isOpen ? controller.close() : controller.open(),
+              onTap: () =>
+                  controller.isOpen ? controller.close() : controller.open(),
               child: Row(
                 mainAxisSize: MainAxisSize.min,
                 children: [
@@ -563,7 +684,11 @@ class ClassSchedulePage extends GetView<ClassScheduleController> {
                     ),
                   ),
                   const SizedBox(width: 4),
-                  Icon(Icons.arrow_drop_down, size: 18, color: Theme.of(context).colorScheme.primary),
+                  Icon(
+                    Icons.arrow_drop_down,
+                    size: 18,
+                    color: Theme.of(context).colorScheme.primary,
+                  ),
                 ],
               ),
             ),
@@ -588,15 +713,13 @@ class ClassSchedulePage extends GetView<ClassScheduleController> {
         children: [
           Text(
             'Telefone',
-            style: const TextStyle(
-              fontWeight: FontWeight.w600,
-              fontSize: 12,
-            ),
+            style: const TextStyle(fontWeight: FontWeight.w600, fontSize: 12),
           ),
           const SizedBox(height: 2),
           MenuAnchor(
             builder: (context, controller, child) => InkWell(
-              onTap: () => controller.isOpen ? controller.close() : controller.open(),
+              onTap: () =>
+                  controller.isOpen ? controller.close() : controller.open(),
               child: Row(
                 mainAxisSize: MainAxisSize.min,
                 children: [
@@ -608,7 +731,11 @@ class ClassSchedulePage extends GetView<ClassScheduleController> {
                     ),
                   ),
                   const SizedBox(width: 4),
-                  Icon(Icons.arrow_drop_down, size: 18, color: Theme.of(context).colorScheme.primary),
+                  Icon(
+                    Icons.arrow_drop_down,
+                    size: 18,
+                    color: Theme.of(context).colorScheme.primary,
+                  ),
                 ],
               ),
             ),

@@ -501,7 +501,7 @@ class _TodayPageState extends State<TodayPage> {
     };
     final scheduleWeekday = DateTime.now().weekday;
     final classes =
-        classScheduleController.slots
+        classScheduleController.allSlots
             .where(
               (slot) =>
                   slot.dayOfWeek == scheduleWeekday &&
@@ -509,6 +509,8 @@ class _TodayPageState extends State<TodayPage> {
             )
             .toList()
           ..sort((a, b) => a.startMinutes.compareTo(b.startMinutes));
+    // Com grades de filhos, cada aula mostra de quem e.
+    final showClassOwner = classes.any((c) => c.childId != null);
     final timelineItems = selectedTimelineGroupId == null
         ? upcoming
         : upcoming.where((e) => e.groupId == selectedTimelineGroupId).toList();
@@ -684,6 +686,15 @@ class _TodayPageState extends State<TodayPage> {
                           startMinutes: item.startMinutes,
                           endMinutes: item.endMinutes,
                           subject: item.subject ?? 'Materia',
+                          ownerLabel: !showClassOwner
+                              ? null
+                              : item.childId == null
+                              ? 'Você'
+                              : FamilyItemLabels.childName(item.childId) ??
+                                    'Filho',
+                          ownerColorHex: FamilyItemLabels.childColorHex(
+                            item.childId,
+                          ),
                         ),
                       ),
                     ),
@@ -985,15 +996,22 @@ class _TodayPageState extends State<TodayPage> {
                     style: Theme.of(context).textTheme.bodySmall,
                   ),
                   const SizedBox(height: 2),
-                  Text(
-                    groupName,
-                    style: Theme.of(context).textTheme.labelSmall?.copyWith(
-                      color: Theme.of(context).colorScheme.onSurfaceVariant,
+                  if (FamilyItemLabels.subject(item) == null)
+                    Text(
+                      groupName,
+                      style: Theme.of(context).textTheme.labelSmall?.copyWith(
+                        color: Theme.of(context).colorScheme.onSurfaceVariant,
+                      ),
                     ),
-                  ),
                 ],
               ),
             ),
+            if (FamilyItemLabels.subject(item) != null)
+              _ownerBadge(
+                context,
+                FamilyItemLabels.subject(item)!,
+                FamilyItemLabels.subjectColorHex(item),
+              ),
           ],
         ),
       ),
@@ -1005,6 +1023,8 @@ class _TodayPageState extends State<TodayPage> {
     required int startMinutes,
     required int endMinutes,
     required String subject,
+    String? ownerLabel,
+    String? ownerColorHex,
   }) {
     final start = _formatMinutes(startMinutes);
     final end = _formatMinutes(endMinutes);
@@ -1049,9 +1069,49 @@ class _TodayPageState extends State<TodayPage> {
               ],
             ),
           ),
+          if (ownerLabel != null)
+            _ownerBadge(context, ownerLabel, ownerColorHex),
         ],
       ),
     );
+  }
+
+  /// Etiqueta "de quem e" (filho/Familia/membro) com a cor do filho.
+  Widget _ownerBadge(BuildContext context, String label, String? colorHex) {
+    final color = _hexColor(colorHex) ?? Theme.of(context).colorScheme.primary;
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
+      decoration: BoxDecoration(
+        color: color.withValues(alpha: 0.14),
+        borderRadius: BorderRadius.circular(999),
+      ),
+      child: Row(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          CircleAvatar(radius: 4, backgroundColor: color),
+          const SizedBox(width: 5),
+          ConstrainedBox(
+            constraints: const BoxConstraints(maxWidth: 110),
+            child: Text(
+              label,
+              maxLines: 1,
+              overflow: TextOverflow.ellipsis,
+              style: Theme.of(context).textTheme.labelSmall?.copyWith(
+                color: color,
+                fontWeight: FontWeight.w700,
+              ),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Color? _hexColor(String? hex) {
+    if (hex == null || hex.isEmpty) return null;
+    final h = hex.replaceFirst('#', '');
+    final v = int.tryParse(h.length == 6 ? 'FF$h' : h, radix: 16);
+    return v == null ? null : Color(v);
   }
 
   Widget _buildTimelineTile(
@@ -1109,10 +1169,15 @@ class _TodayPageState extends State<TodayPage> {
                     children: [
                       Expanded(
                         child: Text(
-                          groupName.toUpperCase(),
+                          (FamilyItemLabels.subject(item) ?? groupName)
+                              .toUpperCase(),
                           style: Theme.of(context).textTheme.labelSmall
                               ?.copyWith(
-                                color: Theme.of(context).colorScheme.primary,
+                                color:
+                                    _hexColor(
+                                      FamilyItemLabels.subjectColorHex(item),
+                                    ) ??
+                                    Theme.of(context).colorScheme.primary,
                                 fontWeight: FontWeight.w700,
                               ),
                           maxLines: 1,

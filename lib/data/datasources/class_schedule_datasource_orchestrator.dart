@@ -2,7 +2,8 @@ import '../../domain/entities/class_schedule_slot.dart';
 import '../../domain/repositories/i_class_schedule_datasource.dart';
 import '../../domain/repositories/i_sync_service.dart';
 
-/// Sempre usa local (offline-first); sync envia para nuvem quando premium.
+/// Sempre usa local (offline-first); o sync envia a grade pessoal (Pro)
+/// e as grades dos filhos (Familia).
 class ClassScheduleDataSourceOrchestrator implements IClassScheduleDataSource {
   ClassScheduleDataSourceOrchestrator(this._local, this._syncService);
 
@@ -12,11 +13,15 @@ class ClassScheduleDataSourceOrchestrator implements IClassScheduleDataSource {
   void _scheduleSync() => _syncService.syncNow();
 
   @override
-  Future<List<ClassScheduleSlot>> getSlots() => _local.getSlots();
+  Future<List<ClassScheduleSlot>> getSlots(ScheduleOwner owner) =>
+      _local.getSlots(owner);
 
   @override
-  Future<String?> addTimeRange(int start, int end) async {
-    final result = await _local.addTimeRange(start, end);
+  Future<List<ClassScheduleSlot>> getAllSlots() => _local.getAllSlots();
+
+  @override
+  Future<String?> addTimeRange(ScheduleOwner owner, int start, int end) async {
+    final result = await _local.addTimeRange(owner, start, end);
     if (result == null) _scheduleSync();
     return result;
   }
@@ -40,8 +45,8 @@ class ClassScheduleDataSourceOrchestrator implements IClassScheduleDataSource {
   }
 
   @override
-  Future<void> removeTimeRange(int start, int end) async {
-    await _local.removeTimeRange(start, end);
+  Future<void> removeTimeRange(ScheduleOwner owner, int start, int end) async {
+    await _local.removeTimeRange(owner, start, end);
     _scheduleSync();
   }
 }

@@ -107,6 +107,10 @@ class ClassScheduleSlotsTable extends Table {
   TextColumn get professorEmail => text().nullable()();
   TextColumn get professorPhone => text().nullable()();
   TextColumn get syncState => text().withDefault(const Constant('pending'))();
+  // Grade de um filho da Familia (nulos = grade pessoal).
+  TextColumn get familyId => text().nullable()();
+  TextColumn get childId => text().nullable()();
+  DateTimeColumn get deletedAt => dateTime().nullable()();
   DateTimeColumn get createdAt => dateTime()();
   DateTimeColumn get updatedAt => dateTime()();
 
@@ -156,10 +160,11 @@ class NoteChecklistItemsTable extends Table {
   ],
 )
 class AppDatabase extends _$AppDatabase {
-  AppDatabase() : super(_openConnection());
+  /// [executor] permite banco em memoria nos testes.
+  AppDatabase([QueryExecutor? executor]) : super(executor ?? _openConnection());
 
   @override
-  int get schemaVersion => 7;
+  int get schemaVersion => 8;
 
   @override
   MigrationStrategy get migration => MigrationStrategy(
@@ -197,6 +202,11 @@ class AppDatabase extends _$AppDatabase {
             await m.addColumn(agendaItemsTable, agendaItemsTable.updatedBy);
             await m.addColumn(agendaItemsTable, agendaItemsTable.completedBy);
             await m.addColumn(agendaGroupsTable, agendaGroupsTable.familyId);
+          }
+          if (from < 8) {
+            await m.addColumn(classScheduleSlotsTable, classScheduleSlotsTable.familyId);
+            await m.addColumn(classScheduleSlotsTable, classScheduleSlotsTable.childId);
+            await m.addColumn(classScheduleSlotsTable, classScheduleSlotsTable.deletedAt);
           }
         },
       );

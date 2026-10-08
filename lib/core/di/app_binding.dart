@@ -13,7 +13,6 @@ import '../../data/datasources/family_supabase_datasource.dart';
 import '../../data/datasources/class_group_local_datasource.dart';
 import '../../data/datasources/class_schedule_datasource_orchestrator.dart';
 import '../../data/datasources/class_schedule_local_datasource.dart';
-import '../../data/datasources/class_schedule_supabase_datasource.dart';
 import '../../data/datasources/groups_local_datasource.dart';
 import '../../data/datasources/fcm_token_supabase_datasource.dart';
 import '../../data/datasources/notifications_supabase_datasource.dart';
@@ -210,12 +209,6 @@ class AppBinding extends Bindings {
     );
 
     Get.lazyPut(() => ClassScheduleLocalDataSource(Get.find()), fenix: true);
-    if (SupabaseConfig.isConfigured) {
-      Get.lazyPut<ClassScheduleSupabaseDataSource>(
-        () => ClassScheduleSupabaseDataSource(Supabase.instance.client),
-        fenix: true,
-      );
-    }
     Get.lazyPut<IClassScheduleDataSource>(
       () => ClassScheduleDataSourceOrchestrator(
         Get.find<ClassScheduleLocalDataSource>(),
@@ -299,8 +292,13 @@ class AppBinding extends Bindings {
       ),
       permanent: true,
     );
-    Get.put(ClassScheduleController(Get.find<IClassScheduleDataSource>()),
-        permanent: true);
+    Get.put(
+      ClassScheduleController(
+        Get.find<IClassScheduleDataSource>(),
+        syncService: Get.find<ISyncService>(),
+      ),
+      permanent: true,
+    );
     if (SupabaseConfig.isConfigured) {
       Get.put(
         SyncController(

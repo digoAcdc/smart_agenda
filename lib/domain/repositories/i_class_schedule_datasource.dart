@@ -1,10 +1,13 @@
 import '../entities/class_schedule_slot.dart';
 
-/// Data source para slots de horario de aula (local ou Supabase).
+/// Grade horaria: pessoal ou de um filho da Familia ([ScheduleOwner]).
 abstract class IClassScheduleDataSource {
-  Future<List<ClassScheduleSlot>> getSlots();
+  Future<List<ClassScheduleSlot>> getSlots(ScheduleOwner owner);
 
-  Future<String?> addTimeRange(int start, int end);
+  /// Todas as grades (pessoal e dos filhos), para a Home.
+  Future<List<ClassScheduleSlot>> getAllSlots();
+
+  Future<String?> addTimeRange(ScheduleOwner owner, int start, int end);
 
   Future<void> updateSlotDetails(
     String id, {
@@ -14,5 +17,5 @@ abstract class IClassScheduleDataSource {
     String? professorPhone,
   });
 
-  Future<void> removeTimeRange(int start, int end);
+  Future<void> removeTimeRange(ScheduleOwner owner, int start, int end);
 }

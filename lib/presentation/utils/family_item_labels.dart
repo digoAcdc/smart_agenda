@@ -61,6 +61,11 @@ class FamilyItemLabels {
     return _fs?.memberById(item.completedBy)?.label;
   }
 
+  static String? childName(String? childId) => _fs?.childById(childId)?.name;
+
+  static String? childColorHex(String? childId) =>
+      _fs?.childById(childId)?.colorHex;
+
   /// Linha curta para cards: "João · Resp.: Mamãe".
   static String? summary(AgendaItem item) {
     final s = subject(item);
