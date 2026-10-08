@@ -10,7 +10,12 @@ import {
   logPurchaseValidation,
   SupabasePersistenceError,
 } from "./supabase.js";
-import { createMailerFromEnv, isValidEmail, sendRecoveryCode } from "./recovery.js";
+import {
+  createMailerFromEnv,
+  isValidEmail,
+  RecoveryConfigError,
+  sendRecoveryCode,
+} from "./recovery.js";
 
 dotenv.config();
 
@@ -105,6 +110,11 @@ app.post(
       // Mesma resposta exista ou nao a conta.
       return reply.send({ ok: true });
     } catch (error) {
+      if (error instanceof RecoveryConfigError) {
+        // App cai no envio padrao do Supabase.
+        request.log.error({ err: error.message }, "[recovery_config_error]");
+        return reply.code(503).send({ error: "Password recovery unavailable" });
+      }
       request.log.error({ err: error.message }, "[recovery_send_failed]");
       return reply.code(502).send({ error: "Could not send email. Please retry." });
     }

@@ -11,6 +11,13 @@ const PER_EMAIL_COOLDOWN_MS = 60_000;
 
 const lastSentAt = new Map();
 
+export class RecoveryConfigError extends Error {
+  constructor(message) {
+    super(message);
+    this.name = "RecoveryConfigError";
+  }
+}
+
 export function isValidEmail(value) {
   return typeof value === "string" && value.length <= 254 && EMAIL_PATTERN.test(value);
 }
@@ -57,6 +64,10 @@ export async function sendRecoveryCode({ supabase, mailer, email, log }) {
     type: "recovery",
     email: normalized,
   });
+  if (error && (error.status === 401 || error.status === 403)) {
+    // Chave de servico invalida: e problema de configuracao, nao do usuario.
+    throw new RecoveryConfigError(error.message);
+  }
   if (error || !data?.properties?.email_otp) {
     // Sem conta com este e-mail (ou falha do Auth): responde igual para nao vazar.
     log.info({ reason: error?.message ?? "no_otp" }, "[recovery_skipped]");
