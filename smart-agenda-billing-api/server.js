@@ -160,6 +160,18 @@ app.post(
     productId = body.productId.trim();
     purchaseToken = body.purchaseToken.trim();
     if (!allowedProductIds.has(productId)) {
+      // Registra a recusa: sem isso, uma configuracao errada passa despercebida.
+      request.log.warn({ productId, allowed: [...allowedProductIds] }, "[validate_rejected_product]");
+      await logPurchaseValidation(supabase, {
+        user_id: userId,
+        product_id: productId,
+        purchase_token: purchaseToken,
+        event_type: "validate_subscription",
+        request_payload: { productId, purchaseToken: maskToken(purchaseToken), requestId },
+        response_payload: null,
+        status: "rejected",
+        error_message: "invalid_product_id",
+      }).catch(() => {});
       return reply.code(400).send({ error: "Invalid productId" });
     }
 
