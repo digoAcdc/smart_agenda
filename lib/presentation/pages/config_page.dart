@@ -108,7 +108,8 @@ class _ConfigPageState extends State<ConfigPage> {
         content: Text(
           hasCloud
               ? 'Isso apaga permanentemente no seu aparelho e na nuvem: eventos, '
-                  'grupos, anotacoes, notificacoes, turmas e compartilhamentos. '
+                  'grupos, anotacoes, notificacoes e turmas. Se voce participa de '
+                  'uma Familia, voce sai dela (os eventos da Familia continuam com ela). '
                   'Sua conta de login continua ativa.\n\n'
                   'Esta acao nao pode ser desfeita.'
               : 'Isso apaga permanentemente no seu aparelho: eventos, grupos, '
@@ -208,15 +209,6 @@ class _ConfigPageState extends State<ConfigPage> {
     } finally {
       if (mounted) setState(() => _deletingData = false);
     }
-  }
-
-  void _handleCompartilharAgenda() {
-    final authController = Get.find<AuthController>();
-    if (authController.isLoggedIn.value) {
-      Get.toNamed(AppRoutes.sharing);
-      return;
-    }
-    Get.toNamed(AppRoutes.login, arguments: {'from': 'sharing'});
   }
 
   void _openAreaPremium() {
@@ -387,7 +379,7 @@ class _ConfigPageState extends State<ConfigPage> {
             ),
             const SizedBox(height: 8),
             Text(
-              'Sincronizacao na nuvem, backups automaticos e zero anuncios.',
+              'Familia com agenda compartilhada, varios filhos, sincronizacao e zero anuncios.',
               style: Theme.of(context).textTheme.bodySmall?.copyWith(
                     color: scheme.onSurfaceVariant,
                   ),
@@ -531,13 +523,11 @@ class _ConfigPageState extends State<ConfigPage> {
           child: Column(
             children: [
               _buildAgendaActionTile(
-                icon: Icons.people_outline,
+                icon: Icons.family_restroom_outlined,
                 iconColor: Theme.of(context).colorScheme.primary,
-                title: 'Compartilhar Agenda',
-                  subtitle: _isPremium
-                      ? 'Convidar outros usuarios'
-                      : 'Plano free: 1 compartilhamento ativo',
-                onTap: () => _handleCompartilharAgenda(),
+                title: 'Família',
+                subtitle: 'Pessoas, filhos e convites',
+                onTap: () => Get.toNamed(AppRoutes.family),
               ),
               if (Get.find<AuthController>().isLoggedIn.value &&
                   SupabaseConfig.isConfigured &&

@@ -72,8 +72,10 @@ class UpgradePage extends StatelessWidget {
               const SizedBox(height: DesignTokens.spaceSm),
               Text(
                 isPremium
-                    ? 'Sincronizacao na nuvem, backups automaticos e zero anuncios.'
-                    : 'Desbloqueie todo o potencial com sincronizacao na nuvem, backups automaticos e zero anuncios.',
+                    ? 'Sua Familia, agenda compartilhada, sincronizacao e zero anuncios.'
+                    : 'Organize a rotina da familia: agenda compartilhada com ate 5 pessoas, '
+                        'varios filhos, permissoes, sincronizacao entre aparelhos e zero anuncios. '
+                        'Quem voce convidar nao precisa assinar.',
                 style: Theme.of(context).textTheme.bodyLarge?.copyWith(
                       color: Theme.of(context).colorScheme.onSurfaceVariant,
                     ),

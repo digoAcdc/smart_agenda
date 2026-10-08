@@ -41,4 +41,8 @@ class FileStorageServiceImpl implements IFileStorageService {
       }
     }
   }
+
+  @override
+  Future<Result<String>> uploadToCloud(String localPath, {String? familyId}) async =>
+      Result.failure('Nuvem nao configurada');
 }

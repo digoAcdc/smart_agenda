@@ -3,6 +3,7 @@ import 'package:equatable/equatable.dart';
 class AgendaGroup extends Equatable {
   const AgendaGroup({
     required this.id,
+    this.familyId,
     required this.name,
     this.colorHex,
     this.iconCode,
@@ -12,6 +13,9 @@ class AgendaGroup extends Equatable {
   });
 
   final String id;
+
+  /// Familia dona da categoria (nulo = pessoal).
+  final String? familyId;
   final String name;
   final String? colorHex;
   final int? iconCode;
@@ -21,6 +25,7 @@ class AgendaGroup extends Equatable {
 
   AgendaGroup copyWith({
     String? id,
+    String? familyId,
     String? name,
     String? colorHex,
     int? iconCode,
@@ -30,6 +35,7 @@ class AgendaGroup extends Equatable {
   }) {
     return AgendaGroup(
       id: id ?? this.id,
+      familyId: familyId ?? this.familyId,
       name: name ?? this.name,
       colorHex: colorHex ?? this.colorHex,
       iconCode: iconCode ?? this.iconCode,
@@ -41,5 +47,5 @@ class AgendaGroup extends Equatable {
 
   @override
   List<Object?> get props =>
-      [id, name, colorHex, iconCode, createdAt, updatedAt, deletedAt];
+      [id, familyId, name, colorHex, iconCode, createdAt, updatedAt, deletedAt];
 }

@@ -20,6 +20,17 @@ class AgendaItemsTable extends Table {
   TextColumn get recurrenceJson => text().nullable()();
   TextColumn get source => text().withDefault(const Constant('local'))();
   TextColumn get syncState => text().withDefault(const Constant('pending'))();
+  // Familia dona do item (nulo = agenda pessoal).
+  TextColumn get familyId => text().nullable()();
+  TextColumn get kind => text().withDefault(const Constant('event'))();
+  TextColumn get subjectType => text().withDefault(const Constant('none'))();
+  TextColumn get subjectChildId => text().nullable()();
+  TextColumn get subjectUserId => text().nullable()();
+  TextColumn get assigneeType => text().withDefault(const Constant('none'))();
+  TextColumn get assigneeUserId => text().nullable()();
+  TextColumn get createdBy => text().nullable()();
+  TextColumn get updatedBy => text().nullable()();
+  TextColumn get completedBy => text().nullable()();
   DateTimeColumn get createdAt => dateTime()();
   DateTimeColumn get updatedAt => dateTime()();
   DateTimeColumn get deletedAt => dateTime().nullable()();
@@ -34,6 +45,7 @@ class AgendaGroupsTable extends Table {
   TextColumn get colorHex => text().nullable()();
   IntColumn get iconCode => integer().nullable()();
   TextColumn get syncState => text().withDefault(const Constant('pending'))();
+  TextColumn get familyId => text().nullable()();
   DateTimeColumn get createdAt => dateTime()();
   DateTimeColumn get updatedAt => dateTime()();
   DateTimeColumn get deletedAt => dateTime().nullable()();
@@ -147,7 +159,7 @@ class AppDatabase extends _$AppDatabase {
   AppDatabase() : super(_openConnection());
 
   @override
-  int get schemaVersion => 6;
+  int get schemaVersion => 7;
 
   @override
   MigrationStrategy get migration => MigrationStrategy(
@@ -172,6 +184,19 @@ class AppDatabase extends _$AppDatabase {
           if (from < 6) {
             await m.createTable(notesTable);
             await m.createTable(noteChecklistItemsTable);
+          }
+          if (from < 7) {
+            await m.addColumn(agendaItemsTable, agendaItemsTable.familyId);
+            await m.addColumn(agendaItemsTable, agendaItemsTable.kind);
+            await m.addColumn(agendaItemsTable, agendaItemsTable.subjectType);
+            await m.addColumn(agendaItemsTable, agendaItemsTable.subjectChildId);
+            await m.addColumn(agendaItemsTable, agendaItemsTable.subjectUserId);
+            await m.addColumn(agendaItemsTable, agendaItemsTable.assigneeType);
+            await m.addColumn(agendaItemsTable, agendaItemsTable.assigneeUserId);
+            await m.addColumn(agendaItemsTable, agendaItemsTable.createdBy);
+            await m.addColumn(agendaItemsTable, agendaItemsTable.updatedBy);
+            await m.addColumn(agendaItemsTable, agendaItemsTable.completedBy);
+            await m.addColumn(agendaGroupsTable, agendaGroupsTable.familyId);
           }
         },
       );

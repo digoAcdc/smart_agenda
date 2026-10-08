@@ -134,6 +134,70 @@ class AgendaLocalDataSource {
     );
   }
 
+  /// Aplica um item vindo do servidor. Edicoes locais pendentes tem
+  /// prioridade (serao enviadas no proximo push). Excluidos saem do aparelho.
+  Future<void> applyRemote(
+    AgendaItemsTableCompanion item,
+    List<AttachmentsTableCompanion> attachments, {
+    required bool deleted,
+  }) async {
+    final id = item.id.value;
+    await _db.transaction(() async {
+      final local = await (_db.select(_db.agendaItemsTable)
+            ..where((t) => t.id.equals(id)))
+          .getSingleOrNull();
+      if (local != null && local.syncState == 'pending') return;
+
+      await (_db.delete(_db.attachmentsTable)
+            ..where((t) => t.itemId.equals(id)))
+          .go();
+      if (deleted) {
+        await (_db.delete(_db.agendaItemsTable)..where((t) => t.id.equals(id)))
+            .go();
+        return;
+      }
+      await _db.into(_db.agendaItemsTable).insertOnConflictUpdate(
+            item.copyWith(syncState: const Value('synced')),
+          );
+      if (attachments.isNotEmpty) {
+        await _db.batch((batch) {
+          batch.insertAll(_db.attachmentsTable, attachments);
+        });
+      }
+    });
+  }
+
+  /// Descarta a alteracao local pendente (ex.: sem permissao no servidor).
+  Future<void> discardLocal(String id) async {
+    await _db.transaction(() async {
+      await (_db.delete(_db.attachmentsTable)..where((t) => t.itemId.equals(id)))
+          .go();
+      await (_db.delete(_db.agendaItemsTable)..where((t) => t.id.equals(id)))
+          .go();
+    });
+  }
+
+  /// Remove do aparelho o cache de Familias que o usuario nao participa mais.
+  /// [keepFamilyId] nulo remove o cache de todas as Familias.
+  Future<void> clearFamilyCache({String? keepFamilyId}) async {
+    await _db.transaction(() async {
+      final rows = await (_db.select(_db.agendaItemsTable)
+            ..where((t) {
+              final isFamily = t.familyId.isNotNull();
+              return keepFamilyId == null
+                  ? isFamily
+                  : isFamily & t.familyId.equals(keepFamilyId).not();
+            }))
+          .get();
+      final ids = rows.map((r) => r.id).toList();
+      if (ids.isEmpty) return;
+      await (_db.delete(_db.attachmentsTable)..where((t) => t.itemId.isIn(ids)))
+          .go();
+      await (_db.delete(_db.agendaItemsTable)..where((t) => t.id.isIn(ids)))
+          .go();
+    });
+  }
+
   Future<List<AgendaItemRecord>> _joinAttachments(
     List<AgendaItemsTableData> items,
   ) async {

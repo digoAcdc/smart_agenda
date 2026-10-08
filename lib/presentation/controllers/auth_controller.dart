@@ -10,7 +10,7 @@ import '../../core/config/supabase_config.dart';
 import '../../core/services/firebase_service.dart';
 import '../../data/datasources/fcm_token_supabase_datasource.dart';
 import '../../domain/repositories/i_auth_service.dart';
-import '../../domain/repositories/i_local_to_cloud_migration_service.dart';
+import '../../domain/repositories/i_family_service.dart';
 import '../../domain/repositories/i_sync_service.dart';
 import '../../domain/repositories/i_plan_service.dart';
 import '../../domain/repositories/i_premium_service.dart';
@@ -86,7 +86,7 @@ class AuthController extends GetxController with WidgetsBindingObserver {
       if (isLoggedIn.value) {
         await _planService.refresh();
         unawaited(_revalidateSubscription(reason: 'auth_check', withRestore: false));
-        await _runMigrationIfNeeded();
+        await _loadFamilyAndSync();
         await _updateUserInfo();
       } else {
         userEmail.value = null;
@@ -121,6 +121,7 @@ class AuthController extends GetxController with WidgetsBindingObserver {
       await _planService.refresh();
       isPremium.value = await _planService.isPremium();
       _refreshPremiumService();
+      await _loadFamilyAndSync();
       debugPrint('[auth_subscription_revalidation_done] reason=$reason');
     } catch (e) {
       debugPrint('[auth_subscription_revalidation_error] reason=$reason error=$e');
@@ -155,12 +156,15 @@ class AuthController extends GetxController with WidgetsBindingObserver {
     }
   }
 
-  Future<void> _runMigrationIfNeeded() async {
+  /// Carrega a Familia e sincroniza (pessoal Pro + Familia).
+  /// No Free sem Familia, os dados continuam so no aparelho.
+  Future<void> _loadFamilyAndSync() async {
     if (!SupabaseConfig.isConfigured) return;
-    if (!Get.isRegistered<ILocalToCloudMigrationService>()) return;
     try {
-      await Get.find<ILocalToCloudMigrationService>().migrateIfNeeded();
-      await Get.find<ISyncService>().syncNow();
+      if (Get.isRegistered<IFamilyService>()) {
+        await Get.find<IFamilyService>().refresh();
+      }
+      unawaited(Get.find<ISyncService>().syncNow());
     } catch (_) {}
   }
 
@@ -181,7 +185,7 @@ class AuthController extends GetxController with WidgetsBindingObserver {
         isPremium.value = await _planService.isPremium();
         _refreshPremiumService();
         unawaited(_revalidateSubscription(reason: 'login', withRestore: true));
-        await _runMigrationIfNeeded();
+        await _loadFamilyAndSync();
         if (rememberMe.value) {
           rememberedEmail.value = email;
           await _saveRememberMe();
@@ -219,6 +223,7 @@ class AuthController extends GetxController with WidgetsBindingObserver {
         isPremium.value = await _planService.isPremium();
         _refreshPremiumService();
         unawaited(_revalidateSubscription(reason: 'signup', withRestore: true));
+        await _loadFamilyAndSync();
         loading.value = false;
         return true;
       }
@@ -290,6 +295,12 @@ class AuthController extends GetxController with WidgetsBindingObserver {
       try {
         await Get.find<FcmTokenSupabaseDataSource>().deleteToken(userId, token);
       } catch (_) {}
+    }
+    if (Get.isRegistered<ISyncService>()) {
+      await Get.find<ISyncService>().clearCloudCache();
+    }
+    if (Get.isRegistered<IFamilyService>()) {
+      await Get.find<IFamilyService>().clear();
     }
     await _authService.signOut();
     await FirebaseService.setUserId(null);

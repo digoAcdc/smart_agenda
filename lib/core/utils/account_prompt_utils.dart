@@ -14,10 +14,11 @@ class AccountPromptUtils {
 
     final decision = await Get.dialog<AccountPromptDecision>(
       AlertDialog(
-        title: const Text('Sincronização online'),
+        title: const Text('Salvar no aparelho'),
         content: const Text(
-          'Para sincronizar online, é preciso ter uma conta cadastrada.\n\n'
-          'Você pode continuar sem conta e salvar localmente no celular.',
+          'Sem conta, sua agenda fica salva neste celular.\n\n'
+          'Com uma conta você pode participar de uma Família e, no Pro, '
+          'sincronizar entre aparelhos.',
         ),
         actions: [
           TextButton(

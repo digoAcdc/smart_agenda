@@ -28,6 +28,16 @@ AgendaItemsTableCompanion agendaItemToCompanion(AgendaItem item) {
     recurrenceJson: Value(
       item.recurrence == null ? null : jsonEncode(item.recurrence!.toJson()),
     ),
+    familyId: Value(item.familyId),
+    kind: Value(item.kind.name),
+    subjectType: Value(item.subjectType.name),
+    subjectChildId: Value(item.subjectChildId),
+    subjectUserId: Value(item.subjectUserId),
+    assigneeType: Value(item.assigneeType.name),
+    assigneeUserId: Value(item.assigneeUserId),
+    createdBy: Value(item.createdBy),
+    updatedBy: Value(item.updatedBy),
+    completedBy: Value(item.completedBy),
     source: Value(item.source.name),
     syncState: Value(item.syncState.name),
     createdAt: Value(item.createdAt),
@@ -75,7 +85,18 @@ AgendaItem itemFromDb(
     recurrence:
         recurrenceMap == null ? null : RecurrenceRule.fromJson(recurrenceMap),
     attachments: attachments.map(attachmentFromDb).toList(),
-    ownerEmail: null,
+    familyId: row.familyId,
+    kind: enumByName(AgendaItemKind.values, row.kind, AgendaItemKind.event),
+    subjectType: enumByName(
+        AgendaSubjectType.values, row.subjectType, AgendaSubjectType.none),
+    subjectChildId: row.subjectChildId,
+    subjectUserId: row.subjectUserId,
+    assigneeType: enumByName(
+        AgendaAssigneeType.values, row.assigneeType, AgendaAssigneeType.none),
+    assigneeUserId: row.assigneeUserId,
+    createdBy: row.createdBy,
+    updatedBy: row.updatedBy,
+    completedBy: row.completedBy,
     source: ItemSource.values.firstWhere(
       (e) => e.name == row.source,
       orElse: () => ItemSource.local,
@@ -111,6 +132,7 @@ AttachmentRef attachmentFromDb(AttachmentsTableData row) {
 AgendaGroupsTableCompanion groupToCompanion(AgendaGroup group) {
   return AgendaGroupsTableCompanion(
     id: Value(group.id),
+    familyId: Value(group.familyId),
     name: Value(group.name),
     colorHex: Value(group.colorHex),
     iconCode: Value(group.iconCode),
@@ -124,6 +146,7 @@ AgendaGroupsTableCompanion groupToCompanion(AgendaGroup group) {
 AgendaGroup groupFromDb(AgendaGroupsTableData row) {
   return AgendaGroup(
     id: row.id,
+    familyId: row.familyId,
     name: row.name,
     colorHex: row.colorHex,
     iconCode: row.iconCode,

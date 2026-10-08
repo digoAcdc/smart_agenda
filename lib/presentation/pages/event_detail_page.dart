@@ -12,6 +12,7 @@ import '../controllers/agenda_controller.dart';
 import '../controllers/groups_controller.dart';
 import '../widgets/group_chip.dart';
 import '../widgets/ui_primitives.dart';
+import '../utils/family_item_labels.dart';
 
 class EventDetailPage extends StatelessWidget {
   const EventDetailPage({super.key});
@@ -44,7 +45,19 @@ class EventDetailPage extends StatelessWidget {
     final dateLabel = arg.allDay
         ? DateFormat('EEEE, dd MMM').format(arg.startAt)
         : '${startFmt.format(arg.startAt)}${arg.endAt != null ? ' - ${endFmt.format(arg.endAt!)}' : ''}';
-    final isShared = arg.ownerEmail != null;
+    final isShared = !FamilyItemLabels.canEdit(arg);
+    final familyRows = <(IconData, String)>[
+      if (FamilyItemLabels.subject(arg) != null)
+        (Icons.family_restroom_outlined, 'Para: ${FamilyItemLabels.subject(arg)}'),
+      if (FamilyItemLabels.assignee(arg) != null)
+        (Icons.assignment_ind_outlined, 'Responsável: ${FamilyItemLabels.assignee(arg)}'),
+      if (FamilyItemLabels.createdBy(arg) != null)
+        (Icons.person_outline, 'Criado por ${FamilyItemLabels.createdBy(arg)}'),
+      if (FamilyItemLabels.completedBy(arg) != null)
+        (Icons.task_alt, 'Concluído por ${FamilyItemLabels.completedBy(arg)}'),
+      if (arg.isFamilyItem && isShared)
+        (Icons.visibility_outlined, 'Somente leitura para você'),
+    ];
 
     return Scaffold(
       appBar: AppBar(
@@ -64,24 +77,31 @@ class EventDetailPage extends StatelessWidget {
         child: ListView(
           padding: const EdgeInsets.fromLTRB(0, 10, 0, 120),
           children: [
-          if (isShared)
+          if (familyRows.isNotEmpty)
             AppSurfaceCard(
-              child: Row(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  Icon(
-                    Icons.people_outline,
-                    size: 20,
-                    color: Theme.of(context).colorScheme.primary,
-                  ),
-                  const SizedBox(width: DesignTokens.spaceSm),
-                  Expanded(
-                    child: Text(
-                      'Compartilhada por ${arg.ownerEmail}',
-                      style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+                  for (final (icon, text) in familyRows)
+                    Padding(
+                      padding: const EdgeInsets.symmetric(vertical: 3),
+                      child: Row(
+                        children: [
+                          Icon(
+                            icon,
+                            size: 18,
                             color: Theme.of(context).colorScheme.primary,
                           ),
+                          const SizedBox(width: DesignTokens.spaceSm),
+                          Expanded(
+                            child: Text(
+                              text,
+                              style: Theme.of(context).textTheme.bodyMedium,
+                            ),
+                          ),
+                        ],
+                      ),
                     ),
-                  ),
                 ],
               ),
             ),

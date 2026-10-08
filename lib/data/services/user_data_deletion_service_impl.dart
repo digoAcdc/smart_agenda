@@ -29,6 +29,17 @@ class UserDataDeletionServiceImpl implements IUserDataDeletionService {
     if (SupabaseConfig.isConfigured && client != null) {
       final uid = client.auth.currentUser?.id;
       if (uid != null) {
+        final owned = await client
+            .from('families')
+            .select('name')
+            .eq('owner_id', uid)
+            .maybeSingle();
+        if (owned != null) {
+          return Result.failure(
+            'Você é dono da ${owned['name']}. Exclua a Família na tela Família '
+            'antes de apagar seus dados, para não apagar a agenda das outras pessoas sem aviso.',
+          );
+        }
         try {
           await _deleteRemoteUserData(client, uid);
         } catch (e, st) {
@@ -63,14 +74,22 @@ class UserDataDeletionServiceImpl implements IUserDataDeletionService {
     await client.from('note_checklist_items').delete().eq('user_id', uid);
     await client.from('notes').delete().eq('user_id', uid);
 
-    await client.from('agenda_items').delete().eq('user_id', uid);
-
-    await client.from('agenda_groups').delete().eq('user_id', uid);
+    // Agenda pessoal (itens da Familia pertencem a Familia e ficam).
+    // Anexos saem em cascata.
+    await client.from('agenda_items').delete().eq('owner_user_id', uid);
+    await client.from('agenda_groups').delete().eq('owner_user_id', uid);
 
     await client.from('class_schedule_slots').delete().eq('user_id', uid);
 
-    await client.from('agenda_shares').delete().eq('owner_id', uid);
-    await client.from('agenda_shares').delete().eq('shared_with_id', uid);
+    // Membro sai da Familia; o dono precisa excluir a Familia antes (tela Familia).
+    final family = await client
+        .from('family_members')
+        .select('family_id')
+        .eq('user_id', uid)
+        .maybeSingle();
+    if (family != null) {
+      await client.rpc('leave_family', params: {'p_family': family['family_id']});
+    }
 
     await client.from('user_notifications').delete().eq('user_id', uid);
     await client.from('user_fcm_tokens').delete().eq('user_id', uid);
@@ -84,6 +103,8 @@ class UserDataDeletionServiceImpl implements IUserDataDeletionService {
     String userId,
   ) async {
     final bucket = client.storage.from('attachments');
+    await _removeStoragePathRecursive(bucket, 'user/$userId');
+    // Pasta do formato antigo (antes do modelo de Familia).
     await _removeStoragePathRecursive(bucket, userId);
   }
 

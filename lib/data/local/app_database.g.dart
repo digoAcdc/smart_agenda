@@ -158,6 +158,117 @@ class $AgendaItemsTableTable extends AgendaItemsTable
     requiredDuringInsert: false,
     defaultValue: const Constant('pending'),
   );
+  static const VerificationMeta _familyIdMeta = const VerificationMeta(
+    'familyId',
+  );
+  @override
+  late final GeneratedColumn<String> familyId = GeneratedColumn<String>(
+    'family_id',
+    aliasedName,
+    true,
+    type: DriftSqlType.string,
+    requiredDuringInsert: false,
+  );
+  static const VerificationMeta _kindMeta = const VerificationMeta('kind');
+  @override
+  late final GeneratedColumn<String> kind = GeneratedColumn<String>(
+    'kind',
+    aliasedName,
+    false,
+    type: DriftSqlType.string,
+    requiredDuringInsert: false,
+    defaultValue: const Constant('event'),
+  );
+  static const VerificationMeta _subjectTypeMeta = const VerificationMeta(
+    'subjectType',
+  );
+  @override
+  late final GeneratedColumn<String> subjectType = GeneratedColumn<String>(
+    'subject_type',
+    aliasedName,
+    false,
+    type: DriftSqlType.string,
+    requiredDuringInsert: false,
+    defaultValue: const Constant('none'),
+  );
+  static const VerificationMeta _subjectChildIdMeta = const VerificationMeta(
+    'subjectChildId',
+  );
+  @override
+  late final GeneratedColumn<String> subjectChildId = GeneratedColumn<String>(
+    'subject_child_id',
+    aliasedName,
+    true,
+    type: DriftSqlType.string,
+    requiredDuringInsert: false,
+  );
+  static const VerificationMeta _subjectUserIdMeta = const VerificationMeta(
+    'subjectUserId',
+  );
+  @override
+  late final GeneratedColumn<String> subjectUserId = GeneratedColumn<String>(
+    'subject_user_id',
+    aliasedName,
+    true,
+    type: DriftSqlType.string,
+    requiredDuringInsert: false,
+  );
+  static const VerificationMeta _assigneeTypeMeta = const VerificationMeta(
+    'assigneeType',
+  );
+  @override
+  late final GeneratedColumn<String> assigneeType = GeneratedColumn<String>(
+    'assignee_type',
+    aliasedName,
+    false,
+    type: DriftSqlType.string,
+    requiredDuringInsert: false,
+    defaultValue: const Constant('none'),
+  );
+  static const VerificationMeta _assigneeUserIdMeta = const VerificationMeta(
+    'assigneeUserId',
+  );
+  @override
+  late final GeneratedColumn<String> assigneeUserId = GeneratedColumn<String>(
+    'assignee_user_id',
+    aliasedName,
+    true,
+    type: DriftSqlType.string,
+    requiredDuringInsert: false,
+  );
+  static const VerificationMeta _createdByMeta = const VerificationMeta(
+    'createdBy',
+  );
+  @override
+  late final GeneratedColumn<String> createdBy = GeneratedColumn<String>(
+    'created_by',
+    aliasedName,
+    true,
+    type: DriftSqlType.string,
+    requiredDuringInsert: false,
+  );
+  static const VerificationMeta _updatedByMeta = const VerificationMeta(
+    'updatedBy',
+  );
+  @override
+  late final GeneratedColumn<String> updatedBy = GeneratedColumn<String>(
+    'updated_by',
+    aliasedName,
+    true,
+    type: DriftSqlType.string,
+    requiredDuringInsert: false,
+  );
+  static const VerificationMeta _completedByMeta = const VerificationMeta(
+    'completedBy',
+  );
+  @override
+  late final GeneratedColumn<String> completedBy = GeneratedColumn<String>(
+    'completed_by',
+    aliasedName,
+    true,
+    type: DriftSqlType.string,
+    requiredDuringInsert: false,
+  );
   static const VerificationMeta _createdAtMeta = const VerificationMeta(
     'createdAt',
   );
@@ -207,6 +318,16 @@ class $AgendaItemsTableTable extends AgendaItemsTable
     recurrenceJson,
     source,
     syncState,
+    familyId,
+    kind,
+    subjectType,
+    subjectChildId,
+    subjectUserId,
+    assigneeType,
+    assigneeUserId,
+    createdBy,
+    updatedBy,
+    completedBy,
     createdAt,
     updatedAt,
     deletedAt,
@@ -322,6 +443,84 @@ class $AgendaItemsTableTable extends AgendaItemsTable
         syncState.isAcceptableOrUnknown(data['sync_state']!, _syncStateMeta),
       );
     }
+    if (data.containsKey('family_id')) {
+      context.handle(
+        _familyIdMeta,
+        familyId.isAcceptableOrUnknown(data['family_id']!, _familyIdMeta),
+      );
+    }
+    if (data.containsKey('kind')) {
+      context.handle(
+        _kindMeta,
+        kind.isAcceptableOrUnknown(data['kind']!, _kindMeta),
+      );
+    }
+    if (data.containsKey('subject_type')) {
+      context.handle(
+        _subjectTypeMeta,
+        subjectType.isAcceptableOrUnknown(
+          data['subject_type']!,
+          _subjectTypeMeta,
+        ),
+      );
+    }
+    if (data.containsKey('subject_child_id')) {
+      context.handle(
+        _subjectChildIdMeta,
+        subjectChildId.isAcceptableOrUnknown(
+          data['subject_child_id']!,
+          _subjectChildIdMeta,
+        ),
+      );
+    }
+    if (data.containsKey('subject_user_id')) {
+      context.handle(
+        _subjectUserIdMeta,
+        subjectUserId.isAcceptableOrUnknown(
+          data['subject_user_id']!,
+          _subjectUserIdMeta,
+        ),
+      );
+    }
+    if (data.containsKey('assignee_type')) {
+      context.handle(
+        _assigneeTypeMeta,
+        assigneeType.isAcceptableOrUnknown(
+          data['assignee_type']!,
+          _assigneeTypeMeta,
+        ),
+      );
+    }
+    if (data.containsKey('assignee_user_id')) {
+      context.handle(
+        _assigneeUserIdMeta,
+        assigneeUserId.isAcceptableOrUnknown(
+          data['assignee_user_id']!,
+          _assigneeUserIdMeta,
+        ),
+      );
+    }
+    if (data.containsKey('created_by')) {
+      context.handle(
+        _createdByMeta,
+        createdBy.isAcceptableOrUnknown(data['created_by']!, _createdByMeta),
+      );
+    }
+    if (data.containsKey('updated_by')) {
+      context.handle(
+        _updatedByMeta,
+        updatedBy.isAcceptableOrUnknown(data['updated_by']!, _updatedByMeta),
+      );
+    }
+    if (data.containsKey('completed_by')) {
+      context.handle(
+        _completedByMeta,
+        completedBy.isAcceptableOrUnknown(
+          data['completed_by']!,
+          _completedByMeta,
+        ),
+      );
+    }
     if (data.containsKey('created_at')) {
       context.handle(
         _createdAtMeta,
@@ -409,6 +608,46 @@ class $AgendaItemsTableTable extends AgendaItemsTable
         DriftSqlType.string,
         data['${effectivePrefix}sync_state'],
       )!,
+      familyId: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}family_id'],
+      ),
+      kind: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}kind'],
+      )!,
+      subjectType: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}subject_type'],
+      )!,
+      subjectChildId: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}subject_child_id'],
+      ),
+      subjectUserId: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}subject_user_id'],
+      ),
+      assigneeType: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}assignee_type'],
+      )!,
+      assigneeUserId: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}assignee_user_id'],
+      ),
+      createdBy: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}created_by'],
+      ),
+      updatedBy: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}updated_by'],
+      ),
+      completedBy: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}completed_by'],
+      ),
       createdAt: attachedDatabase.typeMapping.read(
         DriftSqlType.dateTime,
         data['${effectivePrefix}created_at'],
@@ -446,6 +685,16 @@ class AgendaItemsTableData extends DataClass
   final String? recurrenceJson;
   final String source;
   final String syncState;
+  final String? familyId;
+  final String kind;
+  final String subjectType;
+  final String? subjectChildId;
+  final String? subjectUserId;
+  final String assigneeType;
+  final String? assigneeUserId;
+  final String? createdBy;
+  final String? updatedBy;
+  final String? completedBy;
   final DateTime createdAt;
   final DateTime updatedAt;
   final DateTime? deletedAt;
@@ -464,6 +713,16 @@ class AgendaItemsTableData extends DataClass
     this.recurrenceJson,
     required this.source,
     required this.syncState,
+    this.familyId,
+    required this.kind,
+    required this.subjectType,
+    this.subjectChildId,
+    this.subjectUserId,
+    required this.assigneeType,
+    this.assigneeUserId,
+    this.createdBy,
+    this.updatedBy,
+    this.completedBy,
     required this.createdAt,
     required this.updatedAt,
     this.deletedAt,
@@ -499,6 +758,30 @@ class AgendaItemsTableData extends DataClass
     }
     map['source'] = Variable<String>(source);
     map['sync_state'] = Variable<String>(syncState);
+    if (!nullToAbsent || familyId != null) {
+      map['family_id'] = Variable<String>(familyId);
+    }
+    map['kind'] = Variable<String>(kind);
+    map['subject_type'] = Variable<String>(subjectType);
+    if (!nullToAbsent || subjectChildId != null) {
+      map['subject_child_id'] = Variable<String>(subjectChildId);
+    }
+    if (!nullToAbsent || subjectUserId != null) {
+      map['subject_user_id'] = Variable<String>(subjectUserId);
+    }
+    map['assignee_type'] = Variable<String>(assigneeType);
+    if (!nullToAbsent || assigneeUserId != null) {
+      map['assignee_user_id'] = Variable<String>(assigneeUserId);
+    }
+    if (!nullToAbsent || createdBy != null) {
+      map['created_by'] = Variable<String>(createdBy);
+    }
+    if (!nullToAbsent || updatedBy != null) {
+      map['updated_by'] = Variable<String>(updatedBy);
+    }
+    if (!nullToAbsent || completedBy != null) {
+      map['completed_by'] = Variable<String>(completedBy);
+    }
     map['created_at'] = Variable<DateTime>(createdAt);
     map['updated_at'] = Variable<DateTime>(updatedAt);
     if (!nullToAbsent || deletedAt != null) {
@@ -537,6 +820,30 @@ class AgendaItemsTableData extends DataClass
           : Value(recurrenceJson),
       source: Value(source),
       syncState: Value(syncState),
+      familyId: familyId == null && nullToAbsent
+          ? const Value.absent()
+          : Value(familyId),
+      kind: Value(kind),
+      subjectType: Value(subjectType),
+      subjectChildId: subjectChildId == null && nullToAbsent
+          ? const Value.absent()
+          : Value(subjectChildId),
+      subjectUserId: subjectUserId == null && nullToAbsent
+          ? const Value.absent()
+          : Value(subjectUserId),
+      assigneeType: Value(assigneeType),
+      assigneeUserId: assigneeUserId == null && nullToAbsent
+          ? const Value.absent()
+          : Value(assigneeUserId),
+      createdBy: createdBy == null && nullToAbsent
+          ? const Value.absent()
+          : Value(createdBy),
+      updatedBy: updatedBy == null && nullToAbsent
+          ? const Value.absent()
+          : Value(updatedBy),
+      completedBy: completedBy == null && nullToAbsent
+          ? const Value.absent()
+          : Value(completedBy),
       createdAt: Value(createdAt),
       updatedAt: Value(updatedAt),
       deletedAt: deletedAt == null && nullToAbsent
@@ -565,6 +872,16 @@ class AgendaItemsTableData extends DataClass
       recurrenceJson: serializer.fromJson<String?>(json['recurrenceJson']),
       source: serializer.fromJson<String>(json['source']),
       syncState: serializer.fromJson<String>(json['syncState']),
+      familyId: serializer.fromJson<String?>(json['familyId']),
+      kind: serializer.fromJson<String>(json['kind']),
+      subjectType: serializer.fromJson<String>(json['subjectType']),
+      subjectChildId: serializer.fromJson<String?>(json['subjectChildId']),
+      subjectUserId: serializer.fromJson<String?>(json['subjectUserId']),
+      assigneeType: serializer.fromJson<String>(json['assigneeType']),
+      assigneeUserId: serializer.fromJson<String?>(json['assigneeUserId']),
+      createdBy: serializer.fromJson<String?>(json['createdBy']),
+      updatedBy: serializer.fromJson<String?>(json['updatedBy']),
+      completedBy: serializer.fromJson<String?>(json['completedBy']),
       createdAt: serializer.fromJson<DateTime>(json['createdAt']),
       updatedAt: serializer.fromJson<DateTime>(json['updatedAt']),
       deletedAt: serializer.fromJson<DateTime?>(json['deletedAt']),
@@ -588,6 +905,16 @@ class AgendaItemsTableData extends DataClass
       'recurrenceJson': serializer.toJson<String?>(recurrenceJson),
       'source': serializer.toJson<String>(source),
       'syncState': serializer.toJson<String>(syncState),
+      'familyId': serializer.toJson<String?>(familyId),
+      'kind': serializer.toJson<String>(kind),
+      'subjectType': serializer.toJson<String>(subjectType),
+      'subjectChildId': serializer.toJson<String?>(subjectChildId),
+      'subjectUserId': serializer.toJson<String?>(subjectUserId),
+      'assigneeType': serializer.toJson<String>(assigneeType),
+      'assigneeUserId': serializer.toJson<String?>(assigneeUserId),
+      'createdBy': serializer.toJson<String?>(createdBy),
+      'updatedBy': serializer.toJson<String?>(updatedBy),
+      'completedBy': serializer.toJson<String?>(completedBy),
       'createdAt': serializer.toJson<DateTime>(createdAt),
       'updatedAt': serializer.toJson<DateTime>(updatedAt),
       'deletedAt': serializer.toJson<DateTime?>(deletedAt),
@@ -609,6 +936,16 @@ class AgendaItemsTableData extends DataClass
     Value<String?> recurrenceJson = const Value.absent(),
     String? source,
     String? syncState,
+    Value<String?> familyId = const Value.absent(),
+    String? kind,
+    String? subjectType,
+    Value<String?> subjectChildId = const Value.absent(),
+    Value<String?> subjectUserId = const Value.absent(),
+    String? assigneeType,
+    Value<String?> assigneeUserId = const Value.absent(),
+    Value<String?> createdBy = const Value.absent(),
+    Value<String?> updatedBy = const Value.absent(),
+    Value<String?> completedBy = const Value.absent(),
     DateTime? createdAt,
     DateTime? updatedAt,
     Value<DateTime?> deletedAt = const Value.absent(),
@@ -629,6 +966,22 @@ class AgendaItemsTableData extends DataClass
         : this.recurrenceJson,
     source: source ?? this.source,
     syncState: syncState ?? this.syncState,
+    familyId: familyId.present ? familyId.value : this.familyId,
+    kind: kind ?? this.kind,
+    subjectType: subjectType ?? this.subjectType,
+    subjectChildId: subjectChildId.present
+        ? subjectChildId.value
+        : this.subjectChildId,
+    subjectUserId: subjectUserId.present
+        ? subjectUserId.value
+        : this.subjectUserId,
+    assigneeType: assigneeType ?? this.assigneeType,
+    assigneeUserId: assigneeUserId.present
+        ? assigneeUserId.value
+        : this.assigneeUserId,
+    createdBy: createdBy.present ? createdBy.value : this.createdBy,
+    updatedBy: updatedBy.present ? updatedBy.value : this.updatedBy,
+    completedBy: completedBy.present ? completedBy.value : this.completedBy,
     createdAt: createdAt ?? this.createdAt,
     updatedAt: updatedAt ?? this.updatedAt,
     deletedAt: deletedAt.present ? deletedAt.value : this.deletedAt,
@@ -657,6 +1010,28 @@ class AgendaItemsTableData extends DataClass
           : this.recurrenceJson,
       source: data.source.present ? data.source.value : this.source,
       syncState: data.syncState.present ? data.syncState.value : this.syncState,
+      familyId: data.familyId.present ? data.familyId.value : this.familyId,
+      kind: data.kind.present ? data.kind.value : this.kind,
+      subjectType: data.subjectType.present
+          ? data.subjectType.value
+          : this.subjectType,
+      subjectChildId: data.subjectChildId.present
+          ? data.subjectChildId.value
+          : this.subjectChildId,
+      subjectUserId: data.subjectUserId.present
+          ? data.subjectUserId.value
+          : this.subjectUserId,
+      assigneeType: data.assigneeType.present
+          ? data.assigneeType.value
+          : this.assigneeType,
+      assigneeUserId: data.assigneeUserId.present
+          ? data.assigneeUserId.value
+          : this.assigneeUserId,
+      createdBy: data.createdBy.present ? data.createdBy.value : this.createdBy,
+      updatedBy: data.updatedBy.present ? data.updatedBy.value : this.updatedBy,
+      completedBy: data.completedBy.present
+          ? data.completedBy.value
+          : this.completedBy,
       createdAt: data.createdAt.present ? data.createdAt.value : this.createdAt,
       updatedAt: data.updatedAt.present ? data.updatedAt.value : this.updatedAt,
       deletedAt: data.deletedAt.present ? data.deletedAt.value : this.deletedAt,
@@ -680,6 +1055,16 @@ class AgendaItemsTableData extends DataClass
           ..write('recurrenceJson: $recurrenceJson, ')
           ..write('source: $source, ')
           ..write('syncState: $syncState, ')
+          ..write('familyId: $familyId, ')
+          ..write('kind: $kind, ')
+          ..write('subjectType: $subjectType, ')
+          ..write('subjectChildId: $subjectChildId, ')
+          ..write('subjectUserId: $subjectUserId, ')
+          ..write('assigneeType: $assigneeType, ')
+          ..write('assigneeUserId: $assigneeUserId, ')
+          ..write('createdBy: $createdBy, ')
+          ..write('updatedBy: $updatedBy, ')
+          ..write('completedBy: $completedBy, ')
           ..write('createdAt: $createdAt, ')
           ..write('updatedAt: $updatedAt, ')
           ..write('deletedAt: $deletedAt')
@@ -688,7 +1073,7 @@ class AgendaItemsTableData extends DataClass
   }
 
   @override
-  int get hashCode => Object.hash(
+  int get hashCode => Object.hashAll([
     id,
     title,
     description,
@@ -703,10 +1088,20 @@ class AgendaItemsTableData extends DataClass
     recurrenceJson,
     source,
     syncState,
+    familyId,
+    kind,
+    subjectType,
+    subjectChildId,
+    subjectUserId,
+    assigneeType,
+    assigneeUserId,
+    createdBy,
+    updatedBy,
+    completedBy,
     createdAt,
     updatedAt,
     deletedAt,
-  );
+  ]);
   @override
   bool operator ==(Object other) =>
       identical(this, other) ||
@@ -725,6 +1120,16 @@ class AgendaItemsTableData extends DataClass
           other.recurrenceJson == this.recurrenceJson &&
           other.source == this.source &&
           other.syncState == this.syncState &&
+          other.familyId == this.familyId &&
+          other.kind == this.kind &&
+          other.subjectType == this.subjectType &&
+          other.subjectChildId == this.subjectChildId &&
+          other.subjectUserId == this.subjectUserId &&
+          other.assigneeType == this.assigneeType &&
+          other.assigneeUserId == this.assigneeUserId &&
+          other.createdBy == this.createdBy &&
+          other.updatedBy == this.updatedBy &&
+          other.completedBy == this.completedBy &&
           other.createdAt == this.createdAt &&
           other.updatedAt == this.updatedAt &&
           other.deletedAt == this.deletedAt);
@@ -745,6 +1150,16 @@ class AgendaItemsTableCompanion extends UpdateCompanion<AgendaItemsTableData> {
   final Value<String?> recurrenceJson;
   final Value<String> source;
   final Value<String> syncState;
+  final Value<String?> familyId;
+  final Value<String> kind;
+  final Value<String> subjectType;
+  final Value<String?> subjectChildId;
+  final Value<String?> subjectUserId;
+  final Value<String> assigneeType;
+  final Value<String?> assigneeUserId;
+  final Value<String?> createdBy;
+  final Value<String?> updatedBy;
+  final Value<String?> completedBy;
   final Value<DateTime> createdAt;
   final Value<DateTime> updatedAt;
   final Value<DateTime?> deletedAt;
@@ -764,6 +1179,16 @@ class AgendaItemsTableCompanion extends UpdateCompanion<AgendaItemsTableData> {
     this.recurrenceJson = const Value.absent(),
     this.source = const Value.absent(),
     this.syncState = const Value.absent(),
+    this.familyId = const Value.absent(),
+    this.kind = const Value.absent(),
+    this.subjectType = const Value.absent(),
+    this.subjectChildId = const Value.absent(),
+    this.subjectUserId = const Value.absent(),
+    this.assigneeType = const Value.absent(),
+    this.assigneeUserId = const Value.absent(),
+    this.createdBy = const Value.absent(),
+    this.updatedBy = const Value.absent(),
+    this.completedBy = const Value.absent(),
     this.createdAt = const Value.absent(),
     this.updatedAt = const Value.absent(),
     this.deletedAt = const Value.absent(),
@@ -784,6 +1209,16 @@ class AgendaItemsTableCompanion extends UpdateCompanion<AgendaItemsTableData> {
     this.recurrenceJson = const Value.absent(),
     this.source = const Value.absent(),
     this.syncState = const Value.absent(),
+    this.familyId = const Value.absent(),
+    this.kind = const Value.absent(),
+    this.subjectType = const Value.absent(),
+    this.subjectChildId = const Value.absent(),
+    this.subjectUserId = const Value.absent(),
+    this.assigneeType = const Value.absent(),
+    this.assigneeUserId = const Value.absent(),
+    this.createdBy = const Value.absent(),
+    this.updatedBy = const Value.absent(),
+    this.completedBy = const Value.absent(),
     required DateTime createdAt,
     required DateTime updatedAt,
     this.deletedAt = const Value.absent(),
@@ -808,6 +1243,16 @@ class AgendaItemsTableCompanion extends UpdateCompanion<AgendaItemsTableData> {
     Expression<String>? recurrenceJson,
     Expression<String>? source,
     Expression<String>? syncState,
+    Expression<String>? familyId,
+    Expression<String>? kind,
+    Expression<String>? subjectType,
+    Expression<String>? subjectChildId,
+    Expression<String>? subjectUserId,
+    Expression<String>? assigneeType,
+    Expression<String>? assigneeUserId,
+    Expression<String>? createdBy,
+    Expression<String>? updatedBy,
+    Expression<String>? completedBy,
     Expression<DateTime>? createdAt,
     Expression<DateTime>? updatedAt,
     Expression<DateTime>? deletedAt,
@@ -828,6 +1273,16 @@ class AgendaItemsTableCompanion extends UpdateCompanion<AgendaItemsTableData> {
       if (recurrenceJson != null) 'recurrence_json': recurrenceJson,
       if (source != null) 'source': source,
       if (syncState != null) 'sync_state': syncState,
+      if (familyId != null) 'family_id': familyId,
+      if (kind != null) 'kind': kind,
+      if (subjectType != null) 'subject_type': subjectType,
+      if (subjectChildId != null) 'subject_child_id': subjectChildId,
+      if (subjectUserId != null) 'subject_user_id': subjectUserId,
+      if (assigneeType != null) 'assignee_type': assigneeType,
+      if (assigneeUserId != null) 'assignee_user_id': assigneeUserId,
+      if (createdBy != null) 'created_by': createdBy,
+      if (updatedBy != null) 'updated_by': updatedBy,
+      if (completedBy != null) 'completed_by': completedBy,
       if (createdAt != null) 'created_at': createdAt,
       if (updatedAt != null) 'updated_at': updatedAt,
       if (deletedAt != null) 'deleted_at': deletedAt,
@@ -850,6 +1305,16 @@ class AgendaItemsTableCompanion extends UpdateCompanion<AgendaItemsTableData> {
     Value<String?>? recurrenceJson,
     Value<String>? source,
     Value<String>? syncState,
+    Value<String?>? familyId,
+    Value<String>? kind,
+    Value<String>? subjectType,
+    Value<String?>? subjectChildId,
+    Value<String?>? subjectUserId,
+    Value<String>? assigneeType,
+    Value<String?>? assigneeUserId,
+    Value<String?>? createdBy,
+    Value<String?>? updatedBy,
+    Value<String?>? completedBy,
     Value<DateTime>? createdAt,
     Value<DateTime>? updatedAt,
     Value<DateTime?>? deletedAt,
@@ -870,6 +1335,16 @@ class AgendaItemsTableCompanion extends UpdateCompanion<AgendaItemsTableData> {
       recurrenceJson: recurrenceJson ?? this.recurrenceJson,
       source: source ?? this.source,
       syncState: syncState ?? this.syncState,
+      familyId: familyId ?? this.familyId,
+      kind: kind ?? this.kind,
+      subjectType: subjectType ?? this.subjectType,
+      subjectChildId: subjectChildId ?? this.subjectChildId,
+      subjectUserId: subjectUserId ?? this.subjectUserId,
+      assigneeType: assigneeType ?? this.assigneeType,
+      assigneeUserId: assigneeUserId ?? this.assigneeUserId,
+      createdBy: createdBy ?? this.createdBy,
+      updatedBy: updatedBy ?? this.updatedBy,
+      completedBy: completedBy ?? this.completedBy,
       createdAt: createdAt ?? this.createdAt,
       updatedAt: updatedAt ?? this.updatedAt,
       deletedAt: deletedAt ?? this.deletedAt,
@@ -922,6 +1397,36 @@ class AgendaItemsTableCompanion extends UpdateCompanion<AgendaItemsTableData> {
     if (syncState.present) {
       map['sync_state'] = Variable<String>(syncState.value);
     }
+    if (familyId.present) {
+      map['family_id'] = Variable<String>(familyId.value);
+    }
+    if (kind.present) {
+      map['kind'] = Variable<String>(kind.value);
+    }
+    if (subjectType.present) {
+      map['subject_type'] = Variable<String>(subjectType.value);
+    }
+    if (subjectChildId.present) {
+      map['subject_child_id'] = Variable<String>(subjectChildId.value);
+    }
+    if (subjectUserId.present) {
+      map['subject_user_id'] = Variable<String>(subjectUserId.value);
+    }
+    if (assigneeType.present) {
+      map['assignee_type'] = Variable<String>(assigneeType.value);
+    }
+    if (assigneeUserId.present) {
+      map['assignee_user_id'] = Variable<String>(assigneeUserId.value);
+    }
+    if (createdBy.present) {
+      map['created_by'] = Variable<String>(createdBy.value);
+    }
+    if (updatedBy.present) {
+      map['updated_by'] = Variable<String>(updatedBy.value);
+    }
+    if (completedBy.present) {
+      map['completed_by'] = Variable<String>(completedBy.value);
+    }
     if (createdAt.present) {
       map['created_at'] = Variable<DateTime>(createdAt.value);
     }
@@ -954,6 +1459,16 @@ class AgendaItemsTableCompanion extends UpdateCompanion<AgendaItemsTableData> {
           ..write('recurrenceJson: $recurrenceJson, ')
           ..write('source: $source, ')
           ..write('syncState: $syncState, ')
+          ..write('familyId: $familyId, ')
+          ..write('kind: $kind, ')
+          ..write('subjectType: $subjectType, ')
+          ..write('subjectChildId: $subjectChildId, ')
+          ..write('subjectUserId: $subjectUserId, ')
+          ..write('assigneeType: $assigneeType, ')
+          ..write('assigneeUserId: $assigneeUserId, ')
+          ..write('createdBy: $createdBy, ')
+          ..write('updatedBy: $updatedBy, ')
+          ..write('completedBy: $completedBy, ')
           ..write('createdAt: $createdAt, ')
           ..write('updatedAt: $updatedAt, ')
           ..write('deletedAt: $deletedAt, ')
@@ -1021,6 +1536,17 @@ class $AgendaGroupsTableTable extends AgendaGroupsTable
     requiredDuringInsert: false,
     defaultValue: const Constant('pending'),
   );
+  static const VerificationMeta _familyIdMeta = const VerificationMeta(
+    'familyId',
+  );
+  @override
+  late final GeneratedColumn<String> familyId = GeneratedColumn<String>(
+    'family_id',
+    aliasedName,
+    true,
+    type: DriftSqlType.string,
+    requiredDuringInsert: false,
+  );
   static const VerificationMeta _createdAtMeta = const VerificationMeta(
     'createdAt',
   );
@@ -1061,6 +1587,7 @@ class $AgendaGroupsTableTable extends AgendaGroupsTable
     colorHex,
     iconCode,
     syncState,
+    familyId,
     createdAt,
     updatedAt,
     deletedAt,
@@ -1106,6 +1633,12 @@ class $AgendaGroupsTableTable extends AgendaGroupsTable
       context.handle(
         _syncStateMeta,
         syncState.isAcceptableOrUnknown(data['sync_state']!, _syncStateMeta),
+      );
+    }
+    if (data.containsKey('family_id')) {
+      context.handle(
+        _familyIdMeta,
+        familyId.isAcceptableOrUnknown(data['family_id']!, _familyIdMeta),
       );
     }
     if (data.containsKey('created_at')) {
@@ -1159,6 +1692,10 @@ class $AgendaGroupsTableTable extends AgendaGroupsTable
         DriftSqlType.string,
         data['${effectivePrefix}sync_state'],
       )!,
+      familyId: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}family_id'],
+      ),
       createdAt: attachedDatabase.typeMapping.read(
         DriftSqlType.dateTime,
         data['${effectivePrefix}created_at'],
@@ -1187,6 +1724,7 @@ class AgendaGroupsTableData extends DataClass
   final String? colorHex;
   final int? iconCode;
   final String syncState;
+  final String? familyId;
   final DateTime createdAt;
   final DateTime updatedAt;
   final DateTime? deletedAt;
@@ -1196,6 +1734,7 @@ class AgendaGroupsTableData extends DataClass
     this.colorHex,
     this.iconCode,
     required this.syncState,
+    this.familyId,
     required this.createdAt,
     required this.updatedAt,
     this.deletedAt,
@@ -1212,6 +1751,9 @@ class AgendaGroupsTableData extends DataClass
       map['icon_code'] = Variable<int>(iconCode);
     }
     map['sync_state'] = Variable<String>(syncState);
+    if (!nullToAbsent || familyId != null) {
+      map['family_id'] = Variable<String>(familyId);
+    }
     map['created_at'] = Variable<DateTime>(createdAt);
     map['updated_at'] = Variable<DateTime>(updatedAt);
     if (!nullToAbsent || deletedAt != null) {
@@ -1231,6 +1773,9 @@ class AgendaGroupsTableData extends DataClass
           ? const Value.absent()
           : Value(iconCode),
       syncState: Value(syncState),
+      familyId: familyId == null && nullToAbsent
+          ? const Value.absent()
+          : Value(familyId),
       createdAt: Value(createdAt),
       updatedAt: Value(updatedAt),
       deletedAt: deletedAt == null && nullToAbsent
@@ -1250,6 +1795,7 @@ class AgendaGroupsTableData extends DataClass
       colorHex: serializer.fromJson<String?>(json['colorHex']),
       iconCode: serializer.fromJson<int?>(json['iconCode']),
       syncState: serializer.fromJson<String>(json['syncState']),
+      familyId: serializer.fromJson<String?>(json['familyId']),
       createdAt: serializer.fromJson<DateTime>(json['createdAt']),
       updatedAt: serializer.fromJson<DateTime>(json['updatedAt']),
       deletedAt: serializer.fromJson<DateTime?>(json['deletedAt']),
@@ -1264,6 +1810,7 @@ class AgendaGroupsTableData extends DataClass
       'colorHex': serializer.toJson<String?>(colorHex),
       'iconCode': serializer.toJson<int?>(iconCode),
       'syncState': serializer.toJson<String>(syncState),
+      'familyId': serializer.toJson<String?>(familyId),
       'createdAt': serializer.toJson<DateTime>(createdAt),
       'updatedAt': serializer.toJson<DateTime>(updatedAt),
       'deletedAt': serializer.toJson<DateTime?>(deletedAt),
@@ -1276,6 +1823,7 @@ class AgendaGroupsTableData extends DataClass
     Value<String?> colorHex = const Value.absent(),
     Value<int?> iconCode = const Value.absent(),
     String? syncState,
+    Value<String?> familyId = const Value.absent(),
     DateTime? createdAt,
     DateTime? updatedAt,
     Value<DateTime?> deletedAt = const Value.absent(),
@@ -1285,6 +1833,7 @@ class AgendaGroupsTableData extends DataClass
     colorHex: colorHex.present ? colorHex.value : this.colorHex,
     iconCode: iconCode.present ? iconCode.value : this.iconCode,
     syncState: syncState ?? this.syncState,
+    familyId: familyId.present ? familyId.value : this.familyId,
     createdAt: createdAt ?? this.createdAt,
     updatedAt: updatedAt ?? this.updatedAt,
     deletedAt: deletedAt.present ? deletedAt.value : this.deletedAt,
@@ -1296,6 +1845,7 @@ class AgendaGroupsTableData extends DataClass
       colorHex: data.colorHex.present ? data.colorHex.value : this.colorHex,
       iconCode: data.iconCode.present ? data.iconCode.value : this.iconCode,
       syncState: data.syncState.present ? data.syncState.value : this.syncState,
+      familyId: data.familyId.present ? data.familyId.value : this.familyId,
       createdAt: data.createdAt.present ? data.createdAt.value : this.createdAt,
       updatedAt: data.updatedAt.present ? data.updatedAt.value : this.updatedAt,
       deletedAt: data.deletedAt.present ? data.deletedAt.value : this.deletedAt,
@@ -1310,6 +1860,7 @@ class AgendaGroupsTableData extends DataClass
           ..write('colorHex: $colorHex, ')
           ..write('iconCode: $iconCode, ')
           ..write('syncState: $syncState, ')
+          ..write('familyId: $familyId, ')
           ..write('createdAt: $createdAt, ')
           ..write('updatedAt: $updatedAt, ')
           ..write('deletedAt: $deletedAt')
@@ -1324,6 +1875,7 @@ class AgendaGroupsTableData extends DataClass
     colorHex,
     iconCode,
     syncState,
+    familyId,
     createdAt,
     updatedAt,
     deletedAt,
@@ -1337,6 +1889,7 @@ class AgendaGroupsTableData extends DataClass
           other.colorHex == this.colorHex &&
           other.iconCode == this.iconCode &&
           other.syncState == this.syncState &&
+          other.familyId == this.familyId &&
           other.createdAt == this.createdAt &&
           other.updatedAt == this.updatedAt &&
           other.deletedAt == this.deletedAt);
@@ -1349,6 +1902,7 @@ class AgendaGroupsTableCompanion
   final Value<String?> colorHex;
   final Value<int?> iconCode;
   final Value<String> syncState;
+  final Value<String?> familyId;
   final Value<DateTime> createdAt;
   final Value<DateTime> updatedAt;
   final Value<DateTime?> deletedAt;
@@ -1359,6 +1913,7 @@ class AgendaGroupsTableCompanion
     this.colorHex = const Value.absent(),
     this.iconCode = const Value.absent(),
     this.syncState = const Value.absent(),
+    this.familyId = const Value.absent(),
     this.createdAt = const Value.absent(),
     this.updatedAt = const Value.absent(),
     this.deletedAt = const Value.absent(),
@@ -1370,6 +1925,7 @@ class AgendaGroupsTableCompanion
     this.colorHex = const Value.absent(),
     this.iconCode = const Value.absent(),
     this.syncState = const Value.absent(),
+    this.familyId = const Value.absent(),
     required DateTime createdAt,
     required DateTime updatedAt,
     this.deletedAt = const Value.absent(),
@@ -1384,6 +1940,7 @@ class AgendaGroupsTableCompanion
     Expression<String>? colorHex,
     Expression<int>? iconCode,
     Expression<String>? syncState,
+    Expression<String>? familyId,
     Expression<DateTime>? createdAt,
     Expression<DateTime>? updatedAt,
     Expression<DateTime>? deletedAt,
@@ -1395,6 +1952,7 @@ class AgendaGroupsTableCompanion
       if (colorHex != null) 'color_hex': colorHex,
       if (iconCode != null) 'icon_code': iconCode,
       if (syncState != null) 'sync_state': syncState,
+      if (familyId != null) 'family_id': familyId,
       if (createdAt != null) 'created_at': createdAt,
       if (updatedAt != null) 'updated_at': updatedAt,
       if (deletedAt != null) 'deleted_at': deletedAt,
@@ -1408,6 +1966,7 @@ class AgendaGroupsTableCompanion
     Value<String?>? colorHex,
     Value<int?>? iconCode,
     Value<String>? syncState,
+    Value<String?>? familyId,
     Value<DateTime>? createdAt,
     Value<DateTime>? updatedAt,
     Value<DateTime?>? deletedAt,
@@ -1419,6 +1978,7 @@ class AgendaGroupsTableCompanion
       colorHex: colorHex ?? this.colorHex,
       iconCode: iconCode ?? this.iconCode,
       syncState: syncState ?? this.syncState,
+      familyId: familyId ?? this.familyId,
       createdAt: createdAt ?? this.createdAt,
       updatedAt: updatedAt ?? this.updatedAt,
       deletedAt: deletedAt ?? this.deletedAt,
@@ -1444,6 +2004,9 @@ class AgendaGroupsTableCompanion
     if (syncState.present) {
       map['sync_state'] = Variable<String>(syncState.value);
     }
+    if (familyId.present) {
+      map['family_id'] = Variable<String>(familyId.value);
+    }
     if (createdAt.present) {
       map['created_at'] = Variable<DateTime>(createdAt.value);
     }
@@ -1467,6 +2030,7 @@ class AgendaGroupsTableCompanion
           ..write('colorHex: $colorHex, ')
           ..write('iconCode: $iconCode, ')
           ..write('syncState: $syncState, ')
+          ..write('familyId: $familyId, ')
           ..write('createdAt: $createdAt, ')
           ..write('updatedAt: $updatedAt, ')
           ..write('deletedAt: $deletedAt, ')
@@ -4904,6 +5468,16 @@ typedef $$AgendaItemsTableTableCreateCompanionBuilder =
       Value<String?> recurrenceJson,
       Value<String> source,
       Value<String> syncState,
+      Value<String?> familyId,
+      Value<String> kind,
+      Value<String> subjectType,
+      Value<String?> subjectChildId,
+      Value<String?> subjectUserId,
+      Value<String> assigneeType,
+      Value<String?> assigneeUserId,
+      Value<String?> createdBy,
+      Value<String?> updatedBy,
+      Value<String?> completedBy,
       required DateTime createdAt,
       required DateTime updatedAt,
       Value<DateTime?> deletedAt,
@@ -4925,6 +5499,16 @@ typedef $$AgendaItemsTableTableUpdateCompanionBuilder =
       Value<String?> recurrenceJson,
       Value<String> source,
       Value<String> syncState,
+      Value<String?> familyId,
+      Value<String> kind,
+      Value<String> subjectType,
+      Value<String?> subjectChildId,
+      Value<String?> subjectUserId,
+      Value<String> assigneeType,
+      Value<String?> assigneeUserId,
+      Value<String?> createdBy,
+      Value<String?> updatedBy,
+      Value<String?> completedBy,
       Value<DateTime> createdAt,
       Value<DateTime> updatedAt,
       Value<DateTime?> deletedAt,
@@ -5007,6 +5591,56 @@ class $$AgendaItemsTableTableFilterComposer
 
   ColumnFilters<String> get syncState => $composableBuilder(
     column: $table.syncState,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get familyId => $composableBuilder(
+    column: $table.familyId,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get kind => $composableBuilder(
+    column: $table.kind,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get subjectType => $composableBuilder(
+    column: $table.subjectType,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get subjectChildId => $composableBuilder(
+    column: $table.subjectChildId,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get subjectUserId => $composableBuilder(
+    column: $table.subjectUserId,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get assigneeType => $composableBuilder(
+    column: $table.assigneeType,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get assigneeUserId => $composableBuilder(
+    column: $table.assigneeUserId,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get createdBy => $composableBuilder(
+    column: $table.createdBy,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get updatedBy => $composableBuilder(
+    column: $table.updatedBy,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get completedBy => $composableBuilder(
+    column: $table.completedBy,
     builder: (column) => ColumnFilters(column),
   );
 
@@ -5105,6 +5739,56 @@ class $$AgendaItemsTableTableOrderingComposer
     builder: (column) => ColumnOrderings(column),
   );
 
+  ColumnOrderings<String> get familyId => $composableBuilder(
+    column: $table.familyId,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get kind => $composableBuilder(
+    column: $table.kind,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get subjectType => $composableBuilder(
+    column: $table.subjectType,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get subjectChildId => $composableBuilder(
+    column: $table.subjectChildId,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get subjectUserId => $composableBuilder(
+    column: $table.subjectUserId,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get assigneeType => $composableBuilder(
+    column: $table.assigneeType,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get assigneeUserId => $composableBuilder(
+    column: $table.assigneeUserId,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get createdBy => $composableBuilder(
+    column: $table.createdBy,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get updatedBy => $composableBuilder(
+    column: $table.updatedBy,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get completedBy => $composableBuilder(
+    column: $table.completedBy,
+    builder: (column) => ColumnOrderings(column),
+  );
+
   ColumnOrderings<DateTime> get createdAt => $composableBuilder(
     column: $table.createdAt,
     builder: (column) => ColumnOrderings(column),
@@ -5180,6 +5864,48 @@ class $$AgendaItemsTableTableAnnotationComposer
   GeneratedColumn<String> get syncState =>
       $composableBuilder(column: $table.syncState, builder: (column) => column);
 
+  GeneratedColumn<String> get familyId =>
+      $composableBuilder(column: $table.familyId, builder: (column) => column);
+
+  GeneratedColumn<String> get kind =>
+      $composableBuilder(column: $table.kind, builder: (column) => column);
+
+  GeneratedColumn<String> get subjectType => $composableBuilder(
+    column: $table.subjectType,
+    builder: (column) => column,
+  );
+
+  GeneratedColumn<String> get subjectChildId => $composableBuilder(
+    column: $table.subjectChildId,
+    builder: (column) => column,
+  );
+
+  GeneratedColumn<String> get subjectUserId => $composableBuilder(
+    column: $table.subjectUserId,
+    builder: (column) => column,
+  );
+
+  GeneratedColumn<String> get assigneeType => $composableBuilder(
+    column: $table.assigneeType,
+    builder: (column) => column,
+  );
+
+  GeneratedColumn<String> get assigneeUserId => $composableBuilder(
+    column: $table.assigneeUserId,
+    builder: (column) => column,
+  );
+
+  GeneratedColumn<String> get createdBy =>
+      $composableBuilder(column: $table.createdBy, builder: (column) => column);
+
+  GeneratedColumn<String> get updatedBy =>
+      $composableBuilder(column: $table.updatedBy, builder: (column) => column);
+
+  GeneratedColumn<String> get completedBy => $composableBuilder(
+    column: $table.completedBy,
+    builder: (column) => column,
+  );
+
   GeneratedColumn<DateTime> get createdAt =>
       $composableBuilder(column: $table.createdAt, builder: (column) => column);
 
@@ -5241,6 +5967,16 @@ class $$AgendaItemsTableTableTableManager
                 Value<String?> recurrenceJson = const Value.absent(),
                 Value<String> source = const Value.absent(),
                 Value<String> syncState = const Value.absent(),
+                Value<String?> familyId = const Value.absent(),
+                Value<String> kind = const Value.absent(),
+                Value<String> subjectType = const Value.absent(),
+                Value<String?> subjectChildId = const Value.absent(),
+                Value<String?> subjectUserId = const Value.absent(),
+                Value<String> assigneeType = const Value.absent(),
+                Value<String?> assigneeUserId = const Value.absent(),
+                Value<String?> createdBy = const Value.absent(),
+                Value<String?> updatedBy = const Value.absent(),
+                Value<String?> completedBy = const Value.absent(),
                 Value<DateTime> createdAt = const Value.absent(),
                 Value<DateTime> updatedAt = const Value.absent(),
                 Value<DateTime?> deletedAt = const Value.absent(),
@@ -5260,6 +5996,16 @@ class $$AgendaItemsTableTableTableManager
                 recurrenceJson: recurrenceJson,
                 source: source,
                 syncState: syncState,
+                familyId: familyId,
+                kind: kind,
+                subjectType: subjectType,
+                subjectChildId: subjectChildId,
+                subjectUserId: subjectUserId,
+                assigneeType: assigneeType,
+                assigneeUserId: assigneeUserId,
+                createdBy: createdBy,
+                updatedBy: updatedBy,
+                completedBy: completedBy,
                 createdAt: createdAt,
                 updatedAt: updatedAt,
                 deletedAt: deletedAt,
@@ -5281,6 +6027,16 @@ class $$AgendaItemsTableTableTableManager
                 Value<String?> recurrenceJson = const Value.absent(),
                 Value<String> source = const Value.absent(),
                 Value<String> syncState = const Value.absent(),
+                Value<String?> familyId = const Value.absent(),
+                Value<String> kind = const Value.absent(),
+                Value<String> subjectType = const Value.absent(),
+                Value<String?> subjectChildId = const Value.absent(),
+                Value<String?> subjectUserId = const Value.absent(),
+                Value<String> assigneeType = const Value.absent(),
+                Value<String?> assigneeUserId = const Value.absent(),
+                Value<String?> createdBy = const Value.absent(),
+                Value<String?> updatedBy = const Value.absent(),
+                Value<String?> completedBy = const Value.absent(),
                 required DateTime createdAt,
                 required DateTime updatedAt,
                 Value<DateTime?> deletedAt = const Value.absent(),
@@ -5300,6 +6056,16 @@ class $$AgendaItemsTableTableTableManager
                 recurrenceJson: recurrenceJson,
                 source: source,
                 syncState: syncState,
+                familyId: familyId,
+                kind: kind,
+                subjectType: subjectType,
+                subjectChildId: subjectChildId,
+                subjectUserId: subjectUserId,
+                assigneeType: assigneeType,
+                assigneeUserId: assigneeUserId,
+                createdBy: createdBy,
+                updatedBy: updatedBy,
+                completedBy: completedBy,
                 createdAt: createdAt,
                 updatedAt: updatedAt,
                 deletedAt: deletedAt,
@@ -5341,6 +6107,7 @@ typedef $$AgendaGroupsTableTableCreateCompanionBuilder =
       Value<String?> colorHex,
       Value<int?> iconCode,
       Value<String> syncState,
+      Value<String?> familyId,
       required DateTime createdAt,
       required DateTime updatedAt,
       Value<DateTime?> deletedAt,
@@ -5353,6 +6120,7 @@ typedef $$AgendaGroupsTableTableUpdateCompanionBuilder =
       Value<String?> colorHex,
       Value<int?> iconCode,
       Value<String> syncState,
+      Value<String?> familyId,
       Value<DateTime> createdAt,
       Value<DateTime> updatedAt,
       Value<DateTime?> deletedAt,
@@ -5390,6 +6158,11 @@ class $$AgendaGroupsTableTableFilterComposer
 
   ColumnFilters<String> get syncState => $composableBuilder(
     column: $table.syncState,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get familyId => $composableBuilder(
+    column: $table.familyId,
     builder: (column) => ColumnFilters(column),
   );
 
@@ -5443,6 +6216,11 @@ class $$AgendaGroupsTableTableOrderingComposer
     builder: (column) => ColumnOrderings(column),
   );
 
+  ColumnOrderings<String> get familyId => $composableBuilder(
+    column: $table.familyId,
+    builder: (column) => ColumnOrderings(column),
+  );
+
   ColumnOrderings<DateTime> get createdAt => $composableBuilder(
     column: $table.createdAt,
     builder: (column) => ColumnOrderings(column),
@@ -5482,6 +6260,9 @@ class $$AgendaGroupsTableTableAnnotationComposer
 
   GeneratedColumn<String> get syncState =>
       $composableBuilder(column: $table.syncState, builder: (column) => column);
+
+  GeneratedColumn<String> get familyId =>
+      $composableBuilder(column: $table.familyId, builder: (column) => column);
 
   GeneratedColumn<DateTime> get createdAt =>
       $composableBuilder(column: $table.createdAt, builder: (column) => column);
@@ -5538,6 +6319,7 @@ class $$AgendaGroupsTableTableTableManager
                 Value<String?> colorHex = const Value.absent(),
                 Value<int?> iconCode = const Value.absent(),
                 Value<String> syncState = const Value.absent(),
+                Value<String?> familyId = const Value.absent(),
                 Value<DateTime> createdAt = const Value.absent(),
                 Value<DateTime> updatedAt = const Value.absent(),
                 Value<DateTime?> deletedAt = const Value.absent(),
@@ -5548,6 +6330,7 @@ class $$AgendaGroupsTableTableTableManager
                 colorHex: colorHex,
                 iconCode: iconCode,
                 syncState: syncState,
+                familyId: familyId,
                 createdAt: createdAt,
                 updatedAt: updatedAt,
                 deletedAt: deletedAt,
@@ -5560,6 +6343,7 @@ class $$AgendaGroupsTableTableTableManager
                 Value<String?> colorHex = const Value.absent(),
                 Value<int?> iconCode = const Value.absent(),
                 Value<String> syncState = const Value.absent(),
+                Value<String?> familyId = const Value.absent(),
                 required DateTime createdAt,
                 required DateTime updatedAt,
                 Value<DateTime?> deletedAt = const Value.absent(),
@@ -5570,6 +6354,7 @@ class $$AgendaGroupsTableTableTableManager
                 colorHex: colorHex,
                 iconCode: iconCode,
                 syncState: syncState,
+                familyId: familyId,
                 createdAt: createdAt,
                 updatedAt: updatedAt,
                 deletedAt: deletedAt,

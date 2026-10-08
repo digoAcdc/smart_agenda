@@ -4,8 +4,8 @@ import 'package:get/get.dart';
 import '../../core/config/supabase_config.dart';
 import '../../core/routes/app_routes.dart';
 import '../../core/theme/design_tokens.dart';
-import '../controllers/auth_controller.dart';
 import '../widgets/ui_primitives.dart';
+import '../../domain/repositories/i_family_service.dart';
 
 /// Tela central de modulos - acesso a todas as funcionalidades do app.
 /// Mantem o rodape limpo com as principais, e concentra o resto aqui.
@@ -69,16 +69,16 @@ class MorePage extends StatelessWidget {
                   if (SupabaseConfig.isConfigured) ...[
                     const Divider(height: 1),
                     Obx(() {
-                      final auth = Get.find<AuthController>();
+                      final ctx = Get.find<IFamilyService>().context;
                       return _buildActionTile(
                         context: context,
-                        icon: Icons.share_rounded,
+                        icon: Icons.family_restroom_rounded,
                         iconColor: primary,
-                        title: 'Compartilhar',
-                        subtitle: auth.isPremium.value
-                            ? 'Compartilhe sua agenda'
-                            : 'Plano free: 1 compartilhamento ativo',
-                        onTap: () => _handleCompartilhar(context, auth.isLoggedIn.value),
+                        title: 'Família',
+                        subtitle: ctx.hasFamily
+                            ? ctx.familyName ?? 'Sua Família'
+                            : 'Agenda compartilhada da família',
+                        onTap: () => Get.toNamed(AppRoutes.family),
                       );
                     }),
                   ],
@@ -89,14 +89,6 @@ class MorePage extends StatelessWidget {
         ),
       ),
     );
-  }
-
-  void _handleCompartilhar(BuildContext context, bool isLoggedIn) {
-    if (isLoggedIn) {
-      Get.toNamed(AppRoutes.sharing);
-      return;
-    }
-    Get.toNamed(AppRoutes.login, arguments: {'from': 'sharing'});
   }
 
   Widget _buildActionTile({

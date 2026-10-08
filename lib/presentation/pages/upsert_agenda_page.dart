@@ -14,6 +14,8 @@ import '../../domain/entities/agenda_enums.dart';
 import '../../domain/entities/agenda_item.dart';
 import '../../domain/entities/attachment_ref.dart';
 import '../../domain/entities/reminder_config.dart';
+import '../../domain/entities/family.dart';
+import '../../domain/repositories/i_family_service.dart';
 import '../../domain/repositories/i_file_storage_service.dart';
 import '../../domain/repositories/i_notification_service.dart';
 import '../../domain/repositories/i_plan_service.dart';
@@ -45,6 +47,19 @@ class _UpsertAgendaPageState extends State<UpsertAgendaPage> {
   AgendaItem? editingItem;
   bool _isPremium = false;
 
+  final _family = Get.find<IFamilyService>();
+  // Destino e papeis do item na Familia (nulo = agenda pessoal).
+  String? familyId;
+  AgendaItemKind kind = AgendaItemKind.event;
+  AgendaSubjectType subjectType = AgendaSubjectType.family;
+  String? subjectChildId;
+  String? subjectUserId;
+  AgendaAssigneeType assigneeType = AgendaAssigneeType.none;
+  String? assigneeUserId;
+
+  /// Imagens: Pro pessoal, ou item de Familia (a assinatura e do dono).
+  bool get _canAttachImages => _isPremium || familyId != null;
+
   @override
   void initState() {
     super.initState();
@@ -61,6 +76,21 @@ class _UpsertAgendaPageState extends State<UpsertAgendaPage> {
       reminderEnabled = arg.reminder?.enabled ?? false;
       reminderMinutes = arg.reminder?.minutesBefore;
       attachments = [...arg.attachments];
+      familyId = arg.familyId;
+      kind = arg.kind;
+      subjectType = arg.subjectType;
+      subjectChildId = arg.subjectChildId;
+      subjectUserId = arg.subjectUserId;
+      assigneeType = arg.assigneeType;
+      assigneeUserId = arg.assigneeUserId;
+    } else {
+      // Com Familia editavel, novos itens vao para a agenda da Familia.
+      final ctx = _family.context;
+      if (ctx.canEditAgenda) familyId = ctx.familyId;
+      if (arg is Map && arg['childId'] is String && familyId != null) {
+        subjectType = AgendaSubjectType.child;
+        subjectChildId = arg['childId'] as String;
+      }
     }
     _loadPlanStatus();
   }
@@ -130,7 +160,7 @@ class _UpsertAgendaPageState extends State<UpsertAgendaPage> {
   }
 
   Future<void> _addImageAttachment() async {
-    if (!_isPremium) {
+    if (!_canAttachImages) {
       _showSaved('Upload de imagem e uma funcionalidade Premium.');
       return;
     }
@@ -147,7 +177,8 @@ class _UpsertAgendaPageState extends State<UpsertAgendaPage> {
 
     final itemId = editingItem?.id ?? const Uuid().v4();
     final pathOrUrl = stored.data!;
-    final isUrl = pathOrUrl.startsWith('http://') || pathOrUrl.startsWith('https://');
+    final isUrl =
+        pathOrUrl.startsWith('http://') || pathOrUrl.startsWith('https://');
     setState(() {
       attachments.add(
         AttachmentRef(
@@ -201,8 +232,7 @@ class _UpsertAgendaPageState extends State<UpsertAgendaPage> {
 
     final controller = Get.find<AgendaController>();
 
-    final notificationId =
-        editingItem?.reminder?.notificationId ?? 0;
+    final notificationId = editingItem?.reminder?.notificationId ?? 0;
     final reminder = reminderEnabled
         ? ReminderConfig(
             enabled: true,
@@ -222,16 +252,18 @@ class _UpsertAgendaPageState extends State<UpsertAgendaPage> {
         startAt: startAt,
         endAt: endAt,
         allDay: allDay,
-        groupId: groupId,
+        groupId: familyId == null ? groupId : null,
         status: status,
         reminder: reminder,
         recurrence: null,
         attachments: const [],
       );
-      final item = newItem.copyWith(
-        attachments: attachments
-            .map((a) => a.copyWith(itemId: newItem.id))
-            .toList(),
+      final item = _withFamilyFields(
+        newItem.copyWith(
+          attachments: attachments
+              .map((a) => a.copyWith(itemId: newItem.id))
+              .toList(),
+        ),
       );
       final ok = await controller.createItem(item);
       if (ok) {
@@ -248,18 +280,19 @@ class _UpsertAgendaPageState extends State<UpsertAgendaPage> {
       return;
     }
 
-    final updated = editingItem!.copyWith(
+    final updated = _withFamilyFields(editingItem!).copyWith(
       title: titleController.text.trim(),
       description: descriptionController.text.trim(),
       startAt: startAt,
       endAt: endAt,
       allDay: allDay,
-      groupId: groupId,
+      groupId: familyId == null ? groupId : null,
       status: status,
       reminder: reminder,
       recurrence: null,
-      attachments:
-          attachments.map((a) => a.copyWith(itemId: editingItem!.id)).toList(),
+      attachments: attachments
+          .map((a) => a.copyWith(itemId: editingItem!.id))
+          .toList(),
       updatedAt: DateTime.now(),
     );
     final ok = await controller.updateItem(updated);
@@ -302,7 +335,8 @@ class _UpsertAgendaPageState extends State<UpsertAgendaPage> {
           FilledButton(
             onPressed: () async {
               if (formKey.currentState?.validate() != true) return;
-              final canProceed = await AccountPromptUtils.confirmSaveWithoutAccount();
+              final canProceed =
+                  await AccountPromptUtils.confirmSaveWithoutAccount();
               if (!canProceed) return;
               final name = nameController.text.trim();
               final newId = await groupsController.create(name);
@@ -334,11 +368,11 @@ class _UpsertAgendaPageState extends State<UpsertAgendaPage> {
         onPrimary: Colors.white,
       ),
       inputDecorationTheme: baseTheme.inputDecorationTheme.copyWith(
-            fillColor: inputNeutral,
-            hintStyle: baseTheme.textTheme.bodyMedium?.copyWith(
-                  color: const Color(0xFF9BA39C),
-                ),
-          ),
+        fillColor: inputNeutral,
+        hintStyle: baseTheme.textTheme.bodyMedium?.copyWith(
+          color: const Color(0xFF9BA39C),
+        ),
+      ),
     );
 
     return Scaffold(
@@ -352,350 +386,380 @@ class _UpsertAgendaPageState extends State<UpsertAgendaPage> {
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-            Row(
-              children: [
-                IconButton(
-                  onPressed: () => Get.back(),
-                  icon: const Icon(Icons.close_rounded),
-                  style: IconButton.styleFrom(
-                    backgroundColor: inputNeutral,
-                  ),
-                ),
-                Expanded(
-                  child: Center(
-                    child: Text(
-                      editingItem == null ? 'Novo evento' : 'Editar evento',
-                      style: Theme.of(context).textTheme.titleMedium?.copyWith(
-                            fontWeight: FontWeight.w700,
-                          ),
-                    ),
-                  ),
-                ),
-                if (editingItem != null)
-                  IconButton(
-                    onPressed: () async {
-                      await Get.find<AgendaController>()
-                          .duplicateItem(editingItem!.id);
-                      if (mounted) Get.back();
-                    },
-                    icon: const Icon(Icons.copy_rounded),
-                    style: IconButton.styleFrom(
-                      backgroundColor: inputNeutral,
-                    ),
-                  )
-                else
-                  const SizedBox(width: 48),
-              ],
-            ),
-            const SizedBox(height: 12),
-            Form(
-              key: _formKey,
-              autovalidateMode: AutovalidateMode.onUserInteraction,
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.stretch,
-                children: [
-            _sectionCard(
-              context,
-              children: [
-                Text(
-                  'TITULO DO EVENTO *',
-                  style: Theme.of(context).textTheme.labelSmall?.copyWith(
-                        fontWeight: FontWeight.w700,
-                        letterSpacing: .9,
-                        color: Theme.of(context).colorScheme.onSurfaceVariant,
-                      ),
-                ),
-                const SizedBox(height: 8),
-                TextFormField(
-                  controller: titleController,
-                  decoration: const InputDecoration(
-                    hintText: 'O que voce esta planejando?',
-                  ),
-                  validator: (v) => requiredValidator(v, 'Titulo e obrigatorio'),
-                ),
-              ],
-            ),
-            _sectionCard(
-              context,
-              children: [
                 Row(
                   children: [
-                    const Icon(
-                      Icons.event_note_rounded,
-                      size: 16,
-                      color: accentGreen,
-                    ),
-                    const SizedBox(width: 6),
-                    Text(
-                      'Date & Time',
-                      style: Theme.of(context).textTheme.titleSmall?.copyWith(
-                            fontWeight: FontWeight.w700,
-                          ),
-                    ),
-                    const Spacer(),
-                    Text(
-                      'Dia todo',
-                      style: Theme.of(context).textTheme.bodySmall,
-                    ),
-                    const SizedBox(width: 8),
-                    Transform.scale(
-                      scale: .86,
-                      child: Switch(
-                        value: allDay,
-                        activeThumbColor: Colors.white,
-                        activeTrackColor: accentGreen,
-                        onChanged: (value) => setState(() => allDay = value),
+                    IconButton(
+                      onPressed: () => Get.back(),
+                      icon: const Icon(Icons.close_rounded),
+                      style: IconButton.styleFrom(
+                        backgroundColor: inputNeutral,
                       ),
                     ),
-                  ],
-                ),
-                const SizedBox(height: 10),
-                Container(
-                  padding: const EdgeInsets.all(12),
-                  decoration: BoxDecoration(
-                    color: inputNeutral,
-                    borderRadius: BorderRadius.circular(14),
-                    border: Border.all(
-                      color: Theme.of(context).colorScheme.outlineVariant,
-                    ),
-                  ),
-                  child: Column(
-                    children: [
-                      _dateLine(
-                        context,
-                        label: 'INICIO',
-                        date: dateFmt.format(startAt),
-                        time: timeFmt.format(startAt),
-                        onTap: _pickStartDateTime,
-                      ),
-                      Divider(
-                        height: 14,
-                        color: Theme.of(context).colorScheme.outlineVariant,
-                      ),
-                      const SizedBox(height: 8),
-                      _dateLine(
-                        context,
-                        label: 'FIM',
-                        date: endAt == null
-                            ? 'Definir'
-                            : dateFmt.format(endAt!),
-                        time: endAt == null ? '--:--' : timeFmt.format(endAt!),
-                        onTap: _pickEndDateTime,
-                        onClear: endAt == null
-                            ? null
-                            : () => setState(() => endAt = null),
-                      ),
-                    ],
-                  ),
-                ),
-              ],
-            ),
-            _sectionCard(
-              context,
-              children: [
-                Row(
-                  children: [
-                    Icon(
-                      Icons.eco_outlined,
-                      size: 16,
-                      color: accentGreen,
-                    ),
-                    SizedBox(width: 6),
-                  ],
-                ),
-                Text(
-                  'Grupo',
-                  style: Theme.of(context).textTheme.titleSmall?.copyWith(
-                        fontWeight: FontWeight.w700,
-                      ),
-                ),
-                const SizedBox(height: 10),
-                Obx(
-                  () => Wrap(
-                    spacing: 10,
-                    runSpacing: 10,
-                    children: [
-                      _groupTile(
-                        context,
-                        title: 'Sem grupo',
-                        selected: groupId == null,
-                        onTap: () => setState(() => groupId = null),
-                      ),
-                      ...groupsController.groups.map(
-                        (g) => _groupTile(
-                          context,
-                          title: g.name,
-                          selected: groupId == g.id,
-                          onTap: () => setState(() => groupId = g.id),
+                    Expanded(
+                      child: Center(
+                        child: Text(
+                          editingItem == null ? 'Novo evento' : 'Editar evento',
+                          style: Theme.of(context).textTheme.titleMedium
+                              ?.copyWith(fontWeight: FontWeight.w700),
                         ),
                       ),
-                      _groupTile(
+                    ),
+                    if (editingItem != null)
+                      IconButton(
+                        onPressed: () async {
+                          await Get.find<AgendaController>().duplicateItem(
+                            editingItem!.id,
+                          );
+                          if (mounted) Get.back();
+                        },
+                        icon: const Icon(Icons.copy_rounded),
+                        style: IconButton.styleFrom(
+                          backgroundColor: inputNeutral,
+                        ),
+                      )
+                    else
+                      const SizedBox(width: 48),
+                  ],
+                ),
+                const SizedBox(height: 12),
+                Form(
+                  key: _formKey,
+                  autovalidateMode: AutovalidateMode.onUserInteraction,
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.stretch,
+                    children: [
+                      _sectionCard(
                         context,
-                        title: 'Novo',
-                        selected: false,
-                        outlined: true,
-                        onTap: () => _openCreateGroupDialog(context),
-                      ),
-                    ],
-                  ),
-                ),
-              ],
-            ),
-            _sectionCard(
-              context,
-              children: [
-                Text(
-                  'Descricao (opcional)',
-                  style: Theme.of(context).textTheme.labelSmall?.copyWith(
-                        fontWeight: FontWeight.w700,
-                        color: Theme.of(context).colorScheme.onSurfaceVariant,
-                      ),
-                ),
-                const SizedBox(height: 8),
-                TextField(
-                  controller: descriptionController,
-                  decoration:
-                      const InputDecoration(hintText: 'Adicione notas do evento'),
-                  minLines: 2,
-                  maxLines: 3,
-                ),
-              ],
-            ),
-            _sectionCard(
-              context,
-              children: [
-                _buildAttachmentsSection(context),
-              ],
-            ),
-            _sectionCard(
-              context,
-              children: [
-                Row(
-                  children: [
-                    Expanded(
-                      child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        mainAxisSize: MainAxisSize.min,
                         children: [
                           Text(
-                            'Lembretes',
-                            style: Theme.of(context).textTheme.titleSmall?.copyWith(
+                            'TITULO DO EVENTO *',
+                            style: Theme.of(context).textTheme.labelSmall
+                                ?.copyWith(
                                   fontWeight: FontWeight.w700,
+                                  letterSpacing: .9,
+                                  color: Theme.of(
+                                    context,
+                                  ).colorScheme.onSurfaceVariant,
                                 ),
                           ),
-                          const SizedBox(height: 2),
-                          Text(
-                            'Receba alertas antes do evento',
-                            maxLines: 2,
-                            overflow: TextOverflow.ellipsis,
-                            style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                                  color: Theme.of(context)
-                                      .colorScheme
-                                      .onSurfaceVariant,
-                                  fontSize: 11,
-                                ),
+                          const SizedBox(height: 8),
+                          TextFormField(
+                            controller: titleController,
+                            decoration: const InputDecoration(
+                              hintText: 'O que voce esta planejando?',
+                            ),
+                            validator: (v) =>
+                                requiredValidator(v, 'Titulo e obrigatorio'),
                           ),
                         ],
                       ),
-                    ),
-                    const SizedBox(width: 8),
-                    Transform.scale(
-                      scale: .86,
-                      child: Switch(
-                        value: reminderEnabled,
-                        activeThumbColor: Colors.white,
-                        activeTrackColor: accentGreen,
-                        onChanged: _handleReminderToggle,
-                      ),
-                    ),
-                  ],
-                ),
-                if (reminderEnabled) ...[
-                  const SizedBox(height: 8),
-                  Wrap(
-                    spacing: 8,
-                    runSpacing: 8,
-                    children: [5, 10, 15, 30, 60]
-                        .map(
-                          (e) => ChoiceChip(
-                            label: Text('$e min antes'),
-                            selected: reminderMinutes == e,
-                            selectedColor: accentGreen.withValues(alpha: 0.2),
-                            backgroundColor: context.palette.scheduleCellEmpty,
-                            onSelected: (_) =>
-                                setState(() => reminderMinutes = e),
+                      _buildFamilySection(context),
+                      _sectionCard(
+                        context,
+                        children: [
+                          Row(
+                            children: [
+                              const Icon(
+                                Icons.event_note_rounded,
+                                size: 16,
+                                color: accentGreen,
+                              ),
+                              const SizedBox(width: 6),
+                              Text(
+                                'Date & Time',
+                                style: Theme.of(context).textTheme.titleSmall
+                                    ?.copyWith(fontWeight: FontWeight.w700),
+                              ),
+                              const Spacer(),
+                              Text(
+                                'Dia todo',
+                                style: Theme.of(context).textTheme.bodySmall,
+                              ),
+                              const SizedBox(width: 8),
+                              Transform.scale(
+                                scale: .86,
+                                child: Switch(
+                                  value: allDay,
+                                  activeThumbColor: Colors.white,
+                                  activeTrackColor: accentGreen,
+                                  onChanged: (value) =>
+                                      setState(() => allDay = value),
+                                ),
+                              ),
+                            ],
                           ),
-                        )
-                        .toList(),
-                  ),
-                ],
-              ],
-            ),
-            _sectionCard(
-              context,
-              children: [
-                Text(
-                  'Status',
-                  style: Theme.of(context).textTheme.titleSmall?.copyWith(
-                        fontWeight: FontWeight.w700,
-                      ),
-                ),
-                const SizedBox(height: 8),
-                DropdownButtonFormField<AgendaStatus>(
-                  initialValue: status,
-                  decoration: const InputDecoration(labelText: 'Status'),
-                  items: AgendaStatus.values
-                      .map(
-                        (e) => DropdownMenuItem(
-                          value: e,
-                          child: Text(
-                            e == AgendaStatus.pending
-                                ? 'Pendente'
-                                : e == AgendaStatus.done
-                                    ? 'Concluido'
-                                    : 'Cancelado',
+                          const SizedBox(height: 10),
+                          Container(
+                            padding: const EdgeInsets.all(12),
+                            decoration: BoxDecoration(
+                              color: inputNeutral,
+                              borderRadius: BorderRadius.circular(14),
+                              border: Border.all(
+                                color: Theme.of(
+                                  context,
+                                ).colorScheme.outlineVariant,
+                              ),
+                            ),
+                            child: Column(
+                              children: [
+                                _dateLine(
+                                  context,
+                                  label: 'INICIO',
+                                  date: dateFmt.format(startAt),
+                                  time: timeFmt.format(startAt),
+                                  onTap: _pickStartDateTime,
+                                ),
+                                Divider(
+                                  height: 14,
+                                  color: Theme.of(
+                                    context,
+                                  ).colorScheme.outlineVariant,
+                                ),
+                                const SizedBox(height: 8),
+                                _dateLine(
+                                  context,
+                                  label: 'FIM',
+                                  date: endAt == null
+                                      ? 'Definir'
+                                      : dateFmt.format(endAt!),
+                                  time: endAt == null
+                                      ? '--:--'
+                                      : timeFmt.format(endAt!),
+                                  onTap: _pickEndDateTime,
+                                  onClear: endAt == null
+                                      ? null
+                                      : () => setState(() => endAt = null),
+                                ),
+                              ],
+                            ),
                           ),
+                        ],
+                      ),
+                      // V1: categorias sao da agenda pessoal.
+                      if (familyId == null)
+                        _sectionCard(
+                          context,
+                          children: [
+                            Row(
+                              children: [
+                                Icon(
+                                  Icons.eco_outlined,
+                                  size: 16,
+                                  color: accentGreen,
+                                ),
+                                SizedBox(width: 6),
+                              ],
+                            ),
+                            Text(
+                              'Grupo',
+                              style: Theme.of(context).textTheme.titleSmall
+                                  ?.copyWith(fontWeight: FontWeight.w700),
+                            ),
+                            const SizedBox(height: 10),
+                            Obx(
+                              () => Wrap(
+                                spacing: 10,
+                                runSpacing: 10,
+                                children: [
+                                  _groupTile(
+                                    context,
+                                    title: 'Sem grupo',
+                                    selected: groupId == null,
+                                    onTap: () => setState(() => groupId = null),
+                                  ),
+                                  ...groupsController.groups.map(
+                                    (g) => _groupTile(
+                                      context,
+                                      title: g.name,
+                                      selected: groupId == g.id,
+                                      onTap: () =>
+                                          setState(() => groupId = g.id),
+                                    ),
+                                  ),
+                                  _groupTile(
+                                    context,
+                                    title: 'Novo',
+                                    selected: false,
+                                    outlined: true,
+                                    onTap: () =>
+                                        _openCreateGroupDialog(context),
+                                  ),
+                                ],
+                              ),
+                            ),
+                          ],
                         ),
-                      )
-                      .toList(),
-                  onChanged: (value) {
-                    if (value != null) setState(() => status = value);
-                  },
-                ),
-              ],
-            ),
-              const SizedBox(height: 12),
-              Row(
-              children: [
-                Expanded(
-                  child: OutlinedButton(
-                    style: OutlinedButton.styleFrom(
-                      minimumSize: const Size(double.infinity, 48),
-                    ),
-                    onPressed: () => Get.back(),
-                    child: const Text('Cancelar'),
+                      _sectionCard(
+                        context,
+                        children: [
+                          Text(
+                            'Descricao (opcional)',
+                            style: Theme.of(context).textTheme.labelSmall
+                                ?.copyWith(
+                                  fontWeight: FontWeight.w700,
+                                  color: Theme.of(
+                                    context,
+                                  ).colorScheme.onSurfaceVariant,
+                                ),
+                          ),
+                          const SizedBox(height: 8),
+                          TextField(
+                            controller: descriptionController,
+                            decoration: const InputDecoration(
+                              hintText: 'Adicione notas do evento',
+                            ),
+                            minLines: 2,
+                            maxLines: 3,
+                          ),
+                        ],
+                      ),
+                      _sectionCard(
+                        context,
+                        children: [_buildAttachmentsSection(context)],
+                      ),
+                      _sectionCard(
+                        context,
+                        children: [
+                          Row(
+                            children: [
+                              Expanded(
+                                child: Column(
+                                  crossAxisAlignment: CrossAxisAlignment.start,
+                                  mainAxisSize: MainAxisSize.min,
+                                  children: [
+                                    Text(
+                                      'Lembretes',
+                                      style: Theme.of(context)
+                                          .textTheme
+                                          .titleSmall
+                                          ?.copyWith(
+                                            fontWeight: FontWeight.w700,
+                                          ),
+                                    ),
+                                    const SizedBox(height: 2),
+                                    Text(
+                                      'Receba alertas antes do evento',
+                                      maxLines: 2,
+                                      overflow: TextOverflow.ellipsis,
+                                      style: Theme.of(context)
+                                          .textTheme
+                                          .bodySmall
+                                          ?.copyWith(
+                                            color: Theme.of(
+                                              context,
+                                            ).colorScheme.onSurfaceVariant,
+                                            fontSize: 11,
+                                          ),
+                                    ),
+                                  ],
+                                ),
+                              ),
+                              const SizedBox(width: 8),
+                              Transform.scale(
+                                scale: .86,
+                                child: Switch(
+                                  value: reminderEnabled,
+                                  activeThumbColor: Colors.white,
+                                  activeTrackColor: accentGreen,
+                                  onChanged: _handleReminderToggle,
+                                ),
+                              ),
+                            ],
+                          ),
+                          if (reminderEnabled) ...[
+                            const SizedBox(height: 8),
+                            Wrap(
+                              spacing: 8,
+                              runSpacing: 8,
+                              children: [5, 10, 15, 30, 60]
+                                  .map(
+                                    (e) => ChoiceChip(
+                                      label: Text('$e min antes'),
+                                      selected: reminderMinutes == e,
+                                      selectedColor: accentGreen.withValues(
+                                        alpha: 0.2,
+                                      ),
+                                      backgroundColor:
+                                          context.palette.scheduleCellEmpty,
+                                      onSelected: (_) =>
+                                          setState(() => reminderMinutes = e),
+                                    ),
+                                  )
+                                  .toList(),
+                            ),
+                          ],
+                        ],
+                      ),
+                      _sectionCard(
+                        context,
+                        children: [
+                          Text(
+                            'Status',
+                            style: Theme.of(context).textTheme.titleSmall
+                                ?.copyWith(fontWeight: FontWeight.w700),
+                          ),
+                          const SizedBox(height: 8),
+                          DropdownButtonFormField<AgendaStatus>(
+                            initialValue: status,
+                            decoration: const InputDecoration(
+                              labelText: 'Status',
+                            ),
+                            items: AgendaStatus.values
+                                .map(
+                                  (e) => DropdownMenuItem(
+                                    value: e,
+                                    child: Text(
+                                      e == AgendaStatus.pending
+                                          ? 'Pendente'
+                                          : e == AgendaStatus.done
+                                          ? 'Concluido'
+                                          : 'Cancelado',
+                                    ),
+                                  ),
+                                )
+                                .toList(),
+                            onChanged: (value) {
+                              if (value != null) setState(() => status = value);
+                            },
+                          ),
+                        ],
+                      ),
+                      const SizedBox(height: 12),
+                      Row(
+                        children: [
+                          Expanded(
+                            child: OutlinedButton(
+                              style: OutlinedButton.styleFrom(
+                                minimumSize: const Size(double.infinity, 48),
+                              ),
+                              onPressed: () => Get.back(),
+                              child: const Text('Cancelar'),
+                            ),
+                          ),
+                          const SizedBox(width: DesignTokens.spaceSm),
+                          Expanded(
+                            child: FilledButton.icon(
+                              style: FilledButton.styleFrom(
+                                backgroundColor: accentGreen,
+                                foregroundColor: Theme.of(
+                                  context,
+                                ).colorScheme.onPrimary,
+                                minimumSize: const Size(double.infinity, 48),
+                              ),
+                              onPressed: _save,
+                              icon: const Icon(Icons.check_rounded),
+                              label: Text(
+                                editingItem == null
+                                    ? 'Salvar evento'
+                                    : 'Salvar alteracoes',
+                              ),
+                            ),
+                          ),
+                        ],
+                      ),
+                    ],
                   ),
                 ),
-                const SizedBox(width: DesignTokens.spaceSm),
-                Expanded(
-                  child: FilledButton.icon(
-                    style: FilledButton.styleFrom(
-                      backgroundColor: accentGreen,
-                      foregroundColor: Theme.of(context).colorScheme.onPrimary,
-                      minimumSize: const Size(double.infinity, 48),
-                    ),
-                    onPressed: _save,
-                    icon: const Icon(Icons.check_rounded),
-                    label: Text(
-                      editingItem == null ? 'Salvar evento' : 'Salvar alteracoes',
-                    ),
-                  ),
-                ),
-              ],
-              ),
-                ],
-              ),
-            ),
               ],
             ),
           ),
@@ -714,8 +778,194 @@ class _UpsertAgendaPageState extends State<UpsertAgendaPage> {
         borderRadius: BorderRadius.circular(22),
       ),
       child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start, children: children),
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: children,
+      ),
     );
+  }
+
+  /// Aplica destino (pessoal/Familia), tipo, "para quem" e responsavel.
+  AgendaItem _withFamilyFields(AgendaItem base) {
+    final isFamily = familyId != null;
+    return AgendaItem(
+      id: base.id,
+      title: base.title,
+      description: base.description,
+      startAt: base.startAt,
+      endAt: base.endAt,
+      allDay: base.allDay,
+      timezone: base.timezone,
+      groupId: isFamily ? null : base.groupId,
+      status: base.status,
+      locationText: base.locationText,
+      reminder: base.reminder,
+      recurrence: base.recurrence,
+      attachments: base.attachments,
+      familyId: familyId,
+      kind: kind,
+      subjectType: isFamily ? subjectType : AgendaSubjectType.none,
+      subjectChildId: isFamily && subjectType == AgendaSubjectType.child
+          ? subjectChildId
+          : null,
+      subjectUserId: isFamily && subjectType == AgendaSubjectType.member
+          ? subjectUserId
+          : null,
+      assigneeType: isFamily ? assigneeType : AgendaAssigneeType.none,
+      assigneeUserId: isFamily && assigneeType == AgendaAssigneeType.member
+          ? assigneeUserId
+          : null,
+      createdBy: base.createdBy,
+      updatedBy: base.updatedBy,
+      completedBy: base.completedBy,
+      source: base.source,
+      syncState: base.syncState,
+      createdAt: base.createdAt,
+      updatedAt: base.updatedAt,
+      deletedAt: base.deletedAt,
+    );
+  }
+
+  Widget _label(BuildContext context, String text) => Padding(
+    padding: const EdgeInsets.only(bottom: 8, top: 4),
+    child: Text(
+      text,
+      style: Theme.of(
+        context,
+      ).textTheme.titleSmall?.copyWith(fontWeight: FontWeight.w700),
+    ),
+  );
+
+  /// Tipo + (na Familia) agenda de destino, "para quem" e responsavel.
+  Widget _buildFamilySection(BuildContext context) {
+    return Obx(() {
+      final ctx = _family.context;
+      final members = _family.members;
+      final children = _family.children;
+      final canChooseScope = editingItem == null && ctx.canEditAgenda;
+      final isFamily = familyId != null;
+      return _sectionCard(
+        context,
+        children: [
+          _label(context, 'Tipo'),
+          Wrap(
+            spacing: 10,
+            runSpacing: 10,
+            children: [
+              for (final k in AgendaItemKind.values)
+                _groupTile(
+                  context,
+                  title: switch (k) {
+                    AgendaItemKind.event => 'Compromisso',
+                    AgendaItemKind.task => 'Tarefa',
+                    AgendaItemKind.reminder => 'Lembrete',
+                  },
+                  selected: kind == k,
+                  onTap: () => setState(() => kind = k),
+                ),
+            ],
+          ),
+          if (canChooseScope) ...[
+            const SizedBox(height: 12),
+            _label(context, 'Agenda'),
+            Wrap(
+              spacing: 10,
+              runSpacing: 10,
+              children: [
+                _groupTile(
+                  context,
+                  title: ctx.familyName ?? 'Família',
+                  selected: isFamily,
+                  onTap: () => setState(() => familyId = ctx.familyId),
+                ),
+                _groupTile(
+                  context,
+                  title: 'Só minha',
+                  selected: !isFamily,
+                  onTap: () => setState(() => familyId = null),
+                ),
+              ],
+            ),
+          ],
+          if (isFamily) ...[
+            const SizedBox(height: 12),
+            _label(context, 'Para quem'),
+            Wrap(
+              spacing: 10,
+              runSpacing: 10,
+              children: [
+                _groupTile(
+                  context,
+                  title: 'Família toda',
+                  selected:
+                      subjectType == AgendaSubjectType.family ||
+                      subjectType == AgendaSubjectType.none,
+                  onTap: () =>
+                      setState(() => subjectType = AgendaSubjectType.family),
+                ),
+                for (final FamilyChild c in children)
+                  _groupTile(
+                    context,
+                    title: c.name,
+                    selected:
+                        subjectType == AgendaSubjectType.child &&
+                        subjectChildId == c.id,
+                    onTap: () => setState(() {
+                      subjectType = AgendaSubjectType.child;
+                      subjectChildId = c.id;
+                    }),
+                  ),
+                for (final FamilyMember m in members)
+                  _groupTile(
+                    context,
+                    title: m.label,
+                    selected:
+                        subjectType == AgendaSubjectType.member &&
+                        subjectUserId == m.userId,
+                    onTap: () => setState(() {
+                      subjectType = AgendaSubjectType.member;
+                      subjectUserId = m.userId;
+                    }),
+                  ),
+              ],
+            ),
+            const SizedBox(height: 12),
+            _label(context, 'Responsável'),
+            Wrap(
+              spacing: 10,
+              runSpacing: 10,
+              children: [
+                _groupTile(
+                  context,
+                  title: 'Ninguém',
+                  selected: assigneeType == AgendaAssigneeType.none,
+                  onTap: () =>
+                      setState(() => assigneeType = AgendaAssigneeType.none),
+                ),
+                _groupTile(
+                  context,
+                  title: 'Todos',
+                  selected: assigneeType == AgendaAssigneeType.all,
+                  onTap: () =>
+                      setState(() => assigneeType = AgendaAssigneeType.all),
+                ),
+                for (final FamilyMember m in members)
+                  _groupTile(
+                    context,
+                    title: m.label,
+                    selected:
+                        assigneeType == AgendaAssigneeType.member &&
+                        assigneeUserId == m.userId,
+                    onTap: () => setState(() {
+                      assigneeType = AgendaAssigneeType.member;
+                      assigneeUserId = m.userId;
+                    }),
+                  ),
+              ],
+            ),
+          ],
+        ],
+      );
+    });
   }
 
   Widget _buildAttachmentsSection(BuildContext context) {
@@ -728,12 +978,12 @@ class _UpsertAgendaPageState extends State<UpsertAgendaPage> {
             Text(
               'ANEXOS',
               style: Theme.of(context).textTheme.labelSmall?.copyWith(
-                    fontWeight: FontWeight.w700,
-                    color: Theme.of(context).colorScheme.onSurfaceVariant,
-                  ),
+                fontWeight: FontWeight.w700,
+                color: Theme.of(context).colorScheme.onSurfaceVariant,
+              ),
             ),
             const Spacer(),
-            if (!_isPremium)
+            if (!_canAttachImages)
               Container(
                 margin: const EdgeInsets.only(right: 8),
                 padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
@@ -749,15 +999,15 @@ class _UpsertAgendaPageState extends State<UpsertAgendaPage> {
                     Text(
                       'Premium',
                       style: Theme.of(context).textTheme.labelSmall?.copyWith(
-                            color: scheme.outline,
-                            fontWeight: FontWeight.w600,
-                          ),
+                        color: scheme.outline,
+                        fontWeight: FontWeight.w600,
+                      ),
                     ),
                   ],
                 ),
               ),
             FilledButton.tonalIcon(
-              onPressed: _isPremium ? _addImageAttachment : null,
+              onPressed: _canAttachImages ? _addImageAttachment : null,
               icon: const Icon(Icons.attach_file_rounded),
               label: const Text('Add Files'),
               style: FilledButton.styleFrom(
@@ -765,8 +1015,10 @@ class _UpsertAgendaPageState extends State<UpsertAgendaPage> {
                 foregroundColor: const Color(0xFF9CD64A),
                 minimumSize: const Size(0, 40),
                 tapTargetSize: MaterialTapTargetSize.shrinkWrap,
-                padding:
-                    const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
+                padding: const EdgeInsets.symmetric(
+                  horizontal: 12,
+                  vertical: 10,
+                ),
               ),
             ),
           ],
@@ -783,8 +1035,10 @@ class _UpsertAgendaPageState extends State<UpsertAgendaPage> {
             ),
             child: Row(
               children: [
-                Icon(Icons.image_not_supported_outlined,
-                    color: scheme.onSurfaceVariant),
+                Icon(
+                  Icons.image_not_supported_outlined,
+                  color: scheme.onSurfaceVariant,
+                ),
                 const SizedBox(width: 10),
                 Expanded(
                   child: Text(
@@ -806,7 +1060,7 @@ class _UpsertAgendaPageState extends State<UpsertAgendaPage> {
               itemBuilder: (context, index) {
                 if (index == attachments.length) {
                   return InkWell(
-                    onTap: _isPremium ? _addImageAttachment : null,
+                    onTap: _canAttachImages ? _addImageAttachment : null,
                     borderRadius: BorderRadius.circular(14),
                     child: Container(
                       width: 104,
@@ -818,8 +1072,10 @@ class _UpsertAgendaPageState extends State<UpsertAgendaPage> {
                       child: Column(
                         mainAxisAlignment: MainAxisAlignment.center,
                         children: [
-                          Icon(Icons.cloud_upload_outlined,
-                              color: scheme.onSurfaceVariant),
+                          Icon(
+                            Icons.cloud_upload_outlined,
+                            color: scheme.onSurfaceVariant,
+                          ),
                           const SizedBox(height: 6),
                           Text(
                             'Upload',
@@ -833,9 +1089,9 @@ class _UpsertAgendaPageState extends State<UpsertAgendaPage> {
                 final attachment = attachments[index];
                 final path = attachment.localPath;
                 final url = attachment.remoteUrl;
-                final hasLocal =
-                    path != null && File(path).existsSync();
-                final hasRemote = url != null &&
+                final hasLocal = path != null && File(path).existsSync();
+                final hasRemote =
+                    url != null &&
                     (url.startsWith('http://') || url.startsWith('https://'));
                 final hasImage = hasLocal || hasRemote;
                 return Container(
@@ -858,16 +1114,28 @@ class _UpsertAgendaPageState extends State<UpsertAgendaPage> {
                               child: SizedBox.expand(
                                 child: hasImage
                                     ? hasLocal
-                                        ? Image.file(File(path),
-                                            fit: BoxFit.cover)
-                                        : Image.network(url as String,
-                                            fit: BoxFit.cover,
-                                            errorBuilder: (context, error, stackTrace) =>
-                                                Icon(Icons.broken_image,
+                                          ? Image.file(
+                                              File(path),
+                                              fit: BoxFit.cover,
+                                            )
+                                          : Image.network(
+                                              url as String,
+                                              fit: BoxFit.cover,
+                                              errorBuilder:
+                                                  (
+                                                    context,
+                                                    error,
+                                                    stackTrace,
+                                                  ) => Icon(
+                                                    Icons.broken_image,
                                                     color:
-                                                        scheme.onSurfaceVariant))
-                                    : Icon(Icons.insert_drive_file,
-                                        color: scheme.onSurfaceVariant),
+                                                        scheme.onSurfaceVariant,
+                                                  ),
+                                            )
+                                    : Icon(
+                                        Icons.insert_drive_file,
+                                        color: scheme.onSurfaceVariant,
+                                      ),
                               ),
                             ),
                           ),
@@ -899,8 +1167,11 @@ class _UpsertAgendaPageState extends State<UpsertAgendaPage> {
                             },
                             child: const Padding(
                               padding: EdgeInsets.all(4),
-                              child: Icon(Icons.close,
-                                  size: 14, color: Colors.white),
+                              child: Icon(
+                                Icons.close,
+                                size: 14,
+                                color: Colors.white,
+                              ),
                             ),
                           ),
                         ),
@@ -946,15 +1217,15 @@ class _UpsertAgendaPageState extends State<UpsertAgendaPage> {
                 Text(
                   label,
                   style: Theme.of(context).textTheme.labelSmall?.copyWith(
-                        color: Theme.of(context).colorScheme.onSurfaceVariant,
-                      ),
+                    color: Theme.of(context).colorScheme.onSurfaceVariant,
+                  ),
                 ),
                 const SizedBox(height: 3),
                 Text(
                   date,
-                  style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                        fontWeight: FontWeight.w600,
-                      ),
+                  style: Theme.of(
+                    context,
+                  ).textTheme.bodyMedium?.copyWith(fontWeight: FontWeight.w600),
                 ),
               ],
             ),
@@ -963,16 +1234,19 @@ class _UpsertAgendaPageState extends State<UpsertAgendaPage> {
             mainAxisSize: MainAxisSize.min,
             children: [
               Container(
-                padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+                padding: const EdgeInsets.symmetric(
+                  horizontal: 12,
+                  vertical: 8,
+                ),
                 decoration: BoxDecoration(
-              color: Theme.of(context).colorScheme.surface,
+                  color: Theme.of(context).colorScheme.surface,
                   borderRadius: BorderRadius.circular(10),
                 ),
                 child: Text(
                   time,
-                  style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                        fontWeight: FontWeight.w700,
-                      ),
+                  style: Theme.of(
+                    context,
+                  ).textTheme.bodyMedium?.copyWith(fontWeight: FontWeight.w700),
                 ),
               ),
               if (onClear != null) ...[
@@ -984,7 +1258,9 @@ class _UpsertAgendaPageState extends State<UpsertAgendaPage> {
                     width: 28,
                     height: 28,
                     decoration: BoxDecoration(
-                      color: Theme.of(context).colorScheme.surfaceContainerHighest,
+                      color: Theme.of(
+                        context,
+                      ).colorScheme.surfaceContainerHighest,
                       shape: BoxShape.circle,
                     ),
                     child: const Icon(Icons.close_rounded, size: 16),
@@ -1023,8 +1299,8 @@ class _UpsertAgendaPageState extends State<UpsertAgendaPage> {
             color: selected
                 ? selectedColor.withValues(alpha: 0.46)
                 : outlined
-                    ? Theme.of(context).colorScheme.outlineVariant
-                    : Colors.transparent,
+                ? Theme.of(context).colorScheme.outlineVariant
+                : Colors.transparent,
             style: selected || outlined ? BorderStyle.solid : BorderStyle.none,
           ),
         ),
@@ -1040,14 +1316,13 @@ class _UpsertAgendaPageState extends State<UpsertAgendaPage> {
             const SizedBox(height: 5),
             Text(
               title,
-              style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                    fontWeight: FontWeight.w600,
-                  ),
+              style: Theme.of(
+                context,
+              ).textTheme.bodySmall?.copyWith(fontWeight: FontWeight.w600),
             ),
           ],
         ),
       ),
     );
   }
-
 }

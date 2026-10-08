@@ -5,6 +5,7 @@ import '../../core/theme/design_tokens.dart';
 import '../../domain/entities/agenda_enums.dart';
 import '../../domain/entities/agenda_item.dart';
 import 'group_chip.dart';
+import '../utils/family_item_labels.dart';
 
 enum AgendaCardVariant { regular, timeline }
 
@@ -82,7 +83,8 @@ class _AgendaCardState extends State<AgendaCard> {
     final railHeight = widget.variant == AgendaCardVariant.timeline ? 48.0 : 56.0;
     final compactRailHeight = 36.0;
 
-    final isShared = item.ownerEmail != null;
+    final isShared = !FamilyItemLabels.canEdit(item);
+    final familyLine = FamilyItemLabels.summary(item);
 
     return Dismissible(
       key: ValueKey(item.id),
@@ -190,11 +192,27 @@ class _AgendaCardState extends State<AgendaCard> {
                               maxLines: _expanded ? 3 : 1,
                               overflow: TextOverflow.ellipsis,
                             ),
+                            if (familyLine != null) ...[
+                              const SizedBox(height: 2),
+                              Text(
+                                familyLine,
+                                maxLines: 1,
+                                overflow: TextOverflow.ellipsis,
+                                style: Theme.of(context)
+                                    .textTheme
+                                    .labelSmall
+                                    ?.copyWith(
+                                      color: Theme.of(context)
+                                          .colorScheme
+                                          .primary,
+                                    ),
+                              ),
+                            ],
                             if (_expanded) ...[
-                              if (isShared) ...[
+                              if (FamilyItemLabels.createdBy(item) != null) ...[
                                 const SizedBox(height: 4),
                                 Text(
-                                  'Compartilhada por ${item.ownerEmail}',
+                                  'Criado por ${FamilyItemLabels.createdBy(item)}',
                                   style: Theme.of(context)
                                       .textTheme
                                       .labelSmall

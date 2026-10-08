@@ -9,17 +9,16 @@ import 'package:uuid/uuid.dart';
 import '../../core/config/supabase_config.dart';
 import '../../data/datasources/agenda_local_datasource.dart';
 import '../../data/datasources/agenda_supabase_datasource.dart';
+import '../../data/datasources/family_supabase_datasource.dart';
 import '../../data/datasources/class_group_local_datasource.dart';
 import '../../data/datasources/class_schedule_datasource_orchestrator.dart';
 import '../../data/datasources/class_schedule_local_datasource.dart';
 import '../../data/datasources/class_schedule_supabase_datasource.dart';
 import '../../data/datasources/groups_local_datasource.dart';
-import '../../data/datasources/agenda_sharing_supabase_datasource.dart';
 import '../../data/datasources/fcm_token_supabase_datasource.dart';
 import '../../data/datasources/notifications_supabase_datasource.dart';
 import '../../data/datasources/push_preferences_supabase_datasource.dart';
 import '../../data/datasources/subscription_supabase_datasource.dart';
-import '../../data/datasources/groups_supabase_datasource.dart';
 import '../../data/datasources/note_local_datasource.dart';
 import '../../data/datasources/note_supabase_datasource.dart';
 import '../../data/local/app_database.dart';
@@ -31,8 +30,9 @@ import '../../data/services/ad_unlock_provider_impl.dart';
 import '../../data/services/admob_service_impl.dart';
 import '../../data/services/ads_service_stub.dart';
 import '../../data/services/auth_service_stub.dart';
+import '../../data/services/family_service_impl.dart';
+import '../../data/services/family_service_stub.dart';
 import '../../data/services/file_storage_service_orchestrator.dart';
-import '../../data/services/local_to_cloud_migration_service_impl.dart';
 import '../../data/services/billing_service_impl.dart';
 import '../../data/services/billing_service_stub.dart';
 import '../../data/services/premium_service_impl.dart';
@@ -40,27 +40,24 @@ import '../../data/services/plan_service_impl.dart';
 import '../../data/services/supabase_auth_service_impl.dart';
 import '../../data/services/notification_service_impl.dart';
 import '../../data/services/connectivity_service_impl.dart';
-import '../../data/services/sharing_service_impl.dart';
-import '../../data/services/sharing_service_stub.dart';
 import '../../data/services/sync_engine_impl.dart';
 import '../../data/services/sync_service_stub.dart';
 import '../../data/services/user_data_deletion_service_impl.dart';
 import '../../domain/repositories/i_ads_service.dart';
 import '../../domain/repositories/i_agenda_repository.dart';
 import '../../domain/repositories/i_auth_service.dart';
+import '../../domain/repositories/i_family_service.dart';
 import '../../domain/repositories/i_file_storage_service.dart';
 import '../../domain/repositories/i_groups_repository.dart';
 import '../../domain/repositories/i_notification_service.dart';
 import '../../domain/repositories/i_class_group_repository.dart';
 import '../../domain/repositories/i_note_repository.dart';
 import '../../domain/repositories/i_class_schedule_datasource.dart';
-import '../../domain/repositories/i_local_to_cloud_migration_service.dart';
 import '../../domain/repositories/i_connectivity_service.dart';
 import '../../domain/repositories/i_billing_service.dart';
 import '../../domain/repositories/i_ad_unlock_provider.dart';
 import '../../domain/repositories/i_premium_service.dart';
 import '../../domain/repositories/i_plan_service.dart';
-import '../../domain/repositories/i_sharing_service.dart';
 import '../../domain/repositories/i_sync_service.dart';
 import '../../domain/repositories/i_user_data_deletion_service.dart';
 import '../../domain/usecases/agenda_usecases.dart';
@@ -110,16 +107,12 @@ class AppBinding extends Bindings {
         () => AgendaSupabaseDataSource(Supabase.instance.client),
         fenix: true,
       );
-      Get.lazyPut<GroupsSupabaseDataSource>(
-        () => GroupsSupabaseDataSource(Supabase.instance.client),
-        fenix: true,
-      );
       Get.lazyPut<NoteSupabaseDataSource>(
         () => NoteSupabaseDataSource(Supabase.instance.client),
         fenix: true,
       );
-      Get.lazyPut<AgendaSharingSupabaseDataSource>(
-        () => AgendaSharingSupabaseDataSource(Supabase.instance.client),
+      Get.lazyPut<FamilySupabaseDataSource>(
+        () => FamilySupabaseDataSource(Supabase.instance.client),
         fenix: true,
       );
       Get.lazyPut<SubscriptionSupabaseDataSource>(
@@ -156,36 +149,20 @@ class AppBinding extends Bindings {
       fenix: true,
     );
     Get.put<IAdUnlockProvider>(AdUnlockProviderImpl(), permanent: true);
-    Get.lazyPut<ISharingService>(
-      () => SupabaseConfig.isConfigured
-          ? SharingServiceImpl(
-              Get.find<IPlanService>(),
-              Get.find<IAuthService>(),
-              Get.find<AgendaSharingSupabaseDataSource>(),
-            )
-          : SharingServiceStub(),
-      fenix: true,
+    Get.put<IFamilyService>(
+      SupabaseConfig.isConfigured
+          ? FamilyServiceImpl(Get.find<FamilySupabaseDataSource>())
+          : FamilyServiceStub(),
+      permanent: true,
     );
-    if (SupabaseConfig.isConfigured) {
-      Get.lazyPut<ILocalToCloudMigrationService>(
-        () => LocalToCloudMigrationServiceImpl(
-          Get.find<AgendaLocalDataSource>(),
-          Get.find<GroupsLocalDataSource>(),
-          Get.find<ClassScheduleLocalDataSource>(),
-          Get.find<AgendaSupabaseDataSource>(),
-          Get.find<GroupsSupabaseDataSource>(),
-          Get.find<IFileStorageService>(),
-          Supabase.instance.client,
-        ),
-        fenix: true,
-      );
-    }
     Get.lazyPut<IAgendaRepository>(
       () => AgendaRepositoryImpl(
         Get.find<AgendaLocalDataSource>(),
         Get.find<ISyncService>(),
-        SupabaseConfig.isConfigured ? Get.find<AgendaSupabaseDataSource>() : null,
-        Get.find<ISharingService>(),
+        Get.find<IFamilyService>(),
+        () => SupabaseConfig.isConfigured
+            ? Supabase.instance.client.auth.currentUser?.id
+            : null,
       ),
       fenix: true,
     );
@@ -198,7 +175,6 @@ class AppBinding extends Bindings {
     );
     Get.lazyPut<IFileStorageService>(
       () => FileStorageServiceOrchestrator(
-        Get.find<IPlanService>(),
         const Uuid(),
         SupabaseConfig.isConfigured ? Supabase.instance.client : null,
       ),
@@ -219,9 +195,10 @@ class AppBinding extends Bindings {
               Get.find<ClassGroupLocalDataSource>(),
               Get.find<NoteLocalDataSource>(),
               Get.find<AgendaSupabaseDataSource>(),
-              Get.find<GroupsSupabaseDataSource>(),
               Get.find<NoteSupabaseDataSource>(),
               Get.find<IFileStorageService>(),
+              Get.find<IPlanService>(),
+              Get.find<IFamilyService>(),
               Supabase.instance.client,
             )
           : SyncServiceStub(),
@@ -309,6 +286,7 @@ class AppBinding extends Bindings {
         getAgendaMarkersByRange: Get.find(),
         searchAgendaItems: Get.find(),
         notificationService: Get.find(),
+        syncService: Get.find<ISyncService>(),
       ),
       permanent: true,
     );

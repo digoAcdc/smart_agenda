@@ -1,296 +1,145 @@
 import 'package:flutter/foundation.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 
+import '../../domain/entities/agenda_group.dart';
 import '../../domain/entities/agenda_item.dart';
 import '../models/supabase_mappers.dart';
 
-/// Data source para agenda no Supabase (plano premium).
+/// Escopo de sincronizacao: agenda pessoal do usuario ou agenda de uma Familia.
+class SyncScope {
+  const SyncScope.personal(String this.userId) : familyId = null;
+  const SyncScope.family(String this.familyId) : userId = null;
+
+  final String? userId;
+  final String? familyId;
+
+  bool get isFamily => familyId != null;
+  String get key => isFamily ? 'family_$familyId' : 'personal_$userId';
+}
+
+class RemoteChanges<T> {
+  const RemoteChanges(this.rows, this.maxUpdatedAt);
+
+  final List<T> rows;
+
+  /// Maior updated_at (texto do servidor) visto: proximo cursor.
+  final String? maxUpdatedAt;
+}
+
+/// Data source da agenda no Supabase. Le e grava respeitando a RLS:
+/// itens pessoais (owner_user_id) e itens da Familia (family_id).
 class AgendaSupabaseDataSource {
   AgendaSupabaseDataSource(this._client);
 
   final SupabaseClient _client;
 
-  String? get _userId => _client.auth.currentUser?.id;
+  static const _pageSize = 500;
 
-  Future<void> createItem(AgendaItem item) async {
-    final uid = _userId;
+  String? get currentUserId => _client.auth.currentUser?.id;
+
+  String _requireUid() {
+    final uid = currentUserId;
     if (uid == null) throw StateError('Usuario nao autenticado');
-
-    await _client.from('agenda_items').insert(
-          agendaItemToSupabase(item, uid),
-        );
-
-    if (item.attachments.isNotEmpty) {
-      await _client.from('attachments').insert(
-            item.attachments
-                .map((a) => attachmentToSupabase(a, uid))
-                .toList(),
-          );
-    }
-    debugPrint('[AgendaSupabaseDS] createItem ${item.id}');
+    return uid;
   }
 
-  Future<void> updateItem(AgendaItem item) async {
-    final uid = _userId;
-    if (uid == null) throw StateError('Usuario nao autenticado');
-
-    await _client.from('agenda_items').upsert(
-          agendaItemToSupabase(item, uid),
-          onConflict: 'id',
-        );
+  Future<void> upsertItem(AgendaItem item) async {
+    final uid = _requireUid();
+    await _client
+        .from('agenda_items')
+        .upsert(agendaItemToSupabase(item, uid), onConflict: 'id');
 
     await _client.from('attachments').delete().eq('item_id', item.id);
-    if (item.attachments.isNotEmpty) {
-      await _client.from('attachments').insert(
-            item.attachments
-                .map((a) => attachmentToSupabase(a, uid))
-                .toList(),
-          );
+    final remoteAttachments = item.attachments
+        .where((a) => a.remoteUrl != null)
+        .toList();
+    if (remoteAttachments.isNotEmpty) {
+      await _client
+          .from('attachments')
+          .insert(remoteAttachments.map(attachmentToSupabase).toList());
     }
-    debugPrint('[AgendaSupabaseDS] updateItem ${item.id}');
+    debugPrint('[AgendaSupabaseDS] upsert ${item.id}');
   }
 
-  Future<void> deleteItemSoft(String id, DateTime deletedAt) async {
-    final uid = _userId;
-    if (uid == null) throw StateError('Usuario nao autenticado');
-
-    await _client.from('agenda_items').update({
-      'deleted_at': deletedAt.toIso8601String(),
-      'updated_at': deletedAt.toIso8601String(),
-    }).eq('id', id).eq('user_id', uid);
-    debugPrint('[AgendaSupabaseDS] deleteItemSoft $id');
-  }
-
-  Future<AgendaItem?> getById(String id) async {
-    final uid = _userId;
-    if (uid == null) return null;
-
-    final rows = await _client
+  Future<AgendaItem?> fetchItem(String id) async {
+    final row = await _client
         .from('agenda_items')
         .select()
         .eq('id', id)
-        .eq('user_id', uid)
-        .isFilter('deleted_at', null);
-
-    if (rows.isEmpty) return null;
-    final row = rows.first;
-
-    final attRows = await _client
-        .from('attachments')
-        .select()
-        .eq('item_id', id)
-        .eq('user_id', uid);
-    final attList = List<Map<String, dynamic>>.from(attRows);
-
+        .maybeSingle();
+    if (row == null) return null;
+    final atts = await _client.from('attachments').select().eq('item_id', id);
     return agendaItemFromSupabase(
       Map<String, dynamic>.from(row),
-      attList,
+      List<Map<String, dynamic>>.from(atts),
     );
   }
 
-  /// Itens compartilhados comigo (somente leitura, com ownerEmail).
-  Future<List<AgendaItem>> getSharedByRange(
-    DateTime start,
-    DateTime end,
-    Map<String, String> ownerIdToEmail,
-  ) async {
-    final uid = _userId;
-    if (uid == null || ownerIdToEmail.isEmpty) return [];
-
-    final ownerIds = ownerIdToEmail.keys.toList();
-    final rows = await _client
-        .from('agenda_items')
-        .select()
-        .inFilter('user_id', ownerIds)
-        .gte('start_at', start.toIso8601String())
-        .lte('start_at', end.toIso8601String())
-        .isFilter('deleted_at', null)
-        .order('start_at');
-
-    if (rows.isEmpty) return [];
-    final items = rows.map((r) => Map<String, dynamic>.from(r)).toList();
-    return _joinAttachmentsWithOwnerEmail(items, ownerIdToEmail);
-  }
-
-  Future<AgendaItem?> getSharedById(
-    String id,
-    Map<String, String> ownerIdToEmail,
-  ) async {
-    if (ownerIdToEmail.isEmpty) return null;
-
-    final rows = await _client
-        .from('agenda_items')
-        .select()
-        .eq('id', id)
-        .inFilter('user_id', ownerIdToEmail.keys.toList())
-        .isFilter('deleted_at', null);
-
-    if (rows.isEmpty) return null;
-    final row = Map<String, dynamic>.from(rows.first);
-    final ownerId = row['user_id'] as String?;
-    final ownerEmail = ownerId != null ? ownerIdToEmail[ownerId] : null;
-
-    final attRows = await _client
-        .from('attachments')
-        .select()
-        .eq('item_id', id)
-        .inFilter('user_id', ownerIdToEmail.keys.toList());
-    final attList = List<Map<String, dynamic>>.from(attRows);
-
-    return agendaItemFromSupabase(row, attList, ownerEmail: ownerEmail);
-  }
-
-  Future<List<AgendaItem>> searchShared(
-    String query, {
-    DateTime? start,
-    DateTime? end,
-    String? groupId,
-    String? status,
-    required Map<String, String> ownerIdToEmail,
+  /// Itens alterados depois de [since] (inclui excluidos logicamente).
+  Future<RemoteChanges<AgendaItem>> fetchItemChanges(
+    SyncScope scope, {
+    String? since,
   }) async {
-    if (ownerIdToEmail.isEmpty) return [];
+    final rows = <Map<String, dynamic>>[];
+    String? cursor = since;
+    while (true) {
+      var q = _client.from('agenda_items').select();
+      q = scope.isFamily
+          ? q.eq('family_id', scope.familyId!)
+          : q.eq('owner_user_id', scope.userId!);
+      if (cursor != null) q = q.gt('updated_at', cursor);
+      final page = List<Map<String, dynamic>>.from(
+        await q.order('updated_at').limit(_pageSize),
+      );
+      rows.addAll(page);
+      if (page.length < _pageSize) break;
+      cursor = page.last['updated_at'] as String;
+    }
+    if (rows.isEmpty) return RemoteChanges(const [], since);
 
-    var q = _client
-        .from('agenda_items')
-        .select()
-        .inFilter('user_id', ownerIdToEmail.keys.toList())
-        .isFilter('deleted_at', null);
-
-    if (query.isNotEmpty) {
-      final pattern = '%$query%';
-      q = q.or('title.ilike.$pattern,description.ilike.$pattern');
-    }
-    if (start != null && end != null) {
-      q = q
-          .gte('start_at', start.toIso8601String())
-          .lte('start_at', end.toIso8601String());
-    }
-    if (groupId != null && groupId.isNotEmpty) {
-      q = q.eq('group_id', groupId);
-    }
-    if (status != null && status.isNotEmpty) {
-      q = q.eq('status', status);
+    final ids = rows.map((r) => r['id'] as String).toList();
+    final atts = <Map<String, dynamic>>[];
+    for (var i = 0; i < ids.length; i += 100) {
+      final chunk = ids.sublist(i, i + 100 > ids.length ? ids.length : i + 100);
+      atts.addAll(
+        List<Map<String, dynamic>>.from(
+          await _client.from('attachments').select().inFilter('item_id', chunk),
+        ),
+      );
     }
 
-    final rows = await q.order('start_at');
-    if (rows.isEmpty) return [];
-    return _joinAttachmentsWithOwnerEmail(
-      List<Map<String, dynamic>>.from(rows),
-      ownerIdToEmail,
-    );
+    final items = rows
+        .map(
+          (r) => agendaItemFromSupabase(
+            r,
+            atts.where((a) => a['item_id'] == r['id']).toList(),
+          ),
+        )
+        .toList();
+    return RemoteChanges(items, rows.last['updated_at'] as String);
   }
 
-  Future<List<AgendaItem>> _joinAttachmentsWithOwnerEmail(
-    List<Map<String, dynamic>> items,
-    Map<String, String> ownerIdToEmail,
-  ) async {
-    if (items.isEmpty) return [];
-    final itemIds = items.map((e) => e['id'] as String).toList();
-    final ownerIds = ownerIdToEmail.keys.toList();
-
-    final attRows = await _client
-        .from('attachments')
-        .select()
-        .inFilter('user_id', ownerIds)
-        .inFilter('item_id', itemIds);
-    final attList =
-        (attRows as List).map((e) => Map<String, dynamic>.from(e)).toList();
-
-    return items.map((row) {
-      final ownerId = row['user_id'] as String?;
-      final ownerEmail = ownerId != null ? ownerIdToEmail[ownerId] : null;
-      final itemAtts =
-          attList.where((a) => a['item_id'] == row['id']).toList();
-      return agendaItemFromSupabase(row, itemAtts, ownerEmail: ownerEmail);
-    }).toList();
+  Future<void> upsertGroup(AgendaGroup group) async {
+    final uid = _requireUid();
+    await _client
+        .from('agenda_groups')
+        .upsert(groupToSupabase(group, uid), onConflict: 'id');
   }
 
-  Future<List<AgendaItem>> getByRange(DateTime start, DateTime end) async {
-    final uid = _userId;
-    if (uid == null) return [];
-
-    final rows = await _client
-        .from('agenda_items')
-        .select()
-        .eq('user_id', uid)
-        .gte('start_at', start.toIso8601String())
-        .lte('start_at', end.toIso8601String())
-        .isFilter('deleted_at', null)
-        .order('start_at');
-
-    if (rows.isEmpty) return [];
-    return _joinAttachments(
-      rows.map((r) => Map<String, dynamic>.from(r)).toList(),
-      uid,
-    );
-  }
-
-  Future<List<AgendaItem>> search(
-    String query, {
-    DateTime? start,
-    DateTime? end,
-    String? groupId,
-    String? status,
+  Future<RemoteChanges<AgendaGroup>> fetchGroupChanges(
+    SyncScope scope, {
+    String? since,
   }) async {
-    final uid = _userId;
-    if (uid == null) return [];
-
-    var q = _client
-        .from('agenda_items')
-        .select()
-        .eq('user_id', uid)
-        .isFilter('deleted_at', null);
-
-    if (query.isNotEmpty) {
-      final pattern = '%$query%';
-      q = q.or('title.ilike.$pattern,description.ilike.$pattern');
-    }
-    if (start != null && end != null) {
-      q = q
-          .gte('start_at', start.toIso8601String())
-          .lte('start_at', end.toIso8601String());
-    }
-    if (groupId != null && groupId.isNotEmpty) {
-      q = q.eq('group_id', groupId);
-    }
-    if (status != null && status.isNotEmpty) {
-      q = q.eq('status', status);
-    }
-
-    final rows = await q.order('start_at');
-    if (rows.isEmpty) return [];
-    return _joinAttachments(List<Map<String, dynamic>>.from(rows), uid);
-  }
-
-  Future<void> setStatus(String id, String status, DateTime updatedAt) async {
-    final uid = _userId;
-    if (uid == null) return;
-
-    await _client.from('agenda_items').update({
-      'status': status,
-      'updated_at': updatedAt.toIso8601String(),
-    }).eq('id', id).eq('user_id', uid);
-  }
-
-  Future<List<AgendaItem>> _joinAttachments(
-    List<Map<String, dynamic>> items,
-    String uid,
-  ) async {
-    if (items.isEmpty) return [];
-    final itemIds = items.map((e) => e['id'] as String).toList();
-
-    final attRows = await _client
-        .from('attachments')
-        .select()
-        .eq('user_id', uid)
-        .inFilter('item_id', itemIds);
-    final attList =
-        (attRows as List).map((e) => Map<String, dynamic>.from(e)).toList();
-
-    return items.map((row) {
-      final itemAtts =
-          attList.where((a) => a['item_id'] == row['id']).toList();
-      return agendaItemFromSupabase(row, itemAtts);
-    }).toList();
+    var q = _client.from('agenda_groups').select();
+    q = scope.isFamily
+        ? q.eq('family_id', scope.familyId!)
+        : q.eq('owner_user_id', scope.userId!);
+    if (since != null) q = q.gt('updated_at', since);
+    final rows = List<Map<String, dynamic>>.from(await q.order('updated_at'));
+    if (rows.isEmpty) return RemoteChanges(const [], since);
+    return RemoteChanges(
+      rows.map(groupFromSupabase).toList(),
+      rows.last['updated_at'] as String,
+    );
   }
 }

@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:flutter/widgets.dart';
 import 'package:get/get.dart';
 import 'package:uuid/uuid.dart';
@@ -9,6 +11,7 @@ import '../../domain/entities/attachment_ref.dart';
 import '../../domain/entities/recurrence_rule.dart';
 import '../../domain/entities/reminder_config.dart';
 import '../../domain/repositories/i_notification_service.dart';
+import '../../domain/repositories/i_sync_service.dart';
 import '../../domain/usecases/agenda_usecases.dart';
 import '../../domain/value_objects/search_filters.dart';
 
@@ -24,6 +27,7 @@ class AgendaController extends GetxController {
     required this.getAgendaMarkersByRange,
     required this.searchAgendaItems,
     required this.notificationService,
+    this.syncService,
   });
 
   final CreateAgendaItem createAgendaItem;
@@ -36,6 +40,7 @@ class AgendaController extends GetxController {
   final GetAgendaMarkersByRange getAgendaMarkersByRange;
   final SearchAgendaItems searchAgendaItems;
   final INotificationService notificationService;
+  final ISyncService? syncService;
 
   final Rx<DateTime> selectedDate = DateTime.now().obs;
   final RxList<AgendaItem> todayItems = <AgendaItem>[].obs;
@@ -47,11 +52,20 @@ class AgendaController extends GetxController {
   final RxBool loading = false.obs;
   final RxnString errorMessage = RxnString();
   int _loadByDayRequestId = 0;
+  StreamSubscription<void>? _remoteChangesSub;
 
   @override
   void onInit() {
     super.onInit();
     WidgetsBinding.instance.addPostFrameCallback((_) => loadToday());
+    // Alteracoes de outros membros/dispositivos chegam pelo sync.
+    _remoteChangesSub = syncService?.onDataChanged.listen((_) => refreshCurrentData());
+  }
+
+  @override
+  void onClose() {
+    _remoteChangesSub?.cancel();
+    super.onClose();
   }
 
   Future<void> loadToday() async {

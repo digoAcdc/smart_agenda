@@ -18,6 +18,7 @@ import '../widgets/ad_banner_widget.dart';
 import '../widgets/empty_state_widget.dart';
 import '../widgets/loading_placeholder_list.dart';
 import '../widgets/section_header.dart';
+import '../utils/family_item_labels.dart';
 
 enum AgendaHomeViewMode { day, week, month }
 enum HomeLandingView { dashboard, calendar }
@@ -1039,10 +1040,10 @@ class _TodayPageState extends State<TodayPage> {
                         ),
                     ],
                   ),
-                  if (item.ownerEmail != null) ...[
+                  if (FamilyItemLabels.summary(item) != null) ...[
                     const SizedBox(height: 4),
                     Text(
-                      'Compartilhada por ${item.ownerEmail}',
+                      FamilyItemLabels.summary(item)!,
                       style: Theme.of(context).textTheme.labelSmall?.copyWith(
                             color: Theme.of(context).colorScheme.primary,
                           ),
@@ -1353,19 +1354,19 @@ class _TodayPageState extends State<TodayPage> {
                           ],
                         ],
                       ),
-                      if (item.ownerEmail != null) ...[
+                      if (FamilyItemLabels.summary(item) != null) ...[
                         const SizedBox(height: 4),
                         Row(
                           children: [
                             Icon(
-                              Icons.people_outline,
+                              Icons.family_restroom_outlined,
                               size: 14,
                               color: Theme.of(context).colorScheme.primary,
                             ),
                             const SizedBox(width: 4),
                             Expanded(
                               child: Text(
-                                'Compartilhada por ${item.ownerEmail}',
+                                FamilyItemLabels.summary(item)!,
                                 style: Theme.of(context).textTheme.labelSmall?.copyWith(
                                       color: Theme.of(context).colorScheme.primary,
                                     ),
@@ -1393,7 +1394,7 @@ class _TodayPageState extends State<TodayPage> {
                     ],
                   ),
                 ),
-                if (item.ownerEmail == null)
+                if (FamilyItemLabels.canEdit(item))
                   IconButton(
                     onPressed: () => onToggleStatus(
                       item.status == AgendaStatus.done
