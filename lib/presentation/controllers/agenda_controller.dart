@@ -48,6 +48,11 @@ class AgendaController extends GetxController {
   final RxList<AgendaItem> monthItems = <AgendaItem>[].obs;
   final RxList<AgendaItem> selectedDayItems = <AgendaItem>[].obs;
   final RxList<AgendaItem> searchResults = <AgendaItem>[].obs;
+
+  /// Proximos eventos a partir de agora, mesmo que distantes.
+  final RxList<AgendaItem> upcomingItems = <AgendaItem>[].obs;
+  static const _upcomingHorizon = Duration(days: 365);
+  static const _upcomingLimit = 15;
   final RxSet<DateTime> monthMarkers = <DateTime>{}.obs;
   final RxBool loading = false.obs;
   final RxnString errorMessage = RxnString();
@@ -57,9 +62,14 @@ class AgendaController extends GetxController {
   @override
   void onInit() {
     super.onInit();
-    WidgetsBinding.instance.addPostFrameCallback((_) => loadToday());
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      loadToday();
+      loadUpcoming();
+    });
     // Alteracoes de outros membros/dispositivos chegam pelo sync.
-    _remoteChangesSub = syncService?.onDataChanged.listen((_) => refreshCurrentData());
+    _remoteChangesSub = syncService?.onDataChanged.listen(
+      (_) => refreshCurrentData(),
+    );
   }
 
   @override
@@ -78,6 +88,27 @@ class AgendaController extends GetxController {
       errorMessage.value = result.errorMessage;
     }
     loading.value = false;
+  }
+
+  Future<void> loadUpcoming() async {
+    final now = DateTime.now();
+    final today = DateUtilsEx.startOfDay(now);
+    final result = await getAgendaItemsByRange(
+      today,
+      now.add(_upcomingHorizon),
+    );
+    if (!result.isSuccess) return;
+    final items =
+        (result.data ?? [])
+            .where((e) => e.status != AgendaStatus.canceled)
+            .where(
+              (e) =>
+                  !e.startAt.isBefore(now) ||
+                  (e.allDay && DateUtilsEx.startOfDay(e.startAt) == today),
+            )
+            .toList()
+          ..sort((a, b) => a.startAt.compareTo(b.startAt));
+    upcomingItems.assignAll(items.take(_upcomingLimit));
   }
 
   Future<void> loadWeek(DateTime start, DateTime end) async {
@@ -145,8 +176,9 @@ class AgendaController extends GetxController {
     loading.value = true;
     errorMessage.value = null;
     await notificationService.cancelForItem(item);
-    final result =
-        await updateAgendaItem(item.copyWith(updatedAt: DateTime.now()));
+    final result = await updateAgendaItem(
+      item.copyWith(updatedAt: DateTime.now()),
+    );
     if (result.isSuccess) {
       final notifyResult = await notificationService.scheduleForItem(item);
       if (!notifyResult.isSuccess) {
@@ -212,10 +244,13 @@ class AgendaController extends GetxController {
   Future<void> refreshCurrentData() async {
     final now = DateTime.now();
     await loadToday();
+    await loadUpcoming();
     await loadByDay(selectedDate.value);
     await loadWeek(DateUtilsEx.startOfWeek(now), DateUtilsEx.endOfWeek(now));
     await loadMonthItems(
-        DateUtilsEx.startOfMonth(now), DateUtilsEx.endOfMonth(now));
+      DateUtilsEx.startOfMonth(now),
+      DateUtilsEx.endOfMonth(now),
+    );
     await loadMonth(DateUtilsEx.startOfMonth(now), DateUtilsEx.endOfMonth(now));
   }
 

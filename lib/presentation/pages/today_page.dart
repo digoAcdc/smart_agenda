@@ -469,10 +469,8 @@ class _TodayPageState extends State<TodayPage> {
               e.startAt.isBefore(DateTime.now()),
         )
         .toList();
-    final upcoming = todayEvents
-        .where((e) => e.startAt.isAfter(DateTime.now()))
-        .take(6)
-        .toList();
+    final upcoming = agendaController.upcomingItems.toList();
+    final isTodaySelected = isSameDay(selectedDate, DateTime.now());
     final agendaDoDia = [...agendaController.selectedDayItems]
       ..sort((a, b) => a.startAt.compareTo(b.startAt));
     final overdueIds = overdue.map((e) => e.id).toSet();
@@ -583,12 +581,23 @@ class _TodayPageState extends State<TodayPage> {
                 const SizedBox(height: 8),
                 _buildWeekStrip(agendaController, accentGreen),
                 const SizedBox(height: 10),
-                _sectionTitle(context, 'Agenda de hoje'),
+                _sectionTitle(
+                  context,
+                  _dayAgendaTitle(selectedDate),
+                  trailing: isTodaySelected ? null : 'Voltar para hoje',
+                  onTrailingTap: isTodaySelected
+                      ? null
+                      : () {
+                          final today = DateUtilsEx.startOfDay(DateTime.now());
+                          setState(() => selectedDate = today);
+                          agendaController.loadByDay(today);
+                        },
+                ),
                 const SizedBox(height: 8),
                 if (agendaDoDiaExibida.isEmpty)
                   _buildDashboardEmpty(context, accentGreen)
                 else
-                  ...agendaDoDiaExibida.take(2).map(
+                  ...agendaDoDiaExibida.map(
                     (item) => Padding(
                       padding: const EdgeInsets.only(bottom: 8),
                       child: _buildDashboardEventTile(
@@ -650,7 +659,7 @@ class _TodayPageState extends State<TodayPage> {
                     ),
                   ),
                 const SizedBox(height: 12),
-                _sectionTitle(context, 'Timeline'),
+                _sectionTitle(context, 'Próximos eventos'),
                 const SizedBox(height: 8),
                 Row(
                   children: [
@@ -799,26 +808,68 @@ class _TodayPageState extends State<TodayPage> {
     );
   }
 
-  Widget _sectionTitle(BuildContext context, String title, {String? trailing}) {
-    return Row(
-      children: [
-        Text(
-          title,
-          style: Theme.of(context).textTheme.titleMedium?.copyWith(
-                fontWeight: FontWeight.w700,
-              ),
-        ),
-        const Spacer(),
-        if (trailing != null)
-          Text(
+  Widget _sectionTitle(
+    BuildContext context,
+    String title, {
+    String? trailing,
+    VoidCallback? onTrailingTap,
+  }) {
+    final trailingText = trailing == null
+        ? null
+        : Text(
             trailing,
             style: Theme.of(context).textTheme.bodySmall?.copyWith(
                   color: Theme.of(context).colorScheme.primary,
                   fontWeight: FontWeight.w600,
                 ),
+          );
+    return Row(
+      children: [
+        Expanded(
+          child: Text(
+            title,
+            style: Theme.of(context).textTheme.titleMedium?.copyWith(
+                  fontWeight: FontWeight.w700,
+                ),
+            maxLines: 1,
+            overflow: TextOverflow.ellipsis,
           ),
+        ),
+        if (trailingText != null)
+          onTrailingTap == null
+              ? trailingText
+              : InkWell(
+                  onTap: onTrailingTap,
+                  borderRadius: BorderRadius.circular(8),
+                  child: Padding(
+                    padding: const EdgeInsets.symmetric(horizontal: 4, vertical: 6),
+                    child: trailingText,
+                  ),
+                ),
       ],
     );
+  }
+
+  /// "Agenda de hoje", "Agenda de amanhã" ou "Agenda de sex, 17/10".
+  String _dayAgendaTitle(DateTime day) {
+    final today = DateUtilsEx.startOfDay(DateTime.now());
+    final target = DateUtilsEx.startOfDay(day);
+    final diff = target.difference(today).inDays;
+    if (diff == 0) return 'Agenda de hoje';
+    if (diff == 1) return 'Agenda de amanhã';
+    if (diff == -1) return 'Agenda de ontem';
+    return 'Agenda de ${DateFormat('EEE, dd/MM', 'pt_BR').format(target)}';
+  }
+
+  /// Data curta para a lista de proximos eventos.
+  String _upcomingDateLabel(DateTime start) {
+    final today = DateUtilsEx.startOfDay(DateTime.now());
+    final diff = DateUtilsEx.startOfDay(start).difference(today).inDays;
+    if (diff == 0) return 'Hoje';
+    if (diff == 1) return 'Amanhã';
+    if (diff < 7) return DateFormat('EEE', 'pt_BR').format(start);
+    if (start.year == today.year) return DateFormat('dd/MM').format(start);
+    return DateFormat('dd/MM/yy').format(start);
   }
 
   Widget _filterChip(
@@ -974,7 +1025,8 @@ class _TodayPageState extends State<TodayPage> {
     required String groupName,
     required Color accentGreen,
   }) {
-    final timeLabel = DateFormat('HH:mm').format(item.startAt);
+    final timeLabel =
+        '${_upcomingDateLabel(item.startAt)}\n${item.allDay ? 'Dia todo' : DateFormat('HH:mm').format(item.startAt)}';
     final isExpired = item.status == AgendaStatus.pending &&
         item.startAt.isBefore(DateTime.now());
     final lineColor = isExpired
