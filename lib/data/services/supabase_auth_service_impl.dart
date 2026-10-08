@@ -1,6 +1,10 @@
+import 'dart:convert';
+import 'dart:io';
+
 import 'package:flutter/foundation.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 
+import '../../core/constants/billing_constants.dart';
 import '../../core/result/result.dart';
 import '../../domain/entities/auth_user.dart' as domain;
 import '../../domain/repositories/i_auth_service.dart';
@@ -53,11 +57,36 @@ class SupabaseAuthServiceImpl implements IAuthService {
 
   @override
   Future<Result<void>> resetPasswordForEmail(String email) async {
+    // E-mail em portugues so com o codigo, enviado pela nossa API.
+    // Se ela nao responder, cai no envio padrao do Supabase.
+    if (await _requestRecoveryViaApi(email)) return Result.success(null);
     try {
       await _client.auth.resetPasswordForEmail(email);
       return Result.success(null);
     } catch (e) {
       return Result.failure(_mapError(e));
+    }
+  }
+
+  Future<bool> _requestRecoveryViaApi(String email) async {
+    final baseUrl = BillingConstants.billingApiBaseUrl.trim();
+    if (baseUrl.isEmpty) return false;
+    final client = HttpClient()..connectionTimeout = const Duration(seconds: 10);
+    try {
+      final request = await client.postUrl(
+        Uri.parse('$baseUrl/auth/password-recovery'),
+      );
+      request.headers.set(HttpHeaders.contentTypeHeader, 'application/json');
+      request.add(utf8.encode(jsonEncode({'email': email.trim()})));
+      final response = await request.close().timeout(const Duration(seconds: 20));
+      await response.drain<void>();
+      debugPrint('[password_recovery] api status=${response.statusCode}');
+      return response.statusCode == 200;
+    } catch (e) {
+      debugPrint('[password_recovery] api indisponivel: $e');
+      return false;
+    } finally {
+      client.close();
     }
   }
 

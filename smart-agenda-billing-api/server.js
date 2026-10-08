@@ -10,6 +10,7 @@ import {
   logPurchaseValidation,
   SupabasePersistenceError,
 } from "./supabase.js";
+import { createMailerFromEnv, isValidEmail, sendRecoveryCode } from "./recovery.js";
 
 dotenv.config();
 
@@ -44,6 +45,13 @@ const supabase = createSupabaseAdminClient({
   serviceRoleKey: process.env.SUPABASE_SERVICE_ROLE_KEY,
 });
 
+// SMTP opcional: sem ele, a recuperacao de senha responde 503 e o app usa o
+// envio padrao do Supabase.
+const mailer = createMailerFromEnv(process.env);
+if (!mailer) {
+  app.log.warn("SMTP not configured: /auth/password-recovery disabled");
+}
+
 function maskToken(token) {
   if (!token || token.length < 8) return "***";
   return `${token.slice(0, 4)}...${token.slice(-4)}`;
@@ -76,6 +84,32 @@ app.get("/health", async () => {
     },
   };
 });
+
+app.post(
+  "/auth/password-recovery",
+  {
+    config: {
+      rateLimit: { max: 5, timeWindow: "15 minutes" },
+    },
+  },
+  async (request, reply) => {
+    if (!mailer) {
+      return reply.code(503).send({ error: "Password recovery unavailable" });
+    }
+    const email = request.body?.email;
+    if (!isValidEmail(email)) {
+      return reply.code(400).send({ error: "Invalid email" });
+    }
+    try {
+      await sendRecoveryCode({ supabase, mailer, email, log: request.log });
+      // Mesma resposta exista ou nao a conta.
+      return reply.send({ ok: true });
+    } catch (error) {
+      request.log.error({ err: error.message }, "[recovery_send_failed]");
+      return reply.code(502).send({ error: "Could not send email. Please retry." });
+    }
+  }
+);
 
 app.post(
   "/validate-subscription",

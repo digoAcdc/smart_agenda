@@ -12,11 +12,11 @@ class BillingConstants {
   /// Package name do app Android (deve bater com applicationId).
   static const String packageName = 'com.digo.smartagenda';
 
-  /// Base URL da API de billing Node.
-  /// Exemplo: https://smart-agenda-billing-api.vybg0t.easypanel.host
+  /// Base URL da API Node (assinaturas e e-mail de recuperacao de senha).
+  /// Para sobrescrever: --dart-define=BILLING_API_BASE_URL=...
   static const String billingApiBaseUrl = String.fromEnvironment(
     'BILLING_API_BASE_URL',
-    defaultValue: '',
+    defaultValue: 'https://smart-agenda-billing-api.vybg0t.easypanel.host',
   );
 
   static bool get hasBillingApiConfigured => billingApiBaseUrl.trim().isNotEmpty;
