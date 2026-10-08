@@ -11,6 +11,8 @@ class FamilyServiceStub implements IFamilyService {
   @override
   FamilyContext get context => FamilyContext.empty;
   @override
+  String? get currentUserId => null;
+  @override
   List<FamilyMember> get members => const [];
   @override
   List<FamilyChild> get children => const [];

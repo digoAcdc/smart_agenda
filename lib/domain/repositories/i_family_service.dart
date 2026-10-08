@@ -5,6 +5,9 @@ import '../entities/family.dart';
 /// pessoas, filhos e convites. Os getters sao reativos na implementacao.
 abstract class IFamilyService {
   FamilyContext get context;
+
+  /// Usuario logado (nulo sem conta).
+  String? get currentUserId;
   List<FamilyMember> get members;
 
   /// Filhos ativos (nao arquivados).

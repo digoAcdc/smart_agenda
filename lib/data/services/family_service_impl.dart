@@ -68,6 +68,8 @@ class FamilyServiceImpl extends GetxController implements IFamilyService {
   @override
   FamilyContext get context => _context.value;
   @override
+  String? get currentUserId => _ds.currentUserId;
+  @override
   List<FamilyMember> get members => _members;
   @override
   List<FamilyChild> get children =>

@@ -1,9 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
-import 'package:supabase_flutter/supabase_flutter.dart';
 import 'package:uuid/uuid.dart';
 
-import '../../core/config/supabase_config.dart';
 import '../../core/result/result.dart';
 import '../../core/routes/app_routes.dart';
 import '../../core/theme/design_tokens.dart';
@@ -37,9 +35,7 @@ class _FamilyPageState extends State<FamilyPage> {
     super.dispose();
   }
 
-  String? get _myUserId => SupabaseConfig.isConfigured
-      ? Supabase.instance.client.auth.currentUser?.id
-      : null;
+  String? get _myUserId => _family.currentUserId;
 
   @override
   void initState() {
@@ -661,6 +657,7 @@ class _FamilyPageState extends State<FamilyPage> {
       builder: (dialogContext) => StatefulBuilder(
         builder: (dialogContext, setLocal) => AlertDialog(
           title: const Text('Convidar para a Família'),
+          scrollable: true,
           content: Form(
             key: formKey,
             child: Column(
@@ -685,9 +682,15 @@ class _FamilyPageState extends State<FamilyPage> {
                       for (final r in FamilyRole.values)
                         RadioListTile<FamilyRole>(
                           contentPadding: EdgeInsets.zero,
+                          dense: true,
+                          visualDensity: VisualDensity.compact,
                           value: r,
                           title: Text(r.label),
-                          subtitle: Text(r.description),
+                          subtitle: Text(
+                            r.description,
+                            maxLines: 2,
+                            overflow: TextOverflow.ellipsis,
+                          ),
                         ),
                     ],
                   ),
@@ -746,6 +749,7 @@ class _FamilyPageState extends State<FamilyPage> {
           title: Text(
             child == null ? 'Adicionar filho' : 'Editar ${child.name}',
           ),
+          scrollable: true,
           content: Form(
             key: formKey,
             child: Column(
