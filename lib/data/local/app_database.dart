@@ -1,6 +1,7 @@
 import 'dart:convert';
 
 import 'package:drift/drift.dart';
+import 'package:flutter/foundation.dart' show visibleForTesting;
 import 'package:drift_flutter/drift_flutter.dart';
 
 part 'app_database.g.dart';
@@ -111,6 +112,7 @@ class ClassScheduleSlotsTable extends Table {
   TextColumn get familyId => text().nullable()();
   TextColumn get childId => text().nullable()();
   DateTimeColumn get deletedAt => dateTime().nullable()();
+  TextColumn get scheduleId => text().nullable()();
   DateTimeColumn get createdAt => dateTime()();
   DateTimeColumn get updatedAt => dateTime()();
 
@@ -147,6 +149,21 @@ class NoteChecklistItemsTable extends Table {
   Set<Column<Object>> get primaryKey => {id};
 }
 
+/// Grade com nome. Com filho = da Familia; sem filho = pessoal.
+class ClassSchedulesTable extends Table {
+  TextColumn get id => text()();
+  TextColumn get name => text()();
+  TextColumn get familyId => text().nullable()();
+  TextColumn get childId => text().nullable()();
+  TextColumn get syncState => text().withDefault(const Constant('pending'))();
+  DateTimeColumn get createdAt => dateTime()();
+  DateTimeColumn get updatedAt => dateTime()();
+  DateTimeColumn get deletedAt => dateTime().nullable()();
+
+  @override
+  Set<Column<Object>> get primaryKey => {id};
+}
+
 @DriftDatabase(
   tables: [
     AgendaItemsTable,
@@ -155,6 +172,7 @@ class NoteChecklistItemsTable extends Table {
     ClassGroupsTable,
     StudentsTable,
     ClassScheduleSlotsTable,
+    ClassSchedulesTable,
     NotesTable,
     NoteChecklistItemsTable,
   ],
@@ -164,7 +182,7 @@ class AppDatabase extends _$AppDatabase {
   AppDatabase([QueryExecutor? executor]) : super(executor ?? _openConnection());
 
   @override
-  int get schemaVersion => 8;
+  int get schemaVersion => 9;
 
   @override
   MigrationStrategy get migration => MigrationStrategy(
@@ -208,8 +226,40 @@ class AppDatabase extends _$AppDatabase {
             await m.addColumn(classScheduleSlotsTable, classScheduleSlotsTable.childId);
             await m.addColumn(classScheduleSlotsTable, classScheduleSlotsTable.deletedAt);
           }
+          if (from < 9) {
+            await m.createTable(classSchedulesTable);
+            await m.addColumn(classScheduleSlotsTable, classScheduleSlotsTable.scheduleId);
+            await migrateSlotsToNamedSchedules();
+          }
         },
       );
+
+  /// v9: aulas existentes ganham uma grade. Pessoal vira "Minha grade";
+  /// cada filho ganha a grade "Escola" (id igual ao da migration 021).
+  @visibleForTesting
+  Future<void> migrateSlotsToNamedSchedules() async {
+    final now = DateTime.now().millisecondsSinceEpoch ~/ 1000;
+    await customStatement('''
+      INSERT INTO class_schedules_table (id, name, family_id, child_id, sync_state, created_at, updated_at)
+      SELECT 'legacy-personal', 'Minha grade', NULL, NULL, 'pending', $now, $now
+      WHERE EXISTS (SELECT 1 FROM class_schedule_slots_table WHERE family_id IS NULL)
+    ''');
+    await customStatement('''
+      UPDATE class_schedule_slots_table
+      SET schedule_id = 'legacy-personal', sync_state = 'pending'
+      WHERE family_id IS NULL
+    ''');
+    await customStatement('''
+      INSERT OR IGNORE INTO class_schedules_table (id, name, family_id, child_id, sync_state, created_at, updated_at)
+      SELECT DISTINCT 'legacy-' || child_id, 'Escola', family_id, child_id, 'pending', $now, $now
+      FROM class_schedule_slots_table WHERE family_id IS NOT NULL
+    ''');
+    await customStatement('''
+      UPDATE class_schedule_slots_table
+      SET schedule_id = 'legacy-' || child_id, sync_state = 'pending'
+      WHERE family_id IS NOT NULL
+    ''');
+  }
 
   String encodeJson(Map<String, dynamic>? value) {
     if (value == null) return '';

@@ -115,9 +115,9 @@ class SyncEngineImpl implements ISyncService {
       changed |= await _pullItems(uid, SyncScope.personal(uid));
       changed |= await _pullGroups(uid, SyncScope.personal(uid));
       if (ctx.familyId != null) {
-        changed |= await _pushFamilySlots(uid, ctx);
+        changed |= await _pushFamilySchedules(uid, ctx);
         changed |= await _pullItems(uid, SyncScope.family(ctx.familyId!));
-        changed |= await _pullFamilySlots(uid, ctx.familyId!);
+        changed |= await _pullFamilySchedules(uid, ctx.familyId!);
       }
 
       if (hasPro) {
@@ -286,23 +286,55 @@ class SyncEngineImpl implements ISyncService {
   // Grade dos filhos (Familia)
   // ---------------------------------------------------------------------------
 
-  String _slotsCursorKey(String uid, String familyId) =>
-      '$_cursorPrefix${uid}_slots_family_$familyId';
+  String _familyCursorKey(String uid, String table, String familyId) =>
+      '$_cursorPrefix${uid}_${table}_family_$familyId';
 
-  Future<bool> _pushFamilySlots(String uid, FamilyContext ctx) async {
-    final pending = await _localSchedule.getPendingFamilySlots();
+  DateTime? _parseDate(Object? v) =>
+      v == null ? null : DateTime.parse(v as String).toLocal();
+
+  /// Envia grades e aulas dos filhos pendentes. Sem permissao, descarta a
+  /// alteracao local e forca baixar de novo a versao do servidor.
+  Future<bool> _pushFamilySchedules(String uid, FamilyContext ctx) async {
     var changed = false;
-    var resetCursor = false;
-    for (final row in pending) {
-      if (row.familyId != ctx.familyId || !ctx.canEditAgenda) {
-        // Sem permissao: descarta e baixa de novo a versao do servidor.
-        await _localSchedule.deleteLocalSlot(row.id);
-        resetCursor = changed = true;
+    var resetCursors = false;
+    bool allowed(String? familyId) =>
+        familyId == ctx.familyId && ctx.canEditAgenda;
+
+    for (final row in await _localSchedule.getPendingFamilySchedules()) {
+      if (!allowed(row.familyId)) {
+        await _localSchedule.deleteLocalSchedule(row.id);
+        resetCursors = changed = true;
         continue;
       }
       try {
-        await _remoteAgenda.upsertFamilySlot({
+        await _remoteAgenda.upsertFamilyRow('class_schedules', {
           'id': row.id,
+          'family_id': row.familyId,
+          'child_id': row.childId,
+          'name': row.name,
+          'created_at': row.createdAt.toUtc().toIso8601String(),
+          'deleted_at': row.deletedAt?.toUtc().toIso8601String(),
+        });
+        await _localSchedule.markScheduleSynced(row.id);
+      } on PostgrestException catch (e) {
+        debugPrint('[SyncEngine] grade ${row.id} recusada: ${e.code} ${e.message}');
+        if (e.code == '42501') {
+          await _localSchedule.deleteLocalSchedule(row.id);
+          resetCursors = changed = true;
+        }
+      }
+    }
+
+    for (final row in await _localSchedule.getPendingFamilySlots()) {
+      if (!allowed(row.familyId) || row.scheduleId == null) {
+        await _localSchedule.deleteLocalSlot(row.id);
+        resetCursors = changed = true;
+        continue;
+      }
+      try {
+        await _remoteAgenda.upsertFamilyRow('class_schedule_slots', {
+          'id': row.id,
+          'schedule_id': row.scheduleId,
           'family_id': row.familyId,
           'child_id': row.childId,
           'day_of_week': row.dayOfWeek,
@@ -317,30 +349,63 @@ class SyncEngineImpl implements ISyncService {
         });
         await _localSchedule.markSlotSynced(row.id);
       } on PostgrestException catch (e) {
-        debugPrint('[SyncEngine] slot ${row.id} recusado: ${e.code} ${e.message}');
-        if (e.code == '42501') {
+        debugPrint('[SyncEngine] aula ${row.id} recusada: ${e.code} ${e.message}');
+        if (e.code == '42501' || e.code == '23503' || e.code == '23514') {
           await _localSchedule.deleteLocalSlot(row.id);
-          resetCursor = changed = true;
+          resetCursors = changed = true;
         }
       }
     }
-    if (resetCursor && ctx.familyId != null) {
+
+    if (resetCursors && ctx.familyId != null) {
       final prefs = await SharedPreferences.getInstance();
-      await prefs.remove(_slotsCursorKey(uid, ctx.familyId!));
+      for (final table in ['class_schedules', 'class_schedule_slots']) {
+        await prefs.remove(_familyCursorKey(uid, table, ctx.familyId!));
+      }
     }
     return changed;
   }
 
-  Future<bool> _pullFamilySlots(String uid, String familyId) async {
+  Future<bool> _pullFamilySchedules(String uid, String familyId) async {
     final prefs = await SharedPreferences.getInstance();
-    final key = _slotsCursorKey(uid, familyId);
-    final since = prefs.getString(key);
-    final changes = await _remoteAgenda.fetchFamilySlotChanges(familyId, since: since);
-    for (final r in changes.rows) {
-      DateTime? parse(Object? v) => v == null ? null : DateTime.parse(v as String).toLocal();
+    var changed = false;
+
+    final schedulesKey = _familyCursorKey(uid, 'class_schedules', familyId);
+    final schedules = await _remoteAgenda.fetchFamilyChanges(
+      'class_schedules',
+      familyId,
+      since: prefs.getString(schedulesKey),
+    );
+    for (final r in schedules.rows) {
+      await _localSchedule.applyRemoteFamilySchedule(
+        ClassSchedulesTableCompanion(
+          id: Value(r['id'] as String),
+          name: Value(r['name'] as String),
+          familyId: Value(r['family_id'] as String?),
+          childId: Value(r['child_id'] as String?),
+          createdAt: Value(_parseDate(r['created_at'])!),
+          updatedAt: Value(_parseDate(r['updated_at'])!),
+          deletedAt: Value(_parseDate(r['deleted_at'])),
+        ),
+        deleted: r['deleted_at'] != null,
+      );
+    }
+    if (schedules.maxUpdatedAt != null) {
+      await prefs.setString(schedulesKey, schedules.maxUpdatedAt!);
+    }
+    changed |= schedules.rows.isNotEmpty;
+
+    final slotsKey = _familyCursorKey(uid, 'class_schedule_slots', familyId);
+    final slots = await _remoteAgenda.fetchFamilyChanges(
+      'class_schedule_slots',
+      familyId,
+      since: prefs.getString(slotsKey),
+    );
+    for (final r in slots.rows) {
       await _localSchedule.applyRemoteFamilySlot(
         ClassScheduleSlotsTableCompanion(
           id: Value(r['id'] as String),
+          scheduleId: Value(r['schedule_id'] as String?),
           familyId: Value(r['family_id'] as String?),
           childId: Value(r['child_id'] as String?),
           dayOfWeek: Value(r['day_of_week'] as int),
@@ -350,17 +415,17 @@ class SyncEngineImpl implements ISyncService {
           professorName: Value(r['professor_name'] as String?),
           professorEmail: Value(r['professor_email'] as String?),
           professorPhone: Value(r['professor_phone'] as String?),
-          createdAt: Value(parse(r['created_at'])!),
-          updatedAt: Value(parse(r['updated_at'])!),
-          deletedAt: Value(parse(r['deleted_at'])),
+          createdAt: Value(_parseDate(r['created_at'])!),
+          updatedAt: Value(_parseDate(r['updated_at'])!),
+          deletedAt: Value(_parseDate(r['deleted_at'])),
         ),
         deleted: r['deleted_at'] != null,
       );
     }
-    if (changes.maxUpdatedAt != null && changes.maxUpdatedAt != since) {
-      await prefs.setString(key, changes.maxUpdatedAt!);
+    if (slots.maxUpdatedAt != null) {
+      await prefs.setString(slotsKey, slots.maxUpdatedAt!);
     }
-    return changes.rows.isNotEmpty;
+    return changed || slots.rows.isNotEmpty;
   }
 
   // ---------------------------------------------------------------------------
@@ -410,7 +475,7 @@ class SyncEngineImpl implements ISyncService {
     }
 
     if (familyId != null) {
-      for (final table in ['agenda_items', 'class_schedule_slots']) {
+      for (final table in ['agenda_items', 'class_schedules', 'class_schedule_slots']) {
         channel.onPostgresChanges(
           event: PostgresChangeEvent.all,
           schema: 'public',
@@ -454,29 +519,46 @@ class SyncEngineImpl implements ISyncService {
   // apagar a nuvem a partir de um aparelho sem dados.
   // ---------------------------------------------------------------------------
 
+  /// Grades pessoais (Pro): substituicao completa a partir do aparelho.
   Future<void> _pushClassSchedule(String uid) async {
-    final allSlots = await _localSchedule.getAllPersonalSlots();
-    final pending = await _localSchedule.getPendingSlots();
-    if (allSlots.isEmpty || pending.isEmpty) return;
+    if (!await _localSchedule.hasPersonalPending()) return;
+    final schedules = await _localSchedule.getAllPersonalSchedules();
+    final slots = await _localSchedule.getAllPersonalSlots();
+    // Nunca apaga a nuvem a partir de um aparelho sem grades.
+    if (schedules.isEmpty) return;
 
+    // Aulas com schedule_id saem em cascata; linhas antigas sem grade tambem.
+    await _client.from('class_schedules').delete().eq('owner_user_id', uid);
     await _client.from('class_schedule_slots').delete().eq('user_id', uid);
-    for (final row in allSlots) {
-      await _client.from('class_schedule_slots').insert({
-        'id': row.id,
-        'user_id': uid,
-        'day_of_week': row.dayOfWeek,
-        'start_minutes': row.startMinutes,
-        'end_minutes': row.endMinutes,
-        'subject': row.subject,
-        'professor_name': row.professorName,
-        'professor_email': row.professorEmail,
-        'professor_phone': row.professorPhone,
-        'created_at': row.createdAt.toIso8601String(),
-        'updated_at': row.updatedAt.toIso8601String(),
-      });
-    }
-    await _localSchedule.markSlotsSynced();
-    debugPrint('[SyncEngine] ${allSlots.length} slots sincronizados');
+    await _client.from('class_schedules').insert([
+      for (final g in schedules)
+        {
+          'id': g.id,
+          'owner_user_id': uid,
+          'name': g.name,
+          'created_at': g.createdAt.toUtc().toIso8601String(),
+        },
+    ]);
+    final scheduleIds = schedules.map((g) => g.id).toSet();
+    final rows = [
+      for (final row in slots.where((r) => scheduleIds.contains(r.scheduleId)))
+        {
+          'id': row.id,
+          'user_id': uid,
+          'schedule_id': row.scheduleId,
+          'day_of_week': row.dayOfWeek,
+          'start_minutes': row.startMinutes,
+          'end_minutes': row.endMinutes,
+          'subject': row.subject,
+          'professor_name': row.professorName,
+          'professor_email': row.professorEmail,
+          'professor_phone': row.professorPhone,
+          'created_at': row.createdAt.toUtc().toIso8601String(),
+        },
+    ];
+    if (rows.isNotEmpty) await _client.from('class_schedule_slots').insert(rows);
+    await _localSchedule.markPersonalSynced();
+    debugPrint('[SyncEngine] ${schedules.length} grades pessoais sincronizadas');
   }
 
   Future<void> _pushClassGroups(String uid) async {

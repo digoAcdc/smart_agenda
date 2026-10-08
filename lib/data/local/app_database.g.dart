@@ -3780,6 +3780,17 @@ class $ClassScheduleSlotsTableTable extends ClassScheduleSlotsTable
     type: DriftSqlType.dateTime,
     requiredDuringInsert: false,
   );
+  static const VerificationMeta _scheduleIdMeta = const VerificationMeta(
+    'scheduleId',
+  );
+  @override
+  late final GeneratedColumn<String> scheduleId = GeneratedColumn<String>(
+    'schedule_id',
+    aliasedName,
+    true,
+    type: DriftSqlType.string,
+    requiredDuringInsert: false,
+  );
   static const VerificationMeta _createdAtMeta = const VerificationMeta(
     'createdAt',
   );
@@ -3816,6 +3827,7 @@ class $ClassScheduleSlotsTableTable extends ClassScheduleSlotsTable
     familyId,
     childId,
     deletedAt,
+    scheduleId,
     createdAt,
     updatedAt,
   ];
@@ -3920,6 +3932,12 @@ class $ClassScheduleSlotsTableTable extends ClassScheduleSlotsTable
         deletedAt.isAcceptableOrUnknown(data['deleted_at']!, _deletedAtMeta),
       );
     }
+    if (data.containsKey('schedule_id')) {
+      context.handle(
+        _scheduleIdMeta,
+        scheduleId.isAcceptableOrUnknown(data['schedule_id']!, _scheduleIdMeta),
+      );
+    }
     if (data.containsKey('created_at')) {
       context.handle(
         _createdAtMeta,
@@ -3996,6 +4014,10 @@ class $ClassScheduleSlotsTableTable extends ClassScheduleSlotsTable
         DriftSqlType.dateTime,
         data['${effectivePrefix}deleted_at'],
       ),
+      scheduleId: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}schedule_id'],
+      ),
       createdAt: attachedDatabase.typeMapping.read(
         DriftSqlType.dateTime,
         data['${effectivePrefix}created_at'],
@@ -4027,6 +4049,7 @@ class ClassScheduleSlotsTableData extends DataClass
   final String? familyId;
   final String? childId;
   final DateTime? deletedAt;
+  final String? scheduleId;
   final DateTime createdAt;
   final DateTime updatedAt;
   const ClassScheduleSlotsTableData({
@@ -4042,6 +4065,7 @@ class ClassScheduleSlotsTableData extends DataClass
     this.familyId,
     this.childId,
     this.deletedAt,
+    this.scheduleId,
     required this.createdAt,
     required this.updatedAt,
   });
@@ -4073,6 +4097,9 @@ class ClassScheduleSlotsTableData extends DataClass
     }
     if (!nullToAbsent || deletedAt != null) {
       map['deleted_at'] = Variable<DateTime>(deletedAt);
+    }
+    if (!nullToAbsent || scheduleId != null) {
+      map['schedule_id'] = Variable<String>(scheduleId);
     }
     map['created_at'] = Variable<DateTime>(createdAt);
     map['updated_at'] = Variable<DateTime>(updatedAt);
@@ -4107,6 +4134,9 @@ class ClassScheduleSlotsTableData extends DataClass
       deletedAt: deletedAt == null && nullToAbsent
           ? const Value.absent()
           : Value(deletedAt),
+      scheduleId: scheduleId == null && nullToAbsent
+          ? const Value.absent()
+          : Value(scheduleId),
       createdAt: Value(createdAt),
       updatedAt: Value(updatedAt),
     );
@@ -4130,6 +4160,7 @@ class ClassScheduleSlotsTableData extends DataClass
       familyId: serializer.fromJson<String?>(json['familyId']),
       childId: serializer.fromJson<String?>(json['childId']),
       deletedAt: serializer.fromJson<DateTime?>(json['deletedAt']),
+      scheduleId: serializer.fromJson<String?>(json['scheduleId']),
       createdAt: serializer.fromJson<DateTime>(json['createdAt']),
       updatedAt: serializer.fromJson<DateTime>(json['updatedAt']),
     );
@@ -4150,6 +4181,7 @@ class ClassScheduleSlotsTableData extends DataClass
       'familyId': serializer.toJson<String?>(familyId),
       'childId': serializer.toJson<String?>(childId),
       'deletedAt': serializer.toJson<DateTime?>(deletedAt),
+      'scheduleId': serializer.toJson<String?>(scheduleId),
       'createdAt': serializer.toJson<DateTime>(createdAt),
       'updatedAt': serializer.toJson<DateTime>(updatedAt),
     };
@@ -4168,6 +4200,7 @@ class ClassScheduleSlotsTableData extends DataClass
     Value<String?> familyId = const Value.absent(),
     Value<String?> childId = const Value.absent(),
     Value<DateTime?> deletedAt = const Value.absent(),
+    Value<String?> scheduleId = const Value.absent(),
     DateTime? createdAt,
     DateTime? updatedAt,
   }) => ClassScheduleSlotsTableData(
@@ -4189,6 +4222,7 @@ class ClassScheduleSlotsTableData extends DataClass
     familyId: familyId.present ? familyId.value : this.familyId,
     childId: childId.present ? childId.value : this.childId,
     deletedAt: deletedAt.present ? deletedAt.value : this.deletedAt,
+    scheduleId: scheduleId.present ? scheduleId.value : this.scheduleId,
     createdAt: createdAt ?? this.createdAt,
     updatedAt: updatedAt ?? this.updatedAt,
   );
@@ -4218,6 +4252,9 @@ class ClassScheduleSlotsTableData extends DataClass
       familyId: data.familyId.present ? data.familyId.value : this.familyId,
       childId: data.childId.present ? data.childId.value : this.childId,
       deletedAt: data.deletedAt.present ? data.deletedAt.value : this.deletedAt,
+      scheduleId: data.scheduleId.present
+          ? data.scheduleId.value
+          : this.scheduleId,
       createdAt: data.createdAt.present ? data.createdAt.value : this.createdAt,
       updatedAt: data.updatedAt.present ? data.updatedAt.value : this.updatedAt,
     );
@@ -4238,6 +4275,7 @@ class ClassScheduleSlotsTableData extends DataClass
           ..write('familyId: $familyId, ')
           ..write('childId: $childId, ')
           ..write('deletedAt: $deletedAt, ')
+          ..write('scheduleId: $scheduleId, ')
           ..write('createdAt: $createdAt, ')
           ..write('updatedAt: $updatedAt')
           ..write(')'))
@@ -4258,6 +4296,7 @@ class ClassScheduleSlotsTableData extends DataClass
     familyId,
     childId,
     deletedAt,
+    scheduleId,
     createdAt,
     updatedAt,
   );
@@ -4277,6 +4316,7 @@ class ClassScheduleSlotsTableData extends DataClass
           other.familyId == this.familyId &&
           other.childId == this.childId &&
           other.deletedAt == this.deletedAt &&
+          other.scheduleId == this.scheduleId &&
           other.createdAt == this.createdAt &&
           other.updatedAt == this.updatedAt);
 }
@@ -4295,6 +4335,7 @@ class ClassScheduleSlotsTableCompanion
   final Value<String?> familyId;
   final Value<String?> childId;
   final Value<DateTime?> deletedAt;
+  final Value<String?> scheduleId;
   final Value<DateTime> createdAt;
   final Value<DateTime> updatedAt;
   final Value<int> rowid;
@@ -4311,6 +4352,7 @@ class ClassScheduleSlotsTableCompanion
     this.familyId = const Value.absent(),
     this.childId = const Value.absent(),
     this.deletedAt = const Value.absent(),
+    this.scheduleId = const Value.absent(),
     this.createdAt = const Value.absent(),
     this.updatedAt = const Value.absent(),
     this.rowid = const Value.absent(),
@@ -4328,6 +4370,7 @@ class ClassScheduleSlotsTableCompanion
     this.familyId = const Value.absent(),
     this.childId = const Value.absent(),
     this.deletedAt = const Value.absent(),
+    this.scheduleId = const Value.absent(),
     required DateTime createdAt,
     required DateTime updatedAt,
     this.rowid = const Value.absent(),
@@ -4350,6 +4393,7 @@ class ClassScheduleSlotsTableCompanion
     Expression<String>? familyId,
     Expression<String>? childId,
     Expression<DateTime>? deletedAt,
+    Expression<String>? scheduleId,
     Expression<DateTime>? createdAt,
     Expression<DateTime>? updatedAt,
     Expression<int>? rowid,
@@ -4367,6 +4411,7 @@ class ClassScheduleSlotsTableCompanion
       if (familyId != null) 'family_id': familyId,
       if (childId != null) 'child_id': childId,
       if (deletedAt != null) 'deleted_at': deletedAt,
+      if (scheduleId != null) 'schedule_id': scheduleId,
       if (createdAt != null) 'created_at': createdAt,
       if (updatedAt != null) 'updated_at': updatedAt,
       if (rowid != null) 'rowid': rowid,
@@ -4386,6 +4431,7 @@ class ClassScheduleSlotsTableCompanion
     Value<String?>? familyId,
     Value<String?>? childId,
     Value<DateTime?>? deletedAt,
+    Value<String?>? scheduleId,
     Value<DateTime>? createdAt,
     Value<DateTime>? updatedAt,
     Value<int>? rowid,
@@ -4403,6 +4449,7 @@ class ClassScheduleSlotsTableCompanion
       familyId: familyId ?? this.familyId,
       childId: childId ?? this.childId,
       deletedAt: deletedAt ?? this.deletedAt,
+      scheduleId: scheduleId ?? this.scheduleId,
       createdAt: createdAt ?? this.createdAt,
       updatedAt: updatedAt ?? this.updatedAt,
       rowid: rowid ?? this.rowid,
@@ -4448,6 +4495,9 @@ class ClassScheduleSlotsTableCompanion
     if (deletedAt.present) {
       map['deleted_at'] = Variable<DateTime>(deletedAt.value);
     }
+    if (scheduleId.present) {
+      map['schedule_id'] = Variable<String>(scheduleId.value);
+    }
     if (createdAt.present) {
       map['created_at'] = Variable<DateTime>(createdAt.value);
     }
@@ -4475,8 +4525,525 @@ class ClassScheduleSlotsTableCompanion
           ..write('familyId: $familyId, ')
           ..write('childId: $childId, ')
           ..write('deletedAt: $deletedAt, ')
+          ..write('scheduleId: $scheduleId, ')
           ..write('createdAt: $createdAt, ')
           ..write('updatedAt: $updatedAt, ')
+          ..write('rowid: $rowid')
+          ..write(')'))
+        .toString();
+  }
+}
+
+class $ClassSchedulesTableTable extends ClassSchedulesTable
+    with TableInfo<$ClassSchedulesTableTable, ClassSchedulesTableData> {
+  @override
+  final GeneratedDatabase attachedDatabase;
+  final String? _alias;
+  $ClassSchedulesTableTable(this.attachedDatabase, [this._alias]);
+  static const VerificationMeta _idMeta = const VerificationMeta('id');
+  @override
+  late final GeneratedColumn<String> id = GeneratedColumn<String>(
+    'id',
+    aliasedName,
+    false,
+    type: DriftSqlType.string,
+    requiredDuringInsert: true,
+  );
+  static const VerificationMeta _nameMeta = const VerificationMeta('name');
+  @override
+  late final GeneratedColumn<String> name = GeneratedColumn<String>(
+    'name',
+    aliasedName,
+    false,
+    type: DriftSqlType.string,
+    requiredDuringInsert: true,
+  );
+  static const VerificationMeta _familyIdMeta = const VerificationMeta(
+    'familyId',
+  );
+  @override
+  late final GeneratedColumn<String> familyId = GeneratedColumn<String>(
+    'family_id',
+    aliasedName,
+    true,
+    type: DriftSqlType.string,
+    requiredDuringInsert: false,
+  );
+  static const VerificationMeta _childIdMeta = const VerificationMeta(
+    'childId',
+  );
+  @override
+  late final GeneratedColumn<String> childId = GeneratedColumn<String>(
+    'child_id',
+    aliasedName,
+    true,
+    type: DriftSqlType.string,
+    requiredDuringInsert: false,
+  );
+  static const VerificationMeta _syncStateMeta = const VerificationMeta(
+    'syncState',
+  );
+  @override
+  late final GeneratedColumn<String> syncState = GeneratedColumn<String>(
+    'sync_state',
+    aliasedName,
+    false,
+    type: DriftSqlType.string,
+    requiredDuringInsert: false,
+    defaultValue: const Constant('pending'),
+  );
+  static const VerificationMeta _createdAtMeta = const VerificationMeta(
+    'createdAt',
+  );
+  @override
+  late final GeneratedColumn<DateTime> createdAt = GeneratedColumn<DateTime>(
+    'created_at',
+    aliasedName,
+    false,
+    type: DriftSqlType.dateTime,
+    requiredDuringInsert: true,
+  );
+  static const VerificationMeta _updatedAtMeta = const VerificationMeta(
+    'updatedAt',
+  );
+  @override
+  late final GeneratedColumn<DateTime> updatedAt = GeneratedColumn<DateTime>(
+    'updated_at',
+    aliasedName,
+    false,
+    type: DriftSqlType.dateTime,
+    requiredDuringInsert: true,
+  );
+  static const VerificationMeta _deletedAtMeta = const VerificationMeta(
+    'deletedAt',
+  );
+  @override
+  late final GeneratedColumn<DateTime> deletedAt = GeneratedColumn<DateTime>(
+    'deleted_at',
+    aliasedName,
+    true,
+    type: DriftSqlType.dateTime,
+    requiredDuringInsert: false,
+  );
+  @override
+  List<GeneratedColumn> get $columns => [
+    id,
+    name,
+    familyId,
+    childId,
+    syncState,
+    createdAt,
+    updatedAt,
+    deletedAt,
+  ];
+  @override
+  String get aliasedName => _alias ?? actualTableName;
+  @override
+  String get actualTableName => $name;
+  static const String $name = 'class_schedules_table';
+  @override
+  VerificationContext validateIntegrity(
+    Insertable<ClassSchedulesTableData> instance, {
+    bool isInserting = false,
+  }) {
+    final context = VerificationContext();
+    final data = instance.toColumns(true);
+    if (data.containsKey('id')) {
+      context.handle(_idMeta, id.isAcceptableOrUnknown(data['id']!, _idMeta));
+    } else if (isInserting) {
+      context.missing(_idMeta);
+    }
+    if (data.containsKey('name')) {
+      context.handle(
+        _nameMeta,
+        name.isAcceptableOrUnknown(data['name']!, _nameMeta),
+      );
+    } else if (isInserting) {
+      context.missing(_nameMeta);
+    }
+    if (data.containsKey('family_id')) {
+      context.handle(
+        _familyIdMeta,
+        familyId.isAcceptableOrUnknown(data['family_id']!, _familyIdMeta),
+      );
+    }
+    if (data.containsKey('child_id')) {
+      context.handle(
+        _childIdMeta,
+        childId.isAcceptableOrUnknown(data['child_id']!, _childIdMeta),
+      );
+    }
+    if (data.containsKey('sync_state')) {
+      context.handle(
+        _syncStateMeta,
+        syncState.isAcceptableOrUnknown(data['sync_state']!, _syncStateMeta),
+      );
+    }
+    if (data.containsKey('created_at')) {
+      context.handle(
+        _createdAtMeta,
+        createdAt.isAcceptableOrUnknown(data['created_at']!, _createdAtMeta),
+      );
+    } else if (isInserting) {
+      context.missing(_createdAtMeta);
+    }
+    if (data.containsKey('updated_at')) {
+      context.handle(
+        _updatedAtMeta,
+        updatedAt.isAcceptableOrUnknown(data['updated_at']!, _updatedAtMeta),
+      );
+    } else if (isInserting) {
+      context.missing(_updatedAtMeta);
+    }
+    if (data.containsKey('deleted_at')) {
+      context.handle(
+        _deletedAtMeta,
+        deletedAt.isAcceptableOrUnknown(data['deleted_at']!, _deletedAtMeta),
+      );
+    }
+    return context;
+  }
+
+  @override
+  Set<GeneratedColumn> get $primaryKey => {id};
+  @override
+  ClassSchedulesTableData map(
+    Map<String, dynamic> data, {
+    String? tablePrefix,
+  }) {
+    final effectivePrefix = tablePrefix != null ? '$tablePrefix.' : '';
+    return ClassSchedulesTableData(
+      id: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}id'],
+      )!,
+      name: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}name'],
+      )!,
+      familyId: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}family_id'],
+      ),
+      childId: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}child_id'],
+      ),
+      syncState: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}sync_state'],
+      )!,
+      createdAt: attachedDatabase.typeMapping.read(
+        DriftSqlType.dateTime,
+        data['${effectivePrefix}created_at'],
+      )!,
+      updatedAt: attachedDatabase.typeMapping.read(
+        DriftSqlType.dateTime,
+        data['${effectivePrefix}updated_at'],
+      )!,
+      deletedAt: attachedDatabase.typeMapping.read(
+        DriftSqlType.dateTime,
+        data['${effectivePrefix}deleted_at'],
+      ),
+    );
+  }
+
+  @override
+  $ClassSchedulesTableTable createAlias(String alias) {
+    return $ClassSchedulesTableTable(attachedDatabase, alias);
+  }
+}
+
+class ClassSchedulesTableData extends DataClass
+    implements Insertable<ClassSchedulesTableData> {
+  final String id;
+  final String name;
+  final String? familyId;
+  final String? childId;
+  final String syncState;
+  final DateTime createdAt;
+  final DateTime updatedAt;
+  final DateTime? deletedAt;
+  const ClassSchedulesTableData({
+    required this.id,
+    required this.name,
+    this.familyId,
+    this.childId,
+    required this.syncState,
+    required this.createdAt,
+    required this.updatedAt,
+    this.deletedAt,
+  });
+  @override
+  Map<String, Expression> toColumns(bool nullToAbsent) {
+    final map = <String, Expression>{};
+    map['id'] = Variable<String>(id);
+    map['name'] = Variable<String>(name);
+    if (!nullToAbsent || familyId != null) {
+      map['family_id'] = Variable<String>(familyId);
+    }
+    if (!nullToAbsent || childId != null) {
+      map['child_id'] = Variable<String>(childId);
+    }
+    map['sync_state'] = Variable<String>(syncState);
+    map['created_at'] = Variable<DateTime>(createdAt);
+    map['updated_at'] = Variable<DateTime>(updatedAt);
+    if (!nullToAbsent || deletedAt != null) {
+      map['deleted_at'] = Variable<DateTime>(deletedAt);
+    }
+    return map;
+  }
+
+  ClassSchedulesTableCompanion toCompanion(bool nullToAbsent) {
+    return ClassSchedulesTableCompanion(
+      id: Value(id),
+      name: Value(name),
+      familyId: familyId == null && nullToAbsent
+          ? const Value.absent()
+          : Value(familyId),
+      childId: childId == null && nullToAbsent
+          ? const Value.absent()
+          : Value(childId),
+      syncState: Value(syncState),
+      createdAt: Value(createdAt),
+      updatedAt: Value(updatedAt),
+      deletedAt: deletedAt == null && nullToAbsent
+          ? const Value.absent()
+          : Value(deletedAt),
+    );
+  }
+
+  factory ClassSchedulesTableData.fromJson(
+    Map<String, dynamic> json, {
+    ValueSerializer? serializer,
+  }) {
+    serializer ??= driftRuntimeOptions.defaultSerializer;
+    return ClassSchedulesTableData(
+      id: serializer.fromJson<String>(json['id']),
+      name: serializer.fromJson<String>(json['name']),
+      familyId: serializer.fromJson<String?>(json['familyId']),
+      childId: serializer.fromJson<String?>(json['childId']),
+      syncState: serializer.fromJson<String>(json['syncState']),
+      createdAt: serializer.fromJson<DateTime>(json['createdAt']),
+      updatedAt: serializer.fromJson<DateTime>(json['updatedAt']),
+      deletedAt: serializer.fromJson<DateTime?>(json['deletedAt']),
+    );
+  }
+  @override
+  Map<String, dynamic> toJson({ValueSerializer? serializer}) {
+    serializer ??= driftRuntimeOptions.defaultSerializer;
+    return <String, dynamic>{
+      'id': serializer.toJson<String>(id),
+      'name': serializer.toJson<String>(name),
+      'familyId': serializer.toJson<String?>(familyId),
+      'childId': serializer.toJson<String?>(childId),
+      'syncState': serializer.toJson<String>(syncState),
+      'createdAt': serializer.toJson<DateTime>(createdAt),
+      'updatedAt': serializer.toJson<DateTime>(updatedAt),
+      'deletedAt': serializer.toJson<DateTime?>(deletedAt),
+    };
+  }
+
+  ClassSchedulesTableData copyWith({
+    String? id,
+    String? name,
+    Value<String?> familyId = const Value.absent(),
+    Value<String?> childId = const Value.absent(),
+    String? syncState,
+    DateTime? createdAt,
+    DateTime? updatedAt,
+    Value<DateTime?> deletedAt = const Value.absent(),
+  }) => ClassSchedulesTableData(
+    id: id ?? this.id,
+    name: name ?? this.name,
+    familyId: familyId.present ? familyId.value : this.familyId,
+    childId: childId.present ? childId.value : this.childId,
+    syncState: syncState ?? this.syncState,
+    createdAt: createdAt ?? this.createdAt,
+    updatedAt: updatedAt ?? this.updatedAt,
+    deletedAt: deletedAt.present ? deletedAt.value : this.deletedAt,
+  );
+  ClassSchedulesTableData copyWithCompanion(ClassSchedulesTableCompanion data) {
+    return ClassSchedulesTableData(
+      id: data.id.present ? data.id.value : this.id,
+      name: data.name.present ? data.name.value : this.name,
+      familyId: data.familyId.present ? data.familyId.value : this.familyId,
+      childId: data.childId.present ? data.childId.value : this.childId,
+      syncState: data.syncState.present ? data.syncState.value : this.syncState,
+      createdAt: data.createdAt.present ? data.createdAt.value : this.createdAt,
+      updatedAt: data.updatedAt.present ? data.updatedAt.value : this.updatedAt,
+      deletedAt: data.deletedAt.present ? data.deletedAt.value : this.deletedAt,
+    );
+  }
+
+  @override
+  String toString() {
+    return (StringBuffer('ClassSchedulesTableData(')
+          ..write('id: $id, ')
+          ..write('name: $name, ')
+          ..write('familyId: $familyId, ')
+          ..write('childId: $childId, ')
+          ..write('syncState: $syncState, ')
+          ..write('createdAt: $createdAt, ')
+          ..write('updatedAt: $updatedAt, ')
+          ..write('deletedAt: $deletedAt')
+          ..write(')'))
+        .toString();
+  }
+
+  @override
+  int get hashCode => Object.hash(
+    id,
+    name,
+    familyId,
+    childId,
+    syncState,
+    createdAt,
+    updatedAt,
+    deletedAt,
+  );
+  @override
+  bool operator ==(Object other) =>
+      identical(this, other) ||
+      (other is ClassSchedulesTableData &&
+          other.id == this.id &&
+          other.name == this.name &&
+          other.familyId == this.familyId &&
+          other.childId == this.childId &&
+          other.syncState == this.syncState &&
+          other.createdAt == this.createdAt &&
+          other.updatedAt == this.updatedAt &&
+          other.deletedAt == this.deletedAt);
+}
+
+class ClassSchedulesTableCompanion
+    extends UpdateCompanion<ClassSchedulesTableData> {
+  final Value<String> id;
+  final Value<String> name;
+  final Value<String?> familyId;
+  final Value<String?> childId;
+  final Value<String> syncState;
+  final Value<DateTime> createdAt;
+  final Value<DateTime> updatedAt;
+  final Value<DateTime?> deletedAt;
+  final Value<int> rowid;
+  const ClassSchedulesTableCompanion({
+    this.id = const Value.absent(),
+    this.name = const Value.absent(),
+    this.familyId = const Value.absent(),
+    this.childId = const Value.absent(),
+    this.syncState = const Value.absent(),
+    this.createdAt = const Value.absent(),
+    this.updatedAt = const Value.absent(),
+    this.deletedAt = const Value.absent(),
+    this.rowid = const Value.absent(),
+  });
+  ClassSchedulesTableCompanion.insert({
+    required String id,
+    required String name,
+    this.familyId = const Value.absent(),
+    this.childId = const Value.absent(),
+    this.syncState = const Value.absent(),
+    required DateTime createdAt,
+    required DateTime updatedAt,
+    this.deletedAt = const Value.absent(),
+    this.rowid = const Value.absent(),
+  }) : id = Value(id),
+       name = Value(name),
+       createdAt = Value(createdAt),
+       updatedAt = Value(updatedAt);
+  static Insertable<ClassSchedulesTableData> custom({
+    Expression<String>? id,
+    Expression<String>? name,
+    Expression<String>? familyId,
+    Expression<String>? childId,
+    Expression<String>? syncState,
+    Expression<DateTime>? createdAt,
+    Expression<DateTime>? updatedAt,
+    Expression<DateTime>? deletedAt,
+    Expression<int>? rowid,
+  }) {
+    return RawValuesInsertable({
+      if (id != null) 'id': id,
+      if (name != null) 'name': name,
+      if (familyId != null) 'family_id': familyId,
+      if (childId != null) 'child_id': childId,
+      if (syncState != null) 'sync_state': syncState,
+      if (createdAt != null) 'created_at': createdAt,
+      if (updatedAt != null) 'updated_at': updatedAt,
+      if (deletedAt != null) 'deleted_at': deletedAt,
+      if (rowid != null) 'rowid': rowid,
+    });
+  }
+
+  ClassSchedulesTableCompanion copyWith({
+    Value<String>? id,
+    Value<String>? name,
+    Value<String?>? familyId,
+    Value<String?>? childId,
+    Value<String>? syncState,
+    Value<DateTime>? createdAt,
+    Value<DateTime>? updatedAt,
+    Value<DateTime?>? deletedAt,
+    Value<int>? rowid,
+  }) {
+    return ClassSchedulesTableCompanion(
+      id: id ?? this.id,
+      name: name ?? this.name,
+      familyId: familyId ?? this.familyId,
+      childId: childId ?? this.childId,
+      syncState: syncState ?? this.syncState,
+      createdAt: createdAt ?? this.createdAt,
+      updatedAt: updatedAt ?? this.updatedAt,
+      deletedAt: deletedAt ?? this.deletedAt,
+      rowid: rowid ?? this.rowid,
+    );
+  }
+
+  @override
+  Map<String, Expression> toColumns(bool nullToAbsent) {
+    final map = <String, Expression>{};
+    if (id.present) {
+      map['id'] = Variable<String>(id.value);
+    }
+    if (name.present) {
+      map['name'] = Variable<String>(name.value);
+    }
+    if (familyId.present) {
+      map['family_id'] = Variable<String>(familyId.value);
+    }
+    if (childId.present) {
+      map['child_id'] = Variable<String>(childId.value);
+    }
+    if (syncState.present) {
+      map['sync_state'] = Variable<String>(syncState.value);
+    }
+    if (createdAt.present) {
+      map['created_at'] = Variable<DateTime>(createdAt.value);
+    }
+    if (updatedAt.present) {
+      map['updated_at'] = Variable<DateTime>(updatedAt.value);
+    }
+    if (deletedAt.present) {
+      map['deleted_at'] = Variable<DateTime>(deletedAt.value);
+    }
+    if (rowid.present) {
+      map['rowid'] = Variable<int>(rowid.value);
+    }
+    return map;
+  }
+
+  @override
+  String toString() {
+    return (StringBuffer('ClassSchedulesTableCompanion(')
+          ..write('id: $id, ')
+          ..write('name: $name, ')
+          ..write('familyId: $familyId, ')
+          ..write('childId: $childId, ')
+          ..write('syncState: $syncState, ')
+          ..write('createdAt: $createdAt, ')
+          ..write('updatedAt: $updatedAt, ')
+          ..write('deletedAt: $deletedAt, ')
           ..write('rowid: $rowid')
           ..write(')'))
         .toString();
@@ -5580,6 +6147,8 @@ abstract class _$AppDatabase extends GeneratedDatabase {
   late final $StudentsTableTable studentsTable = $StudentsTableTable(this);
   late final $ClassScheduleSlotsTableTable classScheduleSlotsTable =
       $ClassScheduleSlotsTableTable(this);
+  late final $ClassSchedulesTableTable classSchedulesTable =
+      $ClassSchedulesTableTable(this);
   late final $NotesTableTable notesTable = $NotesTableTable(this);
   late final $NoteChecklistItemsTableTable noteChecklistItemsTable =
       $NoteChecklistItemsTableTable(this);
@@ -5594,6 +6163,7 @@ abstract class _$AppDatabase extends GeneratedDatabase {
     classGroupsTable,
     studentsTable,
     classScheduleSlotsTable,
+    classSchedulesTable,
     notesTable,
     noteChecklistItemsTable,
   ];
@@ -7372,6 +7942,7 @@ typedef $$ClassScheduleSlotsTableTableCreateCompanionBuilder =
       Value<String?> familyId,
       Value<String?> childId,
       Value<DateTime?> deletedAt,
+      Value<String?> scheduleId,
       required DateTime createdAt,
       required DateTime updatedAt,
       Value<int> rowid,
@@ -7390,6 +7961,7 @@ typedef $$ClassScheduleSlotsTableTableUpdateCompanionBuilder =
       Value<String?> familyId,
       Value<String?> childId,
       Value<DateTime?> deletedAt,
+      Value<String?> scheduleId,
       Value<DateTime> createdAt,
       Value<DateTime> updatedAt,
       Value<int> rowid,
@@ -7461,6 +8033,11 @@ class $$ClassScheduleSlotsTableTableFilterComposer
 
   ColumnFilters<DateTime> get deletedAt => $composableBuilder(
     column: $table.deletedAt,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get scheduleId => $composableBuilder(
+    column: $table.scheduleId,
     builder: (column) => ColumnFilters(column),
   );
 
@@ -7544,6 +8121,11 @@ class $$ClassScheduleSlotsTableTableOrderingComposer
     builder: (column) => ColumnOrderings(column),
   );
 
+  ColumnOrderings<String> get scheduleId => $composableBuilder(
+    column: $table.scheduleId,
+    builder: (column) => ColumnOrderings(column),
+  );
+
   ColumnOrderings<DateTime> get createdAt => $composableBuilder(
     column: $table.createdAt,
     builder: (column) => ColumnOrderings(column),
@@ -7610,6 +8192,11 @@ class $$ClassScheduleSlotsTableTableAnnotationComposer
   GeneratedColumn<DateTime> get deletedAt =>
       $composableBuilder(column: $table.deletedAt, builder: (column) => column);
 
+  GeneratedColumn<String> get scheduleId => $composableBuilder(
+    column: $table.scheduleId,
+    builder: (column) => column,
+  );
+
   GeneratedColumn<DateTime> get createdAt =>
       $composableBuilder(column: $table.createdAt, builder: (column) => column);
 
@@ -7675,6 +8262,7 @@ class $$ClassScheduleSlotsTableTableTableManager
                 Value<String?> familyId = const Value.absent(),
                 Value<String?> childId = const Value.absent(),
                 Value<DateTime?> deletedAt = const Value.absent(),
+                Value<String?> scheduleId = const Value.absent(),
                 Value<DateTime> createdAt = const Value.absent(),
                 Value<DateTime> updatedAt = const Value.absent(),
                 Value<int> rowid = const Value.absent(),
@@ -7691,6 +8279,7 @@ class $$ClassScheduleSlotsTableTableTableManager
                 familyId: familyId,
                 childId: childId,
                 deletedAt: deletedAt,
+                scheduleId: scheduleId,
                 createdAt: createdAt,
                 updatedAt: updatedAt,
                 rowid: rowid,
@@ -7709,6 +8298,7 @@ class $$ClassScheduleSlotsTableTableTableManager
                 Value<String?> familyId = const Value.absent(),
                 Value<String?> childId = const Value.absent(),
                 Value<DateTime?> deletedAt = const Value.absent(),
+                Value<String?> scheduleId = const Value.absent(),
                 required DateTime createdAt,
                 required DateTime updatedAt,
                 Value<int> rowid = const Value.absent(),
@@ -7725,6 +8315,7 @@ class $$ClassScheduleSlotsTableTableTableManager
                 familyId: familyId,
                 childId: childId,
                 deletedAt: deletedAt,
+                scheduleId: scheduleId,
                 createdAt: createdAt,
                 updatedAt: updatedAt,
                 rowid: rowid,
@@ -7756,6 +8347,279 @@ typedef $$ClassScheduleSlotsTableTableProcessedTableManager =
         >,
       ),
       ClassScheduleSlotsTableData,
+      PrefetchHooks Function()
+    >;
+typedef $$ClassSchedulesTableTableCreateCompanionBuilder =
+    ClassSchedulesTableCompanion Function({
+      required String id,
+      required String name,
+      Value<String?> familyId,
+      Value<String?> childId,
+      Value<String> syncState,
+      required DateTime createdAt,
+      required DateTime updatedAt,
+      Value<DateTime?> deletedAt,
+      Value<int> rowid,
+    });
+typedef $$ClassSchedulesTableTableUpdateCompanionBuilder =
+    ClassSchedulesTableCompanion Function({
+      Value<String> id,
+      Value<String> name,
+      Value<String?> familyId,
+      Value<String?> childId,
+      Value<String> syncState,
+      Value<DateTime> createdAt,
+      Value<DateTime> updatedAt,
+      Value<DateTime?> deletedAt,
+      Value<int> rowid,
+    });
+
+class $$ClassSchedulesTableTableFilterComposer
+    extends Composer<_$AppDatabase, $ClassSchedulesTableTable> {
+  $$ClassSchedulesTableTableFilterComposer({
+    required super.$db,
+    required super.$table,
+    super.joinBuilder,
+    super.$addJoinBuilderToRootComposer,
+    super.$removeJoinBuilderFromRootComposer,
+  });
+  ColumnFilters<String> get id => $composableBuilder(
+    column: $table.id,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get name => $composableBuilder(
+    column: $table.name,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get familyId => $composableBuilder(
+    column: $table.familyId,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get childId => $composableBuilder(
+    column: $table.childId,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get syncState => $composableBuilder(
+    column: $table.syncState,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<DateTime> get createdAt => $composableBuilder(
+    column: $table.createdAt,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<DateTime> get updatedAt => $composableBuilder(
+    column: $table.updatedAt,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<DateTime> get deletedAt => $composableBuilder(
+    column: $table.deletedAt,
+    builder: (column) => ColumnFilters(column),
+  );
+}
+
+class $$ClassSchedulesTableTableOrderingComposer
+    extends Composer<_$AppDatabase, $ClassSchedulesTableTable> {
+  $$ClassSchedulesTableTableOrderingComposer({
+    required super.$db,
+    required super.$table,
+    super.joinBuilder,
+    super.$addJoinBuilderToRootComposer,
+    super.$removeJoinBuilderFromRootComposer,
+  });
+  ColumnOrderings<String> get id => $composableBuilder(
+    column: $table.id,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get name => $composableBuilder(
+    column: $table.name,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get familyId => $composableBuilder(
+    column: $table.familyId,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get childId => $composableBuilder(
+    column: $table.childId,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get syncState => $composableBuilder(
+    column: $table.syncState,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<DateTime> get createdAt => $composableBuilder(
+    column: $table.createdAt,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<DateTime> get updatedAt => $composableBuilder(
+    column: $table.updatedAt,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<DateTime> get deletedAt => $composableBuilder(
+    column: $table.deletedAt,
+    builder: (column) => ColumnOrderings(column),
+  );
+}
+
+class $$ClassSchedulesTableTableAnnotationComposer
+    extends Composer<_$AppDatabase, $ClassSchedulesTableTable> {
+  $$ClassSchedulesTableTableAnnotationComposer({
+    required super.$db,
+    required super.$table,
+    super.joinBuilder,
+    super.$addJoinBuilderToRootComposer,
+    super.$removeJoinBuilderFromRootComposer,
+  });
+  GeneratedColumn<String> get id =>
+      $composableBuilder(column: $table.id, builder: (column) => column);
+
+  GeneratedColumn<String> get name =>
+      $composableBuilder(column: $table.name, builder: (column) => column);
+
+  GeneratedColumn<String> get familyId =>
+      $composableBuilder(column: $table.familyId, builder: (column) => column);
+
+  GeneratedColumn<String> get childId =>
+      $composableBuilder(column: $table.childId, builder: (column) => column);
+
+  GeneratedColumn<String> get syncState =>
+      $composableBuilder(column: $table.syncState, builder: (column) => column);
+
+  GeneratedColumn<DateTime> get createdAt =>
+      $composableBuilder(column: $table.createdAt, builder: (column) => column);
+
+  GeneratedColumn<DateTime> get updatedAt =>
+      $composableBuilder(column: $table.updatedAt, builder: (column) => column);
+
+  GeneratedColumn<DateTime> get deletedAt =>
+      $composableBuilder(column: $table.deletedAt, builder: (column) => column);
+}
+
+class $$ClassSchedulesTableTableTableManager
+    extends
+        RootTableManager<
+          _$AppDatabase,
+          $ClassSchedulesTableTable,
+          ClassSchedulesTableData,
+          $$ClassSchedulesTableTableFilterComposer,
+          $$ClassSchedulesTableTableOrderingComposer,
+          $$ClassSchedulesTableTableAnnotationComposer,
+          $$ClassSchedulesTableTableCreateCompanionBuilder,
+          $$ClassSchedulesTableTableUpdateCompanionBuilder,
+          (
+            ClassSchedulesTableData,
+            BaseReferences<
+              _$AppDatabase,
+              $ClassSchedulesTableTable,
+              ClassSchedulesTableData
+            >,
+          ),
+          ClassSchedulesTableData,
+          PrefetchHooks Function()
+        > {
+  $$ClassSchedulesTableTableTableManager(
+    _$AppDatabase db,
+    $ClassSchedulesTableTable table,
+  ) : super(
+        TableManagerState(
+          db: db,
+          table: table,
+          createFilteringComposer: () =>
+              $$ClassSchedulesTableTableFilterComposer($db: db, $table: table),
+          createOrderingComposer: () =>
+              $$ClassSchedulesTableTableOrderingComposer(
+                $db: db,
+                $table: table,
+              ),
+          createComputedFieldComposer: () =>
+              $$ClassSchedulesTableTableAnnotationComposer(
+                $db: db,
+                $table: table,
+              ),
+          updateCompanionCallback:
+              ({
+                Value<String> id = const Value.absent(),
+                Value<String> name = const Value.absent(),
+                Value<String?> familyId = const Value.absent(),
+                Value<String?> childId = const Value.absent(),
+                Value<String> syncState = const Value.absent(),
+                Value<DateTime> createdAt = const Value.absent(),
+                Value<DateTime> updatedAt = const Value.absent(),
+                Value<DateTime?> deletedAt = const Value.absent(),
+                Value<int> rowid = const Value.absent(),
+              }) => ClassSchedulesTableCompanion(
+                id: id,
+                name: name,
+                familyId: familyId,
+                childId: childId,
+                syncState: syncState,
+                createdAt: createdAt,
+                updatedAt: updatedAt,
+                deletedAt: deletedAt,
+                rowid: rowid,
+              ),
+          createCompanionCallback:
+              ({
+                required String id,
+                required String name,
+                Value<String?> familyId = const Value.absent(),
+                Value<String?> childId = const Value.absent(),
+                Value<String> syncState = const Value.absent(),
+                required DateTime createdAt,
+                required DateTime updatedAt,
+                Value<DateTime?> deletedAt = const Value.absent(),
+                Value<int> rowid = const Value.absent(),
+              }) => ClassSchedulesTableCompanion.insert(
+                id: id,
+                name: name,
+                familyId: familyId,
+                childId: childId,
+                syncState: syncState,
+                createdAt: createdAt,
+                updatedAt: updatedAt,
+                deletedAt: deletedAt,
+                rowid: rowid,
+              ),
+          withReferenceMapper: (p0) => p0
+              .map((e) => (e.readTable(table), BaseReferences(db, table, e)))
+              .toList(),
+          prefetchHooksCallback: null,
+        ),
+      );
+}
+
+typedef $$ClassSchedulesTableTableProcessedTableManager =
+    ProcessedTableManager<
+      _$AppDatabase,
+      $ClassSchedulesTableTable,
+      ClassSchedulesTableData,
+      $$ClassSchedulesTableTableFilterComposer,
+      $$ClassSchedulesTableTableOrderingComposer,
+      $$ClassSchedulesTableTableAnnotationComposer,
+      $$ClassSchedulesTableTableCreateCompanionBuilder,
+      $$ClassSchedulesTableTableUpdateCompanionBuilder,
+      (
+        ClassSchedulesTableData,
+        BaseReferences<
+          _$AppDatabase,
+          $ClassSchedulesTableTable,
+          ClassSchedulesTableData
+        >,
+      ),
+      ClassSchedulesTableData,
       PrefetchHooks Function()
     >;
 typedef $$NotesTableTableCreateCompanionBuilder =
@@ -8333,6 +9197,8 @@ class $AppDatabaseManager {
         _db,
         _db.classScheduleSlotsTable,
       );
+  $$ClassSchedulesTableTableTableManager get classSchedulesTable =>
+      $$ClassSchedulesTableTableTableManager(_db, _db.classSchedulesTable);
   $$NotesTableTableTableManager get notesTable =>
       $$NotesTableTableTableManager(_db, _db.notesTable);
   $$NoteChecklistItemsTableTableTableManager get noteChecklistItemsTable =>

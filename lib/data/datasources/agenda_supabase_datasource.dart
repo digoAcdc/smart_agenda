@@ -143,19 +143,17 @@ class AgendaSupabaseDataSource {
     );
   }
 
-  /// Grade de um filho: upsert (exclusao logica via deleted_at).
-  Future<void> upsertFamilySlot(Map<String, dynamic> row) async {
-    await _client.from('class_schedule_slots').upsert(row, onConflict: 'id');
+  /// Grades/aulas da Familia: upsert (exclusao logica via deleted_at).
+  Future<void> upsertFamilyRow(String table, Map<String, dynamic> row) async {
+    await _client.from(table).upsert(row, onConflict: 'id');
   }
 
-  Future<RemoteChanges<Map<String, dynamic>>> fetchFamilySlotChanges(
+  Future<RemoteChanges<Map<String, dynamic>>> fetchFamilyChanges(
+    String table,
     String familyId, {
     String? since,
   }) async {
-    var q = _client
-        .from('class_schedule_slots')
-        .select()
-        .eq('family_id', familyId);
+    var q = _client.from(table).select().eq('family_id', familyId);
     if (since != null) q = q.gt('updated_at', since);
     final rows = List<Map<String, dynamic>>.from(await q.order('updated_at'));
     if (rows.isEmpty) return RemoteChanges(const [], since);

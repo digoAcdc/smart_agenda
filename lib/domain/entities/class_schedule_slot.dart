@@ -1,19 +1,27 @@
 import 'package:equatable/equatable.dart';
 
-/// De quem e a grade: a propria (pessoal) ou de um filho da Familia.
-class ScheduleOwner extends Equatable {
-  const ScheduleOwner.mine()
-      : familyId = null,
-        childId = null;
-  const ScheduleOwner.child({required String this.familyId, required String this.childId});
+/// Grade com nome. Com filho = da Familia (compartilhada); sem filho = pessoal.
+class ClassSchedule extends Equatable {
+  const ClassSchedule({
+    required this.id,
+    required this.name,
+    this.familyId,
+    this.childId,
+    required this.createdAt,
+    required this.updatedAt,
+  });
 
+  final String id;
+  final String name;
   final String? familyId;
   final String? childId;
+  final DateTime createdAt;
+  final DateTime updatedAt;
 
-  bool get isChild => childId != null;
+  bool get isFamily => familyId != null;
 
   @override
-  List<Object?> get props => [familyId, childId];
+  List<Object?> get props => [id, name, familyId, childId, createdAt, updatedAt];
 }
 
 /// Slot de horario de aula (domain entity, independente de Drift/Supabase).
@@ -27,6 +35,7 @@ class ClassScheduleSlot extends Equatable {
     this.professorName,
     this.professorEmail,
     this.professorPhone,
+    this.scheduleId,
     this.familyId,
     this.childId,
     required this.createdAt,
@@ -34,6 +43,7 @@ class ClassScheduleSlot extends Equatable {
   });
 
   final String id;
+  final String? scheduleId;
   final int dayOfWeek;
   final int startMinutes;
   final int endMinutes;
@@ -48,13 +58,10 @@ class ClassScheduleSlot extends Equatable {
   final DateTime createdAt;
   final DateTime updatedAt;
 
-  ScheduleOwner get owner => childId == null
-      ? const ScheduleOwner.mine()
-      : ScheduleOwner.child(familyId: familyId!, childId: childId!);
-
   @override
   List<Object?> get props => [
         id,
+        scheduleId,
         dayOfWeek,
         startMinutes,
         endMinutes,

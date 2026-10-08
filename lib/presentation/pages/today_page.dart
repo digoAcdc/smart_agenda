@@ -509,8 +509,18 @@ class _TodayPageState extends State<TodayPage> {
             )
             .toList()
           ..sort((a, b) => a.startMinutes.compareTo(b.startMinutes));
-    // Com grades de filhos, cada aula mostra de quem e.
-    final showClassOwner = classes.any((c) => c.childId != null);
+    // Com mais de uma grade, cada aula mostra de qual grade/filho e.
+    final schedules = classScheduleController.schedules.toList();
+    final showClassOwner = schedules.length > 1;
+    String? classOwnerLabel(String? scheduleId) {
+      final g = schedules.firstWhereOrNull((s) => s.id == scheduleId);
+      if (g == null) return null;
+      final child = FamilyItemLabels.childName(g.childId);
+      if (child == null) return g.name;
+      final childSchedules = schedules.where((s) => s.childId == g.childId);
+      return childSchedules.length > 1 ? '$child · ${g.name}' : child;
+    }
+
     final timelineItems = selectedTimelineGroupId == null
         ? upcoming
         : upcoming.where((e) => e.groupId == selectedTimelineGroupId).toList();
@@ -686,12 +696,9 @@ class _TodayPageState extends State<TodayPage> {
                           startMinutes: item.startMinutes,
                           endMinutes: item.endMinutes,
                           subject: item.subject ?? 'Materia',
-                          ownerLabel: !showClassOwner
-                              ? null
-                              : item.childId == null
-                              ? 'Você'
-                              : FamilyItemLabels.childName(item.childId) ??
-                                    'Filho',
+                          ownerLabel: showClassOwner
+                              ? classOwnerLabel(item.scheduleId)
+                              : null,
                           ownerColorHex: FamilyItemLabels.childColorHex(
                             item.childId,
                           ),

@@ -29,16 +29,21 @@ class ClassSchedulePage extends GetView<ClassScheduleController> {
   IFamilyService? get _family =>
       Get.isRegistered<IFamilyService>() ? Get.find<IFamilyService>() : null;
 
-  /// Grade pessoal sempre editavel; a de filho segue o papel na Familia.
-  bool get _canEdit {
-    if (!controller.owner.value.isChild) return true;
-    return _family?.context.canEditAgenda ?? false;
+  /// Grade sem filho (pessoal) sempre editavel; com filho segue o papel na Familia.
+  bool _canEditSchedule(ClassSchedule? schedule) {
+    if (schedule == null || !schedule.isFamily) return true;
+    final ctx = _family?.context;
+    return ctx != null &&
+        ctx.familyId == schedule.familyId &&
+        ctx.canEditAgenda;
   }
 
-  String get _ownerLabel {
-    final owner = controller.owner.value;
-    if (!owner.isChild) return 'sua semana';
-    return 'a semana de ${_family?.childById(owner.childId)?.name ?? 'seu filho'}';
+  bool get _canEdit => _canEditSchedule(controller.selected.value);
+
+  /// "Joao · Escola" para grade de filho; o nome para grade pessoal.
+  String _scheduleLabel(ClassSchedule schedule) {
+    final child = _family?.childById(schedule.childId)?.name;
+    return child == null ? schedule.name : '$child · ${schedule.name}';
   }
 
   @override
@@ -50,26 +55,61 @@ class ClassSchedulePage extends GetView<ClassScheduleController> {
         color: palette.appBackground,
         child: Column(
           children: [
-            Obx(
-              () => SectionHeader(
+            Obx(() {
+              final current = controller.selected.value;
+              return SectionHeader(
                 title: 'Grade horaria',
-                subtitle: _canEdit
-                    ? 'Monte $_ownerLabel de aulas por horario'
-                    : 'Grade de ${_ownerLabel.replaceFirst('a semana de ', '')} (somente leitura)',
-                trailing: IconButton(
-                  onPressed: _canEdit
-                      ? () => _openAddTimeRangeDialog(context)
-                      : null,
-                  icon: const Icon(Icons.add),
-                  tooltip: 'Adicionar horario',
-                ),
-              ),
-            ),
-            _buildOwnerSelector(context),
+                subtitle: current == null
+                    ? 'Monte a semana de aulas'
+                    : _canEdit
+                    ? _scheduleLabel(current)
+                    : '${_scheduleLabel(current)} (somente leitura)',
+                trailing: current == null || !_canEdit
+                    ? null
+                    : Row(
+                        mainAxisSize: MainAxisSize.min,
+                        children: [
+                          IconButton(
+                            onPressed: () => _openAddTimeRangeDialog(context),
+                            icon: const Icon(Icons.add),
+                            tooltip: 'Adicionar horario',
+                          ),
+                          PopupMenuButton<String>(
+                            tooltip: 'Opcoes da grade',
+                            onSelected: (v) => v == 'rename'
+                                ? _openRenameDialog(context, current)
+                                : _confirmDelete(context, current),
+                            itemBuilder: (_) => const [
+                              PopupMenuItem(
+                                value: 'rename',
+                                child: Text('Renomear grade'),
+                              ),
+                              PopupMenuItem(
+                                value: 'delete',
+                                child: Text('Excluir grade'),
+                              ),
+                            ],
+                          ),
+                        ],
+                      ),
+              );
+            }),
+            _buildScheduleSelector(context),
             Expanded(
               child: Obx(() {
                 if (controller.loading.value) {
                   return const LoadingPlaceholderList();
+                }
+                if (controller.schedules.isEmpty) {
+                  return EmptyStateWidget(
+                    icon: Icons.view_week_outlined,
+                    title: 'Nenhuma grade ainda',
+                    message:
+                        'Crie uma grade para voce ou para um filho. Ela ja vem com '
+                        '6 materias de segunda a sexta; depois e so ajustar.',
+                    ctaLabel: 'Criar grade',
+                    onTapCta: () => _openNewScheduleDialog(context),
+                  );
                 }
                 final ranges = controller.timeRanges;
                 if (ranges.isEmpty) {
@@ -77,8 +117,7 @@ class ClassSchedulePage extends GetView<ClassScheduleController> {
                     return const EmptyStateWidget(
                       icon: Icons.view_week_outlined,
                       title: 'Sem grade ainda',
-                      message:
-                          'Quem administra a Familia ainda nao montou esta grade.',
+                      message: 'Esta grade ainda nao tem aulas.',
                     );
                   }
                   return SingleChildScrollView(
@@ -143,59 +182,210 @@ class ClassSchedulePage extends GetView<ClassScheduleController> {
     );
   }
 
-  /// "Minha grade" + um chip por filho (so aparece se houver filhos).
-  Widget _buildOwnerSelector(BuildContext context) {
+  /// Uma etiqueta por grade + "Nova grade".
+  Widget _buildScheduleSelector(BuildContext context) {
     return Obx(() {
-      final family = _family;
-      final ctx = family?.context;
-      final kids = family?.children ?? const <FamilyChild>[];
-      final current = controller.owner.value;
-
-      // Filho arquivado ou saiu da Familia: volta para a grade pessoal.
-      final stillValid =
-          !current.isChild ||
-          (ctx?.familyId == current.familyId &&
-              kids.any((c) => c.id == current.childId));
-      if (!stillValid) {
-        WidgetsBinding.instance.addPostFrameCallback(
-          (_) => controller.selectOwner(const ScheduleOwner.mine()),
-        );
-      }
-      if (ctx == null || !ctx.hasFamily || kids.isEmpty) {
-        return const SizedBox.shrink();
-      }
-
-      Widget chip(String label, ScheduleOwner owner, {Color? color}) {
-        final selected = current == owner;
-        return Padding(
-          padding: const EdgeInsets.only(right: 8),
-          child: ChoiceChip(
-            label: Text(label),
-            selected: selected,
-            avatar: color == null
-                ? null
-                : CircleAvatar(backgroundColor: color, radius: 6),
-            onSelected: (_) => controller.selectOwner(owner),
-          ),
-        );
-      }
+      final list = controller.schedules.toList();
+      final current = controller.selected.value;
+      // Reage a mudancas de filhos (nomes/cores) na Familia.
+      _family?.children;
+      if (list.isEmpty) return const SizedBox.shrink();
 
       return SingleChildScrollView(
         scrollDirection: Axis.horizontal,
         padding: const EdgeInsets.fromLTRB(12, 0, 12, 8),
         child: Row(
           children: [
-            chip('Minha grade', const ScheduleOwner.mine()),
-            for (final c in kids)
-              chip(
-                c.name,
-                ScheduleOwner.child(familyId: ctx.familyId!, childId: c.id),
-                color: _parseHexColor(c.colorHex),
+            for (final g in list)
+              Padding(
+                padding: const EdgeInsets.only(right: 8),
+                child: ChoiceChip(
+                  label: Text(_scheduleLabel(g)),
+                  selected: current?.id == g.id,
+                  avatar: g.childId == null
+                      ? null
+                      : CircleAvatar(
+                          radius: 6,
+                          backgroundColor:
+                              _parseHexColor(
+                                _family?.childById(g.childId)?.colorHex,
+                              ) ??
+                              Theme.of(context).colorScheme.primary,
+                        ),
+                  onSelected: (_) => controller.select(g),
+                ),
               ),
+            ActionChip(
+              avatar: const Icon(Icons.add, size: 16),
+              label: const Text('Nova grade'),
+              onPressed: () => _openNewScheduleDialog(context),
+            ),
           ],
         ),
       );
     });
+  }
+
+  /// Nome, filho (opcional) e grade modelo.
+  Future<void> _openNewScheduleDialog(BuildContext context) async {
+    final family = _family;
+    final ctx = family?.context;
+    final kids = (ctx?.canEditAgenda ?? false)
+        ? (family?.children ?? const <FamilyChild>[])
+        : const <FamilyChild>[];
+    final nameController = TextEditingController(
+      text: controller.schedules.isEmpty ? 'Minha grade' : '',
+    );
+    String? childId;
+    var withTemplate = true;
+    final formKey = GlobalKey<FormState>();
+
+    await Get.dialog(
+      StatefulBuilder(
+        builder: (dialogContext, setLocal) => AlertDialog(
+          title: const Text('Nova grade'),
+          scrollable: true,
+          content: Form(
+            key: formKey,
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                TextFormField(
+                  controller: nameController,
+                  autofocus: nameController.text.isEmpty,
+                  textCapitalization: TextCapitalization.sentences,
+                  decoration: const InputDecoration(
+                    labelText: 'Nome',
+                    hintText: 'Ex.: Escola, Ingles, Cursinho',
+                  ),
+                  validator: (v) => (v == null || v.trim().isEmpty)
+                      ? 'Informe um nome'
+                      : null,
+                ),
+                if (kids.isNotEmpty) ...[
+                  const SizedBox(height: 12),
+                  Text(
+                    'Filho (opcional)',
+                    style: Theme.of(dialogContext).textTheme.titleSmall,
+                  ),
+                  const SizedBox(height: 6),
+                  Wrap(
+                    spacing: 8,
+                    runSpacing: 6,
+                    children: [
+                      ChoiceChip(
+                        label: const Text('Nenhum'),
+                        selected: childId == null,
+                        onSelected: (_) => setLocal(() => childId = null),
+                      ),
+                      for (final c in kids)
+                        ChoiceChip(
+                          label: Text(c.name),
+                          selected: childId == c.id,
+                          avatar: CircleAvatar(
+                            radius: 6,
+                            backgroundColor:
+                                _parseHexColor(c.colorHex) ??
+                                Theme.of(dialogContext).colorScheme.primary,
+                          ),
+                          onSelected: (_) => setLocal(() {
+                            childId = c.id;
+                            if (nameController.text.trim().isEmpty ||
+                                nameController.text == 'Minha grade') {
+                              nameController.text = 'Escola';
+                            }
+                          }),
+                        ),
+                    ],
+                  ),
+                  const SizedBox(height: 4),
+                  Text(
+                    childId == null
+                        ? 'Sem filho: so voce ve esta grade.'
+                        : 'Com filho: a Familia ve e edita conforme o papel de cada um.',
+                    style: Theme.of(dialogContext).textTheme.bodySmall,
+                  ),
+                ],
+                const SizedBox(height: 8),
+                CheckboxListTile(
+                  contentPadding: EdgeInsets.zero,
+                  value: withTemplate,
+                  onChanged: (v) => setLocal(() => withTemplate = v ?? true),
+                  title: const Text('Comecar com a grade modelo'),
+                  subtitle: const Text('6 materias de segunda a sexta'),
+                ),
+              ],
+            ),
+          ),
+          actions: [
+            TextButton(onPressed: Get.back, child: const Text('Cancelar')),
+            FilledButton(
+              onPressed: () async {
+                if (formKey.currentState?.validate() != true) return;
+                Get.back();
+                await controller.createSchedule(
+                  name: nameController.text,
+                  familyId: childId == null ? null : ctx?.familyId,
+                  childId: childId,
+                  withTemplate: withTemplate,
+                );
+              },
+              child: const Text('Criar'),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Future<void> _openRenameDialog(BuildContext context, ClassSchedule g) async {
+    final nameController = TextEditingController(text: g.name);
+    await Get.dialog(
+      AlertDialog(
+        title: const Text('Renomear grade'),
+        content: TextField(
+          controller: nameController,
+          autofocus: true,
+          decoration: const InputDecoration(labelText: 'Nome'),
+        ),
+        actions: [
+          TextButton(onPressed: Get.back, child: const Text('Cancelar')),
+          FilledButton(
+            onPressed: () async {
+              if (nameController.text.trim().isEmpty) return;
+              Get.back();
+              await controller.renameSelected(nameController.text);
+            },
+            child: const Text('Salvar'),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Future<void> _confirmDelete(BuildContext context, ClassSchedule g) async {
+    final ok = await Get.dialog<bool>(
+      AlertDialog(
+        title: Text('Excluir "${_scheduleLabel(g)}"?'),
+        content: Text(
+          g.isFamily
+              ? 'A grade e as aulas saem para toda a Familia.'
+              : 'A grade e as aulas serao apagadas.',
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Get.back(result: false),
+            child: const Text('Cancelar'),
+          ),
+          FilledButton(
+            onPressed: () => Get.back(result: true),
+            child: const Text('Excluir'),
+          ),
+        ],
+      ),
+    );
+    if (ok == true) await controller.deleteSelected();
   }
 
   Color? _parseHexColor(String? hex) {
