@@ -29,7 +29,10 @@ async function getGoogleAccessToken(serviceAccountJson) {
   const privateKey = serviceAccount.private_key.replace(/\\n/g, "\n");
 
   const key = await importPKCS8(privateKey, "RS256");
-  const assertion = await new SignJWT({})
+  // Sem "scope" o Google recusa a troca do JWT (invalid_scope).
+  const assertion = await new SignJWT({
+    scope: "https://www.googleapis.com/auth/androidpublisher",
+  })
     .setProtectedHeader({ alg: "RS256", typ: "JWT" })
     .setIssuer(serviceAccount.client_email)
     .setSubject(serviceAccount.client_email)
