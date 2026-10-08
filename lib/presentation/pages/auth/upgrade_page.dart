@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
+import 'package:url_launcher/url_launcher.dart';
 
 import '../../../core/constants/billing_constants.dart';
 import '../../../core/routes/app_routes.dart';
@@ -81,6 +82,24 @@ class UpgradePage extends StatelessWidget {
                     ),
                 textAlign: TextAlign.center,
               ),
+              if (isPremium) ...[
+                const SizedBox(height: DesignTokens.spaceLg),
+                OutlinedButton.icon(
+                  onPressed: _openManageSubscription,
+                  icon: const Icon(Icons.open_in_new),
+                  label: const Text('Gerenciar ou cancelar assinatura'),
+                ),
+                const SizedBox(height: DesignTokens.spaceXs),
+                Text(
+                  'O cancelamento e feito no Google Play. O Pro continua ate o fim do '
+                  'periodo ja pago. Depois disso a agenda da Familia fica disponivel '
+                  'para consulta e nada e apagado.',
+                  style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                        color: Theme.of(context).colorScheme.onSurfaceVariant,
+                      ),
+                  textAlign: TextAlign.center,
+                ),
+              ],
               const SizedBox(height: DesignTokens.spaceXl),
               if (!ctrl.isRuntimeConfigured.value && !isPremium) ...[
                 AppSurfaceCard(
@@ -303,5 +322,15 @@ class UpgradePage extends StatelessWidget {
       return;
     }
     Get.offAllNamed(AppRoutes.home);
+  }
+
+  /// Tela de assinaturas do Google Play (exigencia da loja: caminho facil para cancelar).
+  Future<void> _openManageSubscription() async {
+    final uri = Uri.parse(
+      'https://play.google.com/store/account/subscriptions'
+      '?sku=${BillingConstants.premiumMonthlyProductId}'
+      '&package=${BillingConstants.packageName}',
+    );
+    await launchUrl(uri, mode: LaunchMode.externalApplication);
   }
 }

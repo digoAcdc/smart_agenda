@@ -16,6 +16,7 @@ import {
   RecoveryConfigError,
   sendRecoveryCode,
 } from "./recovery.js";
+import { startRecheckSchedule } from "./revalidation.js";
 
 dotenv.config();
 
@@ -288,6 +289,17 @@ app.post(
   }
 }
 );
+
+// Reconsulta o Google: renovacoes, cancelamentos, reembolsos, carencia.
+const recheckMinutes = Number(process.env.SUBSCRIPTION_RECHECK_MINUTES || 30);
+if (recheckMinutes > 0) {
+  startRecheckSchedule({
+    supabase,
+    env: process.env,
+    logger: app.log.child({ event: "subscription_recheck" }),
+    intervalMinutes: recheckMinutes,
+  });
+}
 
 const port = Number(process.env.PORT || 3000);
 
