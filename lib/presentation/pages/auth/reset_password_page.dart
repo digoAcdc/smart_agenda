@@ -71,7 +71,7 @@ class _ResetPasswordPageState extends State<ResetPasswordPage> {
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
           content: const Text(
-            'Codigo enviado! Use o codigo do e-mail (ignore o link).',
+            'Código enviado! Confira seu e-mail.',
           ),
           backgroundColor: Theme.of(context).colorScheme.primaryContainer,
         ),
@@ -125,7 +125,7 @@ class _ResetPasswordPageState extends State<ResetPasswordPage> {
       _startCooldown();
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
-          content: const Text('Novo codigo enviado! Verifique seu e-mail.'),
+          content: const Text('Novo código enviado! Verifique seu e-mail.'),
           backgroundColor: Theme.of(context).colorScheme.primaryContainer,
         ),
       );
@@ -181,7 +181,7 @@ class _ResetPasswordPageState extends State<ResetPasswordPage> {
                   ),
                   const SizedBox(height: DesignTokens.spaceXs),
                   Text(
-                    'Informe seu e-mail e enviaremos um codigo para redefinir sua senha.',
+                    'Informe seu e-mail e enviaremos um código de 6 dígitos para redefinir sua senha.',
                     style: Theme.of(context).textTheme.bodyMedium?.copyWith(
                           color: Theme.of(context).colorScheme.onSurfaceVariant,
                         ),
@@ -262,7 +262,7 @@ class _ResetPasswordPageState extends State<ResetPasswordPage> {
                   ),
                   const SizedBox(height: DesignTokens.spaceXs),
                   Text(
-                    'Enviamos um codigo de 6 digitos para $_emailSent',
+                    'Enviamos um código de 6 dígitos para $_emailSent',
                     style: Theme.of(context).textTheme.bodyMedium?.copyWith(
                           color: Theme.of(context).colorScheme.onSurfaceVariant,
                         ),
@@ -270,7 +270,7 @@ class _ResetPasswordPageState extends State<ResetPasswordPage> {
                   ),
                   const SizedBox(height: DesignTokens.spaceXs),
                   Text(
-                    'Ignore o link no e-mail e use apenas o codigo abaixo.',
+                    'Não chegou? Confira a caixa de spam ou lixo eletrônico.',
                     style: Theme.of(context).textTheme.bodySmall?.copyWith(
                           color: Theme.of(context).colorScheme.onSurfaceVariant,
                           fontStyle: FontStyle.italic,
