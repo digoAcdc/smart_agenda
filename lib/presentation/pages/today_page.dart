@@ -19,8 +19,10 @@ import '../widgets/empty_state_widget.dart';
 import '../widgets/loading_placeholder_list.dart';
 import '../widgets/section_header.dart';
 import '../utils/family_item_labels.dart';
+import '../../domain/repositories/i_sync_service.dart';
 
 enum AgendaHomeViewMode { day, week, month }
+
 enum HomeLandingView { dashboard, calendar }
 
 /// Retorna saudação conforme o horário: Bom dia (até 12h), Boa tarde (12h–18h), Boa noite (após 18h).
@@ -88,6 +90,7 @@ class _TodayPageState extends State<TodayPage> {
         controller.selectedDate.value = selectedDate;
       }
       controller.loadByDay(selectedDate);
+      controller.loadUpcoming();
       controller.loadWeek(
         DateUtilsEx.startOfWeek(selectedDate),
         DateUtilsEx.endOfWeek(selectedDate),
@@ -111,112 +114,113 @@ class _TodayPageState extends State<TodayPage> {
 
     return SafeArea(
       bottom: false,
-      child: Obx(
-        () {
-          final subtitle = DateFormat('EEEE, dd MMMM').format(selectedDate);
-          if (landingView == HomeLandingView.dashboard) {
-            return _buildDashboardView(
-              context: context,
-              agendaController: agendaController,
-              groupsController: groupsController,
-              classScheduleController: classScheduleController,
-            );
-          }
-          if (isAgendaTabMode) {
-            return _buildAgendaTabModeView(
-              context: context,
-              agendaController: agendaController,
-              groupsController: groupsController,
-            );
-          }
-          return Container(
-            color: null,
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-            const SizedBox(height: 6),
-            SectionHeader(
-              title: 'Smart Agenda',
-              subtitle: DateFormat('dd/MM/yyyy').format(DateTime.now()),
-              trailing: widget.allowLandingSwitch
-                  ? IconButton(
-                      tooltip: 'Ver dashboard',
-                      onPressed: () =>
-                          setState(() => landingView = HomeLandingView.dashboard),
-                      icon: const Icon(Icons.dashboard_customize_outlined),
-                    )
-                  : null,
-            ),
-            if (widget.allowLandingSwitch)
-              Padding(
-                padding: const EdgeInsets.symmetric(horizontal: 16),
-                child: SegmentedButton<HomeLandingView>(
-                  segments: const [
-                    ButtonSegment(
-                      value: HomeLandingView.dashboard,
-                      icon: Icon(Icons.home_outlined),
-                      label: Text('Inicio'),
-                    ),
-                    ButtonSegment(
-                      value: HomeLandingView.calendar,
-                      icon: Icon(Icons.calendar_month_outlined),
-                      label: Text('Calendario'),
-                    ),
-                  ],
-                  selected: {landingView},
-                  onSelectionChanged: (selection) {
-                    setState(() => landingView = selection.first);
-                  },
-                ),
+      child: Obx(() {
+        final subtitle = DateFormat('EEEE, dd MMMM').format(selectedDate);
+        if (landingView == HomeLandingView.dashboard) {
+          return _buildDashboardView(
+            context: context,
+            agendaController: agendaController,
+            groupsController: groupsController,
+            classScheduleController: classScheduleController,
+          );
+        }
+        if (isAgendaTabMode) {
+          return _buildAgendaTabModeView(
+            context: context,
+            agendaController: agendaController,
+            groupsController: groupsController,
+          );
+        }
+        return Container(
+          color: null,
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              const SizedBox(height: 6),
+              SectionHeader(
+                title: 'Smart Agenda',
+                subtitle: DateFormat('dd/MM/yyyy').format(DateTime.now()),
+                trailing: widget.allowLandingSwitch
+                    ? IconButton(
+                        tooltip: 'Ver dashboard',
+                        onPressed: () => setState(
+                          () => landingView = HomeLandingView.dashboard,
+                        ),
+                        icon: const Icon(Icons.dashboard_customize_outlined),
+                      )
+                    : null,
               ),
-            const SizedBox(height: 8),
-            if (!isAgendaTabMode) const AdBannerWidget(),
-            SectionHeader(
-              title: isAgendaTabMode
-                  ? 'Calendario completo'
-                  : mode == AgendaHomeViewMode.day
-                      ? 'Agenda do dia'
-                      : mode == AgendaHomeViewMode.week
-                          ? 'Agenda semanal'
-                          : 'Agenda mensal',
-              subtitle: subtitle,
-              trailing: Row(
-                mainAxisSize: MainAxisSize.min,
-                children: [
-                  IconButton(
-                    onPressed: () {
-                      setState(() {
-                        calendarFormat = calendarFormat == CalendarFormat.week
-                            ? CalendarFormat.month
-                            : CalendarFormat.week;
-                      });
+              if (widget.allowLandingSwitch)
+                Padding(
+                  padding: const EdgeInsets.symmetric(horizontal: 16),
+                  child: SegmentedButton<HomeLandingView>(
+                    segments: const [
+                      ButtonSegment(
+                        value: HomeLandingView.dashboard,
+                        icon: Icon(Icons.home_outlined),
+                        label: Text('Inicio'),
+                      ),
+                      ButtonSegment(
+                        value: HomeLandingView.calendar,
+                        icon: Icon(Icons.calendar_month_outlined),
+                        label: Text('Calendario'),
+                      ),
+                    ],
+                    selected: {landingView},
+                    onSelectionChanged: (selection) {
+                      setState(() => landingView = selection.first);
                     },
-                    tooltip: calendarFormat == CalendarFormat.week
-                        ? 'Expandir para mes'
-                        : 'Ver somente semana',
-                    icon: Icon(
-                      calendarFormat == CalendarFormat.week
-                          ? Icons.open_in_full_rounded
-                          : Icons.close_fullscreen_rounded,
-                    ),
                   ),
-                  if (!isAgendaTabMode)
+                ),
+              const SizedBox(height: 8),
+              if (!isAgendaTabMode) const AdBannerWidget(),
+              SectionHeader(
+                title: isAgendaTabMode
+                    ? 'Calendario completo'
+                    : mode == AgendaHomeViewMode.day
+                    ? 'Agenda do dia'
+                    : mode == AgendaHomeViewMode.week
+                    ? 'Agenda semanal'
+                    : 'Agenda mensal',
+                subtitle: subtitle,
+                trailing: Row(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
                     IconButton(
-                      onPressed: () => setState(
-                          () => isCalendarExpanded = !isCalendarExpanded),
-                      tooltip: isCalendarExpanded
-                          ? 'Recolher calendario'
-                          : 'Expandir calendario',
+                      onPressed: () {
+                        setState(() {
+                          calendarFormat = calendarFormat == CalendarFormat.week
+                              ? CalendarFormat.month
+                              : CalendarFormat.week;
+                        });
+                      },
+                      tooltip: calendarFormat == CalendarFormat.week
+                          ? 'Expandir para mes'
+                          : 'Ver somente semana',
                       icon: Icon(
-                        isCalendarExpanded
-                            ? Icons.keyboard_arrow_up_rounded
-                            : Icons.keyboard_arrow_down_rounded,
+                        calendarFormat == CalendarFormat.week
+                            ? Icons.open_in_full_rounded
+                            : Icons.close_fullscreen_rounded,
                       ),
                     ),
-                ],
+                    if (!isAgendaTabMode)
+                      IconButton(
+                        onPressed: () => setState(
+                          () => isCalendarExpanded = !isCalendarExpanded,
+                        ),
+                        tooltip: isCalendarExpanded
+                            ? 'Recolher calendario'
+                            : 'Expandir calendario',
+                        icon: Icon(
+                          isCalendarExpanded
+                              ? Icons.keyboard_arrow_up_rounded
+                              : Icons.keyboard_arrow_down_rounded,
+                        ),
+                      ),
+                  ],
+                ),
               ),
-            ),
-            AnimatedCrossFade(
+              AnimatedCrossFade(
                 duration: DesignTokens.motionStandard,
                 crossFadeState: isCalendarExpanded
                     ? CrossFadeState.showFirst
@@ -254,40 +258,45 @@ class _TodayPageState extends State<TodayPage> {
                   ),
                 ),
               ),
-            if (!isAgendaTabMode)
-              Padding(
-                padding: const EdgeInsets.fromLTRB(16, 12, 16, 10),
-                child: SegmentedButton<AgendaHomeViewMode>(
-                  segments: const [
-                    ButtonSegment(
-                        value: AgendaHomeViewMode.day, label: Text('Dia')),
-                    ButtonSegment(
-                        value: AgendaHomeViewMode.week, label: Text('Semana')),
-                    ButtonSegment(
-                        value: AgendaHomeViewMode.month, label: Text('Mes')),
-                  ],
-                  selected: {mode},
-                  onSelectionChanged: (value) {
-                    setState(() => mode = value.first);
-                    _reloadByMode(agendaController);
-                  },
+              if (!isAgendaTabMode)
+                Padding(
+                  padding: const EdgeInsets.fromLTRB(16, 12, 16, 10),
+                  child: SegmentedButton<AgendaHomeViewMode>(
+                    segments: const [
+                      ButtonSegment(
+                        value: AgendaHomeViewMode.day,
+                        label: Text('Dia'),
+                      ),
+                      ButtonSegment(
+                        value: AgendaHomeViewMode.week,
+                        label: Text('Semana'),
+                      ),
+                      ButtonSegment(
+                        value: AgendaHomeViewMode.month,
+                        label: Text('Mes'),
+                      ),
+                    ],
+                    selected: {mode},
+                    onSelectionChanged: (value) {
+                      setState(() => mode = value.first);
+                      _reloadByMode(agendaController);
+                    },
+                  ),
+                ),
+              Expanded(
+                child: AnimatedSwitcher(
+                  duration: DesignTokens.motionStandard,
+                  switchInCurve: Curves.easeOut,
+                  child: _buildBodyByMode(
+                    agendaController: agendaController,
+                    groupsController: groupsController,
+                  ),
                 ),
               ),
-            Expanded(
-              child: AnimatedSwitcher(
-                duration: DesignTokens.motionStandard,
-                switchInCurve: Curves.easeOut,
-                child: _buildBodyByMode(
-                  agendaController: agendaController,
-                  groupsController: groupsController,
-                ),
-              ),
-            ),
-              ],
-            ),
-          );
-        },
-      ),
+            ],
+          ),
+        );
+      }),
     );
   }
 
@@ -310,8 +319,8 @@ class _TodayPageState extends State<TodayPage> {
                     child: Text(
                       'Agenda',
                       style: Theme.of(context).textTheme.titleLarge?.copyWith(
-                            fontWeight: FontWeight.w700,
-                          ),
+                        fontWeight: FontWeight.w700,
+                      ),
                     ),
                   ),
                 ),
@@ -333,7 +342,8 @@ class _TodayPageState extends State<TodayPage> {
                       IconButton(
                         onPressed: () {
                           setState(() {
-                            calendarFormat = calendarFormat == CalendarFormat.week
+                            calendarFormat =
+                                calendarFormat == CalendarFormat.week
                                 ? CalendarFormat.month
                                 : CalendarFormat.week;
                           });
@@ -348,8 +358,9 @@ class _TodayPageState extends State<TodayPage> {
                         ),
                       ),
                       IconButton(
-                        onPressed: () =>
-                            setState(() => isCalendarExpanded = !isCalendarExpanded),
+                        onPressed: () => setState(
+                          () => isCalendarExpanded = !isCalendarExpanded,
+                        ),
                         tooltip: isCalendarExpanded
                             ? 'Recolher calendario'
                             : 'Expandir calendario',
@@ -377,7 +388,9 @@ class _TodayPageState extends State<TodayPage> {
                         vertical: 12,
                       ),
                       decoration: BoxDecoration(
-                        color: Theme.of(context).colorScheme.surfaceContainerLow,
+                        color: Theme.of(
+                          context,
+                        ).colorScheme.surfaceContainerLow,
                         borderRadius: BorderRadius.circular(16),
                       ),
                       child: Row(
@@ -406,11 +419,17 @@ class _TodayPageState extends State<TodayPage> {
                   child: SegmentedButton<AgendaHomeViewMode>(
                     segments: const [
                       ButtonSegment(
-                          value: AgendaHomeViewMode.day, label: Text('Dia')),
+                        value: AgendaHomeViewMode.day,
+                        label: Text('Dia'),
+                      ),
                       ButtonSegment(
-                          value: AgendaHomeViewMode.week, label: Text('Semana')),
+                        value: AgendaHomeViewMode.week,
+                        label: Text('Semana'),
+                      ),
                       ButtonSegment(
-                          value: AgendaHomeViewMode.month, label: Text('Mes')),
+                        value: AgendaHomeViewMode.month,
+                        label: Text('Mes'),
+                      ),
                     ],
                     selected: {mode},
                     onSelectionChanged: (value) {
@@ -426,19 +445,19 @@ class _TodayPageState extends State<TodayPage> {
                           groupsController: groupsController,
                         )
                       : mode == AgendaHomeViewMode.week
-                          ? _buildRangeByDayAndGroup(
-                              agendaController: agendaController,
-                              groupsController: groupsController,
-                              items: agendaController.weekItems,
-                              emptyMessage:
-                                  'Sua semana esta leve. Que tal criar um novo evento?',
-                            )
-                          : _buildRangeByDayAndGroup(
-                              agendaController: agendaController,
-                              groupsController: groupsController,
-                              items: agendaController.monthItems,
-                              emptyMessage: 'Nenhum evento para este mes.',
-                            ),
+                      ? _buildRangeByDayAndGroup(
+                          agendaController: agendaController,
+                          groupsController: groupsController,
+                          items: agendaController.weekItems,
+                          emptyMessage:
+                              'Sua semana esta leve. Que tal criar um novo evento?',
+                        )
+                      : _buildRangeByDayAndGroup(
+                          agendaController: agendaController,
+                          groupsController: groupsController,
+                          items: agendaController.monthItems,
+                          emptyMessage: 'Nenhum evento para este mes.',
+                        ),
                 ),
               ],
             ),
@@ -474,20 +493,22 @@ class _TodayPageState extends State<TodayPage> {
     final agendaDoDia = [...agendaController.selectedDayItems]
       ..sort((a, b) => a.startAt.compareTo(b.startAt));
     final overdueIds = overdue.map((e) => e.id).toSet();
-    final agendaDoDiaExibida =
-        agendaDoDia.where((e) => !overdueIds.contains(e.id)).toList();
+    final agendaDoDiaExibida = agendaDoDia
+        .where((e) => !overdueIds.contains(e.id))
+        .toList();
     final groupNameById = {
       for (final g in groupsController.groups) g.id: g.name,
     };
     final scheduleWeekday = DateTime.now().weekday;
-    final classes = classScheduleController.slots
-        .where(
-          (slot) =>
-              slot.dayOfWeek == scheduleWeekday &&
-              (slot.subject?.trim().isNotEmpty ?? false),
-        )
-        .toList()
-      ..sort((a, b) => a.startMinutes.compareTo(b.startMinutes));
+    final classes =
+        classScheduleController.slots
+            .where(
+              (slot) =>
+                  slot.dayOfWeek == scheduleWeekday &&
+                  (slot.subject?.trim().isNotEmpty ?? false),
+            )
+            .toList()
+          ..sort((a, b) => a.startMinutes.compareTo(b.startMinutes));
     final timelineItems = selectedTimelineGroupId == null
         ? upcoming
         : upcoming.where((e) => e.groupId == selectedTimelineGroupId).toList();
@@ -497,253 +518,262 @@ class _TodayPageState extends State<TodayPage> {
       child: Column(
         children: [
           Expanded(
-            child: ListView(
-              padding: const EdgeInsets.fromLTRB(12, 8, 12, 120),
-              children: [
-                Container(
-                  padding: const EdgeInsets.all(12),
-                  decoration: BoxDecoration(
-                    color: Theme.of(context).colorScheme.surface,
-                    borderRadius: BorderRadius.circular(20),
-                  ),
-                  child: Row(
-                    children: [
-                      const CircleAvatar(
-                        radius: 16,
-                        child: Icon(Icons.person, size: 18),
-                      ),
-                      const SizedBox(width: 10),
-                      Expanded(
-                        child: Obx(() {
-                          final authController = Get.find<AuthController>();
-                          final displayName = authController.userEmail.value ??
-                              'Usuário';
-                          final isPremium = authController.isPremium.value;
-                          return Column(
-                            crossAxisAlignment: CrossAxisAlignment.start,
-                            children: [
-                              Text(
-                                _greetingByTime(),
-                                style: Theme.of(context)
-                                    .textTheme
-                                    .labelSmall
-                                    ?.copyWith(letterSpacing: 1.1),
-                              ),
-                              Text(
-                                displayName,
-                                style: Theme.of(context)
-                                    .textTheme
-                                    .titleMedium
-                                    ?.copyWith(
-                                      fontWeight: FontWeight.w700,
-                                    ),
-                                maxLines: 1,
-                                overflow: TextOverflow.ellipsis,
-                              ),
-                              if (isPremium) ...[
-                                const SizedBox(height: 4),
-                                Container(
-                                  padding: const EdgeInsets.symmetric(
-                                    horizontal: 8,
-                                    vertical: 2,
-                                  ),
-                                  decoration: BoxDecoration(
-                                    color: Theme.of(context)
-                                        .colorScheme
-                                        .primary
-                                        .withValues(alpha: 0.12),
-                                    borderRadius:
-                                        BorderRadius.circular(999),
-                                  ),
-                                  child: Text(
-                                    'Premium',
-                                    style: Theme.of(context)
-                                        .textTheme
-                                        .labelSmall
-                                        ?.copyWith(
-                                          color: Theme.of(context)
-                                              .colorScheme
-                                              .primary,
-                                          fontWeight: FontWeight.w700,
-                                        ),
-                                  ),
-                                ),
-                              ],
-                            ],
-                          );
-                        }),
-                      ),
-                    ],
-                  ),
-                ),
-                const SizedBox(height: 8),
-                const AdBannerWidget(),
-                const SizedBox(height: 8),
-                _buildWeekStrip(agendaController, accentGreen),
-                const SizedBox(height: 10),
-                _sectionTitle(
-                  context,
-                  _dayAgendaTitle(selectedDate),
-                  trailing: isTodaySelected ? null : 'Voltar para hoje',
-                  onTrailingTap: isTodaySelected
-                      ? null
-                      : () {
-                          final today = DateUtilsEx.startOfDay(DateTime.now());
-                          setState(() => selectedDate = today);
-                          agendaController.loadByDay(today);
-                        },
-                ),
-                const SizedBox(height: 8),
-                if (agendaDoDiaExibida.isEmpty)
-                  _buildDashboardEmpty(context, accentGreen)
-                else
-                  ...agendaDoDiaExibida.map(
-                    (item) => Padding(
-                      padding: const EdgeInsets.only(bottom: 8),
-                      child: _buildDashboardEventTile(
-                        context,
-                        item: item,
-                        groupName: groupNameById[item.groupId] ?? 'Sem grupo',
-                        accentColor: Theme.of(context).colorScheme.primary,
-                      ),
-                    ),
-                  ),
-                const SizedBox(height: 8),
-                if (overdue.isNotEmpty)
+            child: RefreshIndicator(
+              onRefresh: () async {
+                if (Get.isRegistered<ISyncService>()) {
+                  await Get.find<ISyncService>().syncNow();
+                }
+                await agendaController.refreshCurrentData();
+                await agendaController.loadByDay(selectedDate);
+              },
+              child: ListView(
+                physics: const AlwaysScrollableScrollPhysics(),
+                padding: const EdgeInsets.fromLTRB(12, 8, 12, 120),
+                children: [
                   Container(
                     padding: const EdgeInsets.all(12),
                     decoration: BoxDecoration(
                       color: Theme.of(context).colorScheme.surface,
-                      borderRadius: BorderRadius.circular(18),
-                      border: Border.all(
-                        color: context.semanticColors.danger.withValues(alpha: 0.2),
-                      ),
+                      borderRadius: BorderRadius.circular(20),
                     ),
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
+                    child: Row(
                       children: [
-                        Text(
-                          'ATENCAO NECESSARIA',
-                          style:
-                              Theme.of(context).textTheme.labelSmall?.copyWith(
-                                    color: context.semanticColors.danger,
-                                    fontWeight: FontWeight.w700,
-                                    letterSpacing: 0.8,
-                                  ),
+                        const CircleAvatar(
+                          radius: 16,
+                          child: Icon(Icons.person, size: 18),
                         ),
-                        const SizedBox(height: 8),
-                        _buildDashboardEventTile(
-                          context,
-                          item: overdue.first,
-                          groupName: groupNameById[overdue.first.groupId] ?? 'Sem grupo',
-                          accentColor: context.semanticColors.danger,
+                        const SizedBox(width: 10),
+                        Expanded(
+                          child: Obx(() {
+                            final authController = Get.find<AuthController>();
+                            final displayName =
+                                authController.userEmail.value ?? 'Usuário';
+                            final isPremium = authController.isPremium.value;
+                            return Column(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              children: [
+                                Text(
+                                  _greetingByTime(),
+                                  style: Theme.of(context).textTheme.labelSmall
+                                      ?.copyWith(letterSpacing: 1.1),
+                                ),
+                                Text(
+                                  displayName,
+                                  style: Theme.of(context).textTheme.titleMedium
+                                      ?.copyWith(fontWeight: FontWeight.w700),
+                                  maxLines: 1,
+                                  overflow: TextOverflow.ellipsis,
+                                ),
+                                if (isPremium) ...[
+                                  const SizedBox(height: 4),
+                                  Container(
+                                    padding: const EdgeInsets.symmetric(
+                                      horizontal: 8,
+                                      vertical: 2,
+                                    ),
+                                    decoration: BoxDecoration(
+                                      color: Theme.of(context)
+                                          .colorScheme
+                                          .primary
+                                          .withValues(alpha: 0.12),
+                                      borderRadius: BorderRadius.circular(999),
+                                    ),
+                                    child: Text(
+                                      'Premium',
+                                      style: Theme.of(context)
+                                          .textTheme
+                                          .labelSmall
+                                          ?.copyWith(
+                                            color: Theme.of(
+                                              context,
+                                            ).colorScheme.primary,
+                                            fontWeight: FontWeight.w700,
+                                          ),
+                                    ),
+                                  ),
+                                ],
+                              ],
+                            );
+                          }),
                         ),
                       ],
                     ),
                   ),
-                const SizedBox(height: 14),
-                _sectionTitle(context, 'Aulas de hoje', trailing: 'Ver tudo'),
-                const SizedBox(height: 8),
-                if (classes.isEmpty)
-                  _buildDashboardEmpty(context, accentGreen)
-                else
-                  ...classes.map(
-                    (item) => Padding(
-                      padding: const EdgeInsets.only(bottom: 8),
-                      child: _buildClassCard(
-                        context,
-                        startMinutes: item.startMinutes,
-                        endMinutes: item.endMinutes,
-                        subject: item.subject ?? 'Materia',
-                      ),
-                    ),
+                  const SizedBox(height: 8),
+                  const AdBannerWidget(),
+                  const SizedBox(height: 8),
+                  _buildWeekStrip(agendaController, accentGreen),
+                  const SizedBox(height: 10),
+                  _sectionTitle(
+                    context,
+                    _dayAgendaTitle(selectedDate),
+                    trailing: isTodaySelected ? null : 'Voltar para hoje',
+                    onTrailingTap: isTodaySelected
+                        ? null
+                        : () {
+                            final today = DateUtilsEx.startOfDay(
+                              DateTime.now(),
+                            );
+                            setState(() => selectedDate = today);
+                            agendaController.loadByDay(today);
+                          },
                   ),
-                const SizedBox(height: 12),
-                _sectionTitle(context, 'Próximos eventos'),
-                const SizedBox(height: 8),
-                Row(
-                  children: [
-                    _filterChip(
-                      context,
-                      'Todos',
-                      selected: selectedTimelineGroupId == null,
-                      onTap: () => setState(() => selectedTimelineGroupId = null),
-                    ),
-                    ...groupsController.groups.map(
-                      (group) => _filterChip(
-                        context,
-                        group.name,
-                        selected: selectedTimelineGroupId == group.id,
-                        onTap: () =>
-                            setState(() => selectedTimelineGroupId = group.id),
-                      ),
-                    ),
-                  ],
-                ),
-                const SizedBox(height: 10),
-                if (timelineItems.isEmpty)
-                  _buildDashboardEmpty(context, accentGreen)
-                else
-                  ...timelineItems.map(
-                    (item) => Padding(
-                      padding: const EdgeInsets.only(bottom: 10),
-                      child: _buildTimelineTile(
-                        context,
-                        item: item,
-                        groupName: groupNameById[item.groupId] ?? 'Sem grupo',
-                        accentGreen: accentGreen,
-                      ),
-                    ),
-                  ),
-                const SizedBox(height: 8),
-                Container(
-                  padding: const EdgeInsets.all(16),
-                  decoration: BoxDecoration(
-                    color: accentGreen,
-                    borderRadius: BorderRadius.circular(18),
-                  ),
-                  child: Row(
-                    children: [
-                      Expanded(
-                        child: Column(
-                          crossAxisAlignment: CrossAxisAlignment.start,
-                          children: [
-                            Text(
-                              'Total de eventos',
-                              style: Theme.of(context)
-                                  .textTheme
-                                  .bodySmall
-                                  ?.copyWith(
-                                    color: Theme.of(context).colorScheme.onPrimary,
-                                  ),
-                            ),
-                            const SizedBox(height: 4),
-                            Text(
-                              '${todayEvents.length}',
-                              style: Theme.of(context)
-                                  .textTheme
-                                  .headlineSmall
-                                  ?.copyWith(
-                                    color: Theme.of(context).colorScheme.onPrimary,
-                                    fontWeight: FontWeight.w800,
-                                  ),
-                            ),
-                          ],
+                  const SizedBox(height: 8),
+                  if (agendaDoDiaExibida.isEmpty)
+                    _buildDashboardEmpty(context, accentGreen)
+                  else
+                    ...agendaDoDiaExibida.map(
+                      (item) => Padding(
+                        padding: const EdgeInsets.only(bottom: 8),
+                        child: _buildDashboardEventTile(
+                          context,
+                          item: item,
+                          groupName: groupNameById[item.groupId] ?? 'Sem grupo',
+                          accentColor: Theme.of(context).colorScheme.primary,
                         ),
                       ),
-                      Text(
-                        '+${todayEvents.where((e) => e.status == AgendaStatus.pending).length} pendentes',
-                        style: Theme.of(context)
-                            .textTheme
-                            .bodySmall
-                            ?.copyWith(
-                              color: Theme.of(context).colorScheme.onPrimary,
-                            ),
+                    ),
+                  const SizedBox(height: 8),
+                  if (overdue.isNotEmpty)
+                    Container(
+                      padding: const EdgeInsets.all(12),
+                      decoration: BoxDecoration(
+                        color: Theme.of(context).colorScheme.surface,
+                        borderRadius: BorderRadius.circular(18),
+                        border: Border.all(
+                          color: context.semanticColors.danger.withValues(
+                            alpha: 0.2,
+                          ),
+                        ),
+                      ),
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Text(
+                            'ATENCAO NECESSARIA',
+                            style: Theme.of(context).textTheme.labelSmall
+                                ?.copyWith(
+                                  color: context.semanticColors.danger,
+                                  fontWeight: FontWeight.w700,
+                                  letterSpacing: 0.8,
+                                ),
+                          ),
+                          const SizedBox(height: 8),
+                          _buildDashboardEventTile(
+                            context,
+                            item: overdue.first,
+                            groupName:
+                                groupNameById[overdue.first.groupId] ??
+                                'Sem grupo',
+                            accentColor: context.semanticColors.danger,
+                          ),
+                        ],
+                      ),
+                    ),
+                  const SizedBox(height: 14),
+                  _sectionTitle(context, 'Aulas de hoje', trailing: 'Ver tudo'),
+                  const SizedBox(height: 8),
+                  if (classes.isEmpty)
+                    _buildDashboardEmpty(context, accentGreen)
+                  else
+                    ...classes.map(
+                      (item) => Padding(
+                        padding: const EdgeInsets.only(bottom: 8),
+                        child: _buildClassCard(
+                          context,
+                          startMinutes: item.startMinutes,
+                          endMinutes: item.endMinutes,
+                          subject: item.subject ?? 'Materia',
+                        ),
+                      ),
+                    ),
+                  const SizedBox(height: 12),
+                  _sectionTitle(context, 'Próximos eventos'),
+                  const SizedBox(height: 8),
+                  Row(
+                    children: [
+                      _filterChip(
+                        context,
+                        'Todos',
+                        selected: selectedTimelineGroupId == null,
+                        onTap: () =>
+                            setState(() => selectedTimelineGroupId = null),
+                      ),
+                      ...groupsController.groups.map(
+                        (group) => _filterChip(
+                          context,
+                          group.name,
+                          selected: selectedTimelineGroupId == group.id,
+                          onTap: () => setState(
+                            () => selectedTimelineGroupId = group.id,
+                          ),
+                        ),
                       ),
                     ],
                   ),
-                ),
-              ],
+                  const SizedBox(height: 10),
+                  if (timelineItems.isEmpty)
+                    _buildDashboardEmpty(context, accentGreen)
+                  else
+                    ...timelineItems.map(
+                      (item) => Padding(
+                        padding: const EdgeInsets.only(bottom: 10),
+                        child: _buildTimelineTile(
+                          context,
+                          item: item,
+                          groupName: groupNameById[item.groupId] ?? 'Sem grupo',
+                          accentGreen: accentGreen,
+                        ),
+                      ),
+                    ),
+                  const SizedBox(height: 8),
+                  Container(
+                    padding: const EdgeInsets.all(16),
+                    decoration: BoxDecoration(
+                      color: accentGreen,
+                      borderRadius: BorderRadius.circular(18),
+                    ),
+                    child: Row(
+                      children: [
+                        Expanded(
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              Text(
+                                'Total de eventos',
+                                style: Theme.of(context).textTheme.bodySmall
+                                    ?.copyWith(
+                                      color: Theme.of(
+                                        context,
+                                      ).colorScheme.onPrimary,
+                                    ),
+                              ),
+                              const SizedBox(height: 4),
+                              Text(
+                                '${todayEvents.length}',
+                                style: Theme.of(context).textTheme.headlineSmall
+                                    ?.copyWith(
+                                      color: Theme.of(
+                                        context,
+                                      ).colorScheme.onPrimary,
+                                      fontWeight: FontWeight.w800,
+                                    ),
+                              ),
+                            ],
+                          ),
+                        ),
+                        Text(
+                          '+${todayEvents.where((e) => e.status == AgendaStatus.pending).length} pendentes',
+                          style: Theme.of(context).textTheme.bodySmall
+                              ?.copyWith(
+                                color: Theme.of(context).colorScheme.onPrimary,
+                              ),
+                        ),
+                      ],
+                    ),
+                  ),
+                ],
+              ),
             ),
           ),
         ],
@@ -775,7 +805,9 @@ class _TodayPageState extends State<TodayPage> {
               width: 50,
               padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 6),
               decoration: BoxDecoration(
-                color: selected ? accentGreen : Theme.of(context).colorScheme.surface,
+                color: selected
+                    ? accentGreen
+                    : Theme.of(context).colorScheme.surface,
                 borderRadius: BorderRadius.circular(12),
               ),
               child: Column(
@@ -784,20 +816,20 @@ class _TodayPageState extends State<TodayPage> {
                   Text(
                     DateFormat('E').format(day),
                     style: Theme.of(context).textTheme.labelSmall?.copyWith(
-                          color: selected
-                              ? Theme.of(context).colorScheme.onPrimary
-                              : Theme.of(context).colorScheme.onSurfaceVariant,
-                        ),
+                      color: selected
+                          ? Theme.of(context).colorScheme.onPrimary
+                          : Theme.of(context).colorScheme.onSurfaceVariant,
+                    ),
                   ),
                   const SizedBox(height: 2),
                   Text(
                     '${day.day}',
                     style: Theme.of(context).textTheme.titleMedium?.copyWith(
-                          color: selected
-                              ? Theme.of(context).colorScheme.onPrimary
-                              : Theme.of(context).colorScheme.onSurface,
-                          fontWeight: FontWeight.w700,
-                        ),
+                      color: selected
+                          ? Theme.of(context).colorScheme.onPrimary
+                          : Theme.of(context).colorScheme.onSurface,
+                      fontWeight: FontWeight.w700,
+                    ),
                   ),
                 ],
               ),
@@ -819,18 +851,18 @@ class _TodayPageState extends State<TodayPage> {
         : Text(
             trailing,
             style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                  color: Theme.of(context).colorScheme.primary,
-                  fontWeight: FontWeight.w600,
-                ),
+              color: Theme.of(context).colorScheme.primary,
+              fontWeight: FontWeight.w600,
+            ),
           );
     return Row(
       children: [
         Expanded(
           child: Text(
             title,
-            style: Theme.of(context).textTheme.titleMedium?.copyWith(
-                  fontWeight: FontWeight.w700,
-                ),
+            style: Theme.of(
+              context,
+            ).textTheme.titleMedium?.copyWith(fontWeight: FontWeight.w700),
             maxLines: 1,
             overflow: TextOverflow.ellipsis,
           ),
@@ -842,7 +874,10 @@ class _TodayPageState extends State<TodayPage> {
                   onTap: onTrailingTap,
                   borderRadius: BorderRadius.circular(8),
                   child: Padding(
-                    padding: const EdgeInsets.symmetric(horizontal: 4, vertical: 6),
+                    padding: const EdgeInsets.symmetric(
+                      horizontal: 4,
+                      vertical: 6,
+                    ),
                     child: trailingText,
                   ),
                 ),
@@ -894,11 +929,11 @@ class _TodayPageState extends State<TodayPage> {
           child: Text(
             label,
             style: Theme.of(context).textTheme.labelSmall?.copyWith(
-                  color: selected
-                      ? Theme.of(context).colorScheme.onPrimary
-                      : Theme.of(context).colorScheme.onSurfaceVariant,
-                  fontWeight: FontWeight.w600,
-                ),
+              color: selected
+                  ? Theme.of(context).colorScheme.onPrimary
+                  : Theme.of(context).colorScheme.onSurfaceVariant,
+              fontWeight: FontWeight.w600,
+            ),
           ),
         ),
       ),
@@ -941,8 +976,8 @@ class _TodayPageState extends State<TodayPage> {
                     maxLines: 1,
                     overflow: TextOverflow.ellipsis,
                     style: Theme.of(context).textTheme.titleSmall?.copyWith(
-                          fontWeight: FontWeight.w700,
-                        ),
+                      fontWeight: FontWeight.w700,
+                    ),
                   ),
                   const SizedBox(height: 2),
                   Text(
@@ -953,8 +988,8 @@ class _TodayPageState extends State<TodayPage> {
                   Text(
                     groupName,
                     style: Theme.of(context).textTheme.labelSmall?.copyWith(
-                          color: Theme.of(context).colorScheme.onSurfaceVariant,
-                        ),
+                      color: Theme.of(context).colorScheme.onSurfaceVariant,
+                    ),
                   ),
                 ],
               ),
@@ -986,9 +1021,9 @@ class _TodayPageState extends State<TodayPage> {
             alignment: Alignment.center,
             child: Text(
               start,
-              style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                    fontWeight: FontWeight.w700,
-                  ),
+              style: Theme.of(
+                context,
+              ).textTheme.bodySmall?.copyWith(fontWeight: FontWeight.w700),
             ),
           ),
           const SizedBox(width: 10),
@@ -1000,16 +1035,16 @@ class _TodayPageState extends State<TodayPage> {
                   subject,
                   maxLines: 1,
                   overflow: TextOverflow.ellipsis,
-                  style: Theme.of(context).textTheme.titleSmall?.copyWith(
-                        fontWeight: FontWeight.w700,
-                      ),
+                  style: Theme.of(
+                    context,
+                  ).textTheme.titleSmall?.copyWith(fontWeight: FontWeight.w700),
                 ),
                 const SizedBox(height: 2),
                 Text(
                   '$start - $end',
                   style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                        color: Theme.of(context).colorScheme.onSurfaceVariant,
-                      ),
+                    color: Theme.of(context).colorScheme.onSurfaceVariant,
+                  ),
                 ),
               ],
             ),
@@ -1027,11 +1062,10 @@ class _TodayPageState extends State<TodayPage> {
   }) {
     final timeLabel =
         '${_upcomingDateLabel(item.startAt)}\n${item.allDay ? 'Dia todo' : DateFormat('HH:mm').format(item.startAt)}';
-    final isExpired = item.status == AgendaStatus.pending &&
+    final isExpired =
+        item.status == AgendaStatus.pending &&
         item.startAt.isBefore(DateTime.now());
-    final lineColor = isExpired
-        ? context.semanticColors.danger
-        : accentGreen;
+    final lineColor = isExpired ? context.semanticColors.danger : accentGreen;
     return Row(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
@@ -1040,21 +1074,21 @@ class _TodayPageState extends State<TodayPage> {
           child: Text(
             timeLabel,
             style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                  color: Theme.of(context).colorScheme.onSurfaceVariant,
-                ),
+              color: Theme.of(context).colorScheme.onSurfaceVariant,
             ),
           ),
-          const SizedBox(width: 4),
-          Container(
-            width: 1.5,
-            height: 92,
-            color: lineColor.withValues(alpha: 0.7),
-          ),
-          const SizedBox(width: 8),
-          Expanded(
-            child: InkWell(
+        ),
+        const SizedBox(width: 4),
+        Container(
+          width: 1.5,
+          height: 92,
+          color: lineColor.withValues(alpha: 0.7),
+        ),
+        const SizedBox(width: 8),
+        Expanded(
+          child: InkWell(
             borderRadius: BorderRadius.circular(16),
-              onTap: () => Get.toNamed(AppRoutes.eventDetail, arguments: item),
+            onTap: () => Get.toNamed(AppRoutes.eventDetail, arguments: item),
             child: Container(
               padding: const EdgeInsets.all(12),
               decoration: BoxDecoration(
@@ -1062,7 +1096,9 @@ class _TodayPageState extends State<TodayPage> {
                 borderRadius: BorderRadius.circular(16),
                 border: isExpired
                     ? Border.all(
-                        color: context.semanticColors.danger.withValues(alpha: 0.2),
+                        color: context.semanticColors.danger.withValues(
+                          alpha: 0.2,
+                        ),
                       )
                     : null,
               ),
@@ -1074,10 +1110,11 @@ class _TodayPageState extends State<TodayPage> {
                       Expanded(
                         child: Text(
                           groupName.toUpperCase(),
-                          style: Theme.of(context).textTheme.labelSmall?.copyWith(
-                              color: Theme.of(context).colorScheme.primary,
-                              fontWeight: FontWeight.w700,
-                            ),
+                          style: Theme.of(context).textTheme.labelSmall
+                              ?.copyWith(
+                                color: Theme.of(context).colorScheme.primary,
+                                fontWeight: FontWeight.w700,
+                              ),
                           maxLines: 1,
                           overflow: TextOverflow.ellipsis,
                         ),
@@ -1085,7 +1122,8 @@ class _TodayPageState extends State<TodayPage> {
                       if (isExpired)
                         Text(
                           'Expirado',
-                          style: Theme.of(context).textTheme.labelSmall?.copyWith(
+                          style: Theme.of(context).textTheme.labelSmall
+                              ?.copyWith(
                                 color: context.semanticColors.danger,
                                 fontWeight: FontWeight.w700,
                               ),
@@ -1097,8 +1135,8 @@ class _TodayPageState extends State<TodayPage> {
                     Text(
                       FamilyItemLabels.summary(item)!,
                       style: Theme.of(context).textTheme.labelSmall?.copyWith(
-                            color: Theme.of(context).colorScheme.primary,
-                          ),
+                        color: Theme.of(context).colorScheme.primary,
+                      ),
                       maxLines: 1,
                       overflow: TextOverflow.ellipsis,
                     ),
@@ -1109,8 +1147,8 @@ class _TodayPageState extends State<TodayPage> {
                     maxLines: 2,
                     overflow: TextOverflow.ellipsis,
                     style: Theme.of(context).textTheme.titleSmall?.copyWith(
-                          fontWeight: FontWeight.w700,
-                        ),
+                      fontWeight: FontWeight.w700,
+                    ),
                   ),
                   const SizedBox(height: 4),
                   Text(
@@ -1120,8 +1158,8 @@ class _TodayPageState extends State<TodayPage> {
                     maxLines: 2,
                     overflow: TextOverflow.ellipsis,
                     style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                          color: Theme.of(context).colorScheme.onSurfaceVariant,
-                        ),
+                      color: Theme.of(context).colorScheme.onSurfaceVariant,
+                    ),
                   ),
                 ],
               ),
@@ -1259,11 +1297,13 @@ class _TodayPageState extends State<TodayPage> {
               child: Padding(
                 padding: const EdgeInsets.only(top: 22, left: 8),
                 child: Text(
-                  item.allDay ? 'Dia' : DateFormat('HH:mm').format(item.startAt),
+                  item.allDay
+                      ? 'Dia'
+                      : DateFormat('HH:mm').format(item.startAt),
                   style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                        color: Theme.of(context).colorScheme.onSurfaceVariant,
-                        fontWeight: FontWeight.w600,
-                      ),
+                    color: Theme.of(context).colorScheme.onSurfaceVariant,
+                    fontWeight: FontWeight.w600,
+                  ),
                 ),
               ),
             ),
@@ -1273,7 +1313,8 @@ class _TodayPageState extends State<TodayPage> {
                 item: item,
                 groupName: groupNameById[item.groupId] ?? 'Sem grupo',
                 groupColor: groupColorById[item.groupId],
-                onTap: () => Get.toNamed(AppRoutes.eventDetail, arguments: item),
+                onTap: () =>
+                    Get.toNamed(AppRoutes.eventDetail, arguments: item),
                 onToggleStatus: (status) {
                   agendaController.toggleStatus(item.id, status);
                   _showSavedFeedback(context, 'Status atualizado');
@@ -1306,9 +1347,10 @@ class _TodayPageState extends State<TodayPage> {
     final statusColor = item.status == AgendaStatus.done
         ? context.semanticColors.success
         : item.status == AgendaStatus.canceled
-            ? context.semanticColors.warning
-            : context.semanticColors.pending;
-    final isExpired = item.status == AgendaStatus.pending &&
+        ? context.semanticColors.warning
+        : context.semanticColors.pending;
+    final isExpired =
+        item.status == AgendaStatus.pending &&
         item.startAt.isBefore(DateTime.now());
     final railColor = isExpired
         ? context.semanticColors.danger
@@ -1357,9 +1399,8 @@ class _TodayPageState extends State<TodayPage> {
                         children: [
                           Text(
                             DateFormat('HH:mm').format(item.startAt),
-                            style: Theme.of(context).textTheme.titleMedium?.copyWith(
-                                  fontWeight: FontWeight.w700,
-                                ),
+                            style: Theme.of(context).textTheme.titleMedium
+                                ?.copyWith(fontWeight: FontWeight.w700),
                           ),
                           const SizedBox(width: 8),
                           Flexible(
@@ -1374,7 +1415,8 @@ class _TodayPageState extends State<TodayPage> {
                               ),
                               child: Text(
                                 groupName,
-                                style: Theme.of(context).textTheme.labelSmall?.copyWith(
+                                style: Theme.of(context).textTheme.labelSmall
+                                    ?.copyWith(
                                       color: railColor,
                                       fontWeight: FontWeight.w700,
                                     ),
@@ -1391,13 +1433,15 @@ class _TodayPageState extends State<TodayPage> {
                                 vertical: 4,
                               ),
                               decoration: BoxDecoration(
-                                color: context.semanticColors.danger
-                                    .withValues(alpha: 0.12),
+                                color: context.semanticColors.danger.withValues(
+                                  alpha: 0.12,
+                                ),
                                 borderRadius: BorderRadius.circular(999),
                               ),
                               child: Text(
                                 'Expirado',
-                                style: Theme.of(context).textTheme.labelSmall?.copyWith(
+                                style: Theme.of(context).textTheme.labelSmall
+                                    ?.copyWith(
                                       color: context.semanticColors.danger,
                                       fontWeight: FontWeight.w700,
                                     ),
@@ -1419,8 +1463,11 @@ class _TodayPageState extends State<TodayPage> {
                             Expanded(
                               child: Text(
                                 FamilyItemLabels.summary(item)!,
-                                style: Theme.of(context).textTheme.labelSmall?.copyWith(
-                                      color: Theme.of(context).colorScheme.primary,
+                                style: Theme.of(context).textTheme.labelSmall
+                                    ?.copyWith(
+                                      color: Theme.of(
+                                        context,
+                                      ).colorScheme.primary,
                                     ),
                                 maxLines: 1,
                                 overflow: TextOverflow.ellipsis,
@@ -1433,15 +1480,15 @@ class _TodayPageState extends State<TodayPage> {
                       Text(
                         item.title,
                         style: Theme.of(context).textTheme.titleLarge?.copyWith(
-                              fontWeight: FontWeight.w700,
-                            ),
+                          fontWeight: FontWeight.w700,
+                        ),
                       ),
                       const SizedBox(height: 2),
                       Text(
                         '${DateFormat('dd MMM').format(item.startAt)} · ${item.status.name}',
                         style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                              color: Theme.of(context).colorScheme.onSurfaceVariant,
-                            ),
+                          color: Theme.of(context).colorScheme.onSurfaceVariant,
+                        ),
                       ),
                     ],
                   ),
@@ -1469,7 +1516,9 @@ class _TodayPageState extends State<TodayPage> {
   }
 
   Widget _buildDayList(
-      AgendaController controller, GroupsController groupsController) {
+    AgendaController controller,
+    GroupsController groupsController,
+  ) {
     if (controller.selectedDayItems.isEmpty) {
       return _buildResponsiveEmpty(
         EmptyStateWidget(
@@ -1573,8 +1622,8 @@ class _TodayPageState extends State<TodayPage> {
                 Text(
                   DateFormat('EEEE, dd/MM').format(day),
                   style: Theme.of(context).textTheme.titleMedium?.copyWith(
-                        fontWeight: FontWeight.w700,
-                      ),
+                    fontWeight: FontWeight.w700,
+                  ),
                 ),
                 const SizedBox(height: 8),
                 ...orderedGroupNames.map((groupName) {
@@ -1589,7 +1638,8 @@ class _TodayPageState extends State<TodayPage> {
                             width: 8,
                             height: 8,
                             decoration: BoxDecoration(
-                              color: groupColorByName[groupName] ??
+                              color:
+                                  groupColorByName[groupName] ??
                                   Theme.of(context).colorScheme.primary,
                               shape: BoxShape.circle,
                             ),
@@ -1597,13 +1647,11 @@ class _TodayPageState extends State<TodayPage> {
                           const SizedBox(width: 8),
                           Text(
                             '$groupName (${groupItems.length})',
-                            style: Theme.of(context)
-                                .textTheme
-                                .bodyMedium
+                            style: Theme.of(context).textTheme.bodyMedium
                                 ?.copyWith(
-                                  color: Theme.of(context)
-                                      .colorScheme
-                                      .onSurfaceVariant,
+                                  color: Theme.of(
+                                    context,
+                                  ).colorScheme.onSurfaceVariant,
                                   fontWeight: FontWeight.w600,
                                 ),
                           ),
@@ -1615,14 +1663,18 @@ class _TodayPageState extends State<TodayPage> {
                           item: item,
                           groupName: groupName,
                           groupColor: groupColorById[item.groupId],
-                          onTap: () => Get.toNamed(AppRoutes.eventDetail,
-                              arguments: item),
+                          onTap: () => Get.toNamed(
+                            AppRoutes.eventDetail,
+                            arguments: item,
+                          ),
                           onToggleStatus: (status) {
                             agendaController.toggleStatus(item.id, status);
                             _showSavedFeedback(context, 'Status atualizado');
                           },
                           onDelete: () => _confirmDeleteAndExecute(
-                              agendaController, item.id),
+                            agendaController,
+                            item.id,
+                          ),
                         ),
                       ),
                       const SizedBox(height: 6),
@@ -1734,8 +1786,11 @@ class _TodayPageState extends State<TodayPage> {
             outsideDaysVisible: false,
             defaultTextStyle: Theme.of(context).textTheme.bodyMedium!,
             todayDecoration: BoxDecoration(
-              color: (isAgendaTabMode ? accentGreen : Theme.of(context).colorScheme.primary)
-                  .withValues(alpha: 0.22),
+              color:
+                  (isAgendaTabMode
+                          ? accentGreen
+                          : Theme.of(context).colorScheme.primary)
+                      .withValues(alpha: 0.22),
               shape: BoxShape.circle,
             ),
             selectedDecoration: BoxDecoration(
@@ -1767,11 +1822,13 @@ class _TodayPageState extends State<TodayPage> {
         content: const Text('Essa acao move o evento para exclusao logica.'),
         actions: [
           TextButton(
-              onPressed: () => Navigator.pop(context, false),
-              child: const Text('Cancelar')),
+            onPressed: () => Navigator.pop(context, false),
+            child: const Text('Cancelar'),
+          ),
           FilledButton(
-              onPressed: () => Navigator.pop(context, true),
-              child: const Text('Excluir')),
+            onPressed: () => Navigator.pop(context, true),
+            child: const Text('Excluir'),
+          ),
         ],
       ),
     );
