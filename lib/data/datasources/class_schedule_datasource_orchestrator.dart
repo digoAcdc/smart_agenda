@@ -45,6 +45,20 @@ class ClassScheduleDataSourceOrchestrator implements IClassScheduleDataSource {
   }
 
   @override
+  Future<String?> updateTimeRange(
+    ScheduleOwner owner,
+    int oldStart,
+    int oldEnd,
+    int newStart,
+    int newEnd,
+  ) async {
+    final result =
+        await _local.updateTimeRange(owner, oldStart, oldEnd, newStart, newEnd);
+    if (result == null) _scheduleSync();
+    return result;
+  }
+
+  @override
   Future<void> removeTimeRange(ScheduleOwner owner, int start, int end) async {
     await _local.removeTimeRange(owner, start, end);
     _scheduleSync();

@@ -15,7 +15,7 @@ class TimeRange {
 
 class ClassScheduleController extends GetxController {
   ClassScheduleController(this._dataSource, {ISyncService? syncService})
-      : _syncService = syncService;
+    : _syncService = syncService;
 
   final IClassScheduleDataSource _dataSource;
   final ISyncService? _syncService;
@@ -31,12 +31,34 @@ class ClassScheduleController extends GetxController {
 
   static const weekdays = [1, 2, 3, 4, 5];
 
+  /// Materias sugeridas e usadas na grade modelo.
+  static const defaultSubjects = [
+    'Matemática',
+    'Português',
+    'Ciências',
+    'História',
+    'Geografia',
+    'Inglês',
+  ];
+
+  /// Horarios da grade modelo (aulas de 50 min, intervalo de 20 apos a 3a).
+  static const defaultTimes = [
+    (420, 470),
+    (470, 520),
+    (520, 570),
+    (590, 640),
+    (640, 690),
+    (690, 740),
+  ];
+
   @override
   void onInit() {
     super.onInit();
     WidgetsBinding.instance.addPostFrameCallback((_) => load());
     // Grades dos filhos editadas por outros membros chegam pelo sync.
-    _remoteChangesSub = _syncService?.onDataChanged.listen((_) => load(silent: true));
+    _remoteChangesSub = _syncService?.onDataChanged.listen(
+      (_) => load(silent: true),
+    );
   }
 
   @override
@@ -83,6 +105,54 @@ class ClassScheduleController extends GetxController {
     return set.toList()..sort();
   }
 
+  /// Materias para escolher: as da grade + as principais sugeridas.
+  List<String> get subjectOptions {
+    final existing = existingSubjects;
+    return [
+      ...existing,
+      ...defaultSubjects.where((s) => !existing.contains(s)),
+    ];
+  }
+
+  /// Cria a grade modelo: 6 aulas por dia, de segunda a sexta, com as
+  /// materias principais em ordem diferente a cada dia. So em grade vazia.
+  Future<void> applyTemplate() async {
+    if (slots.isNotEmpty) return;
+    final current = owner.value;
+    for (final (start, end) in defaultTimes) {
+      await _dataSource.addTimeRange(current, start, end);
+    }
+    final created = await _dataSource.getSlots(current);
+    for (final slot in created) {
+      final row = defaultTimes.indexWhere(
+        (t) => t.$1 == slot.startMinutes && t.$2 == slot.endMinutes,
+      );
+      if (row < 0) continue;
+      final subject =
+          defaultSubjects[(row + slot.dayOfWeek - 1) % defaultSubjects.length];
+      await _dataSource.updateSlotDetails(slot.id, subject: subject);
+    }
+    await load();
+  }
+
+  Future<String?> updateTimeRange(
+    int oldStart,
+    int oldEnd,
+    int newStart,
+    int newEnd,
+  ) async {
+    final err = await _dataSource.updateTimeRange(
+      owner.value,
+      oldStart,
+      oldEnd,
+      newStart,
+      newEnd,
+    );
+    if (err != null) return err;
+    await load();
+    return null;
+  }
+
   /// Retorna o slot de referencia para uma materia (o que tem mais dados preenchidos).
   ClassScheduleSlot? getSlotForSubject(String subject) {
     final trimmed = subject.trim();
@@ -96,7 +166,8 @@ class ClassScheduleController extends GetxController {
       }
       final bestScore = _slotDetailScore(best);
       final currScore = _slotDetailScore(s);
-      if (currScore > bestScore || (currScore == bestScore && s.updatedAt.isAfter(best.updatedAt))) {
+      if (currScore > bestScore ||
+          (currScore == bestScore && s.updatedAt.isAfter(best.updatedAt))) {
         best = s;
       }
     }

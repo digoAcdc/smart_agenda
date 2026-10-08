@@ -73,15 +73,33 @@ class ClassSchedulePage extends GetView<ClassScheduleController> {
                 }
                 final ranges = controller.timeRanges;
                 if (ranges.isEmpty) {
-                  return EmptyStateWidget(
-                    icon: Icons.view_week_outlined,
-                    title: 'Sem grade ainda',
-                    message:
-                        'Adicione horarios e depois toque nas celulas para inserir materias.',
-                    ctaLabel: _canEdit ? 'Adicionar horario' : null,
-                    onTapCta: _canEdit
-                        ? () => _openAddTimeRangeDialog(context)
-                        : null,
+                  if (!_canEdit) {
+                    return const EmptyStateWidget(
+                      icon: Icons.view_week_outlined,
+                      title: 'Sem grade ainda',
+                      message:
+                          'Quem administra a Familia ainda nao montou esta grade.',
+                    );
+                  }
+                  return SingleChildScrollView(
+                    child: Column(
+                      children: [
+                        EmptyStateWidget(
+                          icon: Icons.view_week_outlined,
+                          title: 'Sem grade ainda',
+                          message:
+                              'Comece pela grade modelo: 6 aulas de segunda a sexta com '
+                              'Matematica, Portugues, Ciencias, Historia, Geografia e Ingles. '
+                              'Depois e so tocar para trocar materias e horarios.',
+                          ctaLabel: 'Usar grade modelo',
+                          onTapCta: controller.applyTemplate,
+                        ),
+                        TextButton(
+                          onPressed: () => _openAddTimeRangeDialog(context),
+                          child: const Text('Comecar do zero'),
+                        ),
+                      ],
+                    ),
                   );
                 }
 
@@ -243,15 +261,27 @@ class ClassSchedulePage extends GetView<ClassScheduleController> {
             child: Column(
               mainAxisAlignment: MainAxisAlignment.center,
               children: [
-                Text(
-                  controller.formatMinutes(start),
-                  style: Theme.of(
-                    context,
-                  ).textTheme.bodyMedium?.copyWith(fontWeight: FontWeight.w700),
-                ),
-                Text(
-                  controller.formatMinutes(end),
-                  style: Theme.of(context).textTheme.bodySmall,
+                InkWell(
+                  onTap: _canEdit
+                      ? () => _openEditTimeRangeDialog(context, start, end)
+                      : null,
+                  borderRadius: BorderRadius.circular(8),
+                  child: Padding(
+                    padding: const EdgeInsets.all(4),
+                    child: Column(
+                      children: [
+                        Text(
+                          controller.formatMinutes(start),
+                          style: Theme.of(context).textTheme.bodyMedium
+                              ?.copyWith(fontWeight: FontWeight.w700),
+                        ),
+                        Text(
+                          controller.formatMinutes(end),
+                          style: Theme.of(context).textTheme.bodySmall,
+                        ),
+                      ],
+                    ),
+                  ),
                 ),
                 const SizedBox(height: 6),
                 if (_canEdit)
@@ -304,6 +334,85 @@ class ClassSchedulePage extends GetView<ClassScheduleController> {
                 ? FontWeight.w600
                 : FontWeight.w400,
           ),
+        ),
+      ),
+    );
+  }
+
+  /// Troca o horario de uma linha (todos os dias).
+  Future<void> _openEditTimeRangeDialog(
+    BuildContext context,
+    int start,
+    int end,
+  ) async {
+    var newStart = start;
+    var newEnd = end;
+    TimeOfDay toTime(int m) => TimeOfDay(hour: m ~/ 60, minute: m % 60);
+
+    await Get.dialog(
+      StatefulBuilder(
+        builder: (dialogContext, setLocal) => AlertDialog(
+          title: const Text('Horario da aula'),
+          content: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              ListTile(
+                contentPadding: EdgeInsets.zero,
+                leading: const Icon(Icons.schedule),
+                title: const Text('Inicio'),
+                trailing: Text(controller.formatMinutes(newStart)),
+                onTap: () async {
+                  final picked = await showTimePicker(
+                    context: dialogContext,
+                    initialTime: toTime(newStart),
+                  );
+                  if (picked == null) return;
+                  final duration = newEnd - newStart;
+                  setLocal(() {
+                    newStart = picked.hour * 60 + picked.minute;
+                    newEnd = newStart + duration;
+                  });
+                },
+              ),
+              ListTile(
+                contentPadding: EdgeInsets.zero,
+                leading: const Icon(Icons.schedule_outlined),
+                title: const Text('Fim'),
+                trailing: Text(controller.formatMinutes(newEnd)),
+                onTap: () async {
+                  final picked = await showTimePicker(
+                    context: dialogContext,
+                    initialTime: toTime(newEnd),
+                  );
+                  if (picked == null) return;
+                  setLocal(() => newEnd = picked.hour * 60 + picked.minute);
+                },
+              ),
+            ],
+          ),
+          actions: [
+            TextButton(onPressed: Get.back, child: const Text('Cancelar')),
+            FilledButton(
+              onPressed: () async {
+                final error = await controller.updateTimeRange(
+                  start,
+                  end,
+                  newStart,
+                  newEnd,
+                );
+                if (error != null) {
+                  if (context.mounted) {
+                    ScaffoldMessenger.of(
+                      context,
+                    ).showSnackBar(SnackBar(content: Text(error)));
+                  }
+                  return;
+                }
+                Get.back();
+              },
+              child: const Text('Salvar'),
+            ),
+          ],
         ),
       ),
     );
@@ -452,7 +561,7 @@ class ClassSchedulePage extends GetView<ClassScheduleController> {
     int day,
     ClassScheduleSlot cell,
   ) async {
-    final existingSubjects = controller.existingSubjects;
+    final existingSubjects = controller.subjectOptions;
     final currentSubject = cell.subject?.trim();
     final isExisting =
         currentSubject != null &&
@@ -515,7 +624,7 @@ class ClassSchedulePage extends GetView<ClassScheduleController> {
                   crossAxisAlignment: CrossAxisAlignment.stretch,
                   children: [
                     DropdownButtonFormField<String?>(
-                      value: dropdownValue,
+                      initialValue: dropdownValue,
                       decoration: const InputDecoration(
                         labelText: 'Materia (opcional)',
                         isDense: true,

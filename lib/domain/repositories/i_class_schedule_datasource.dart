@@ -18,4 +18,13 @@ abstract class IClassScheduleDataSource {
   });
 
   Future<void> removeTimeRange(ScheduleOwner owner, int start, int end);
+
+  /// Muda o horario de uma linha inteira (todos os dias).
+  Future<String?> updateTimeRange(
+    ScheduleOwner owner,
+    int oldStart,
+    int oldEnd,
+    int newStart,
+    int newEnd,
+  );
 }
