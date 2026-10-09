@@ -9,9 +9,8 @@ class AdConstants {
 
   static const String bannerProdId = 'ca-app-pub-1515466936385187/6662778824';
 
-  /// Bloco "Nativo avancado" criado no AdMob. Enquanto vazio, o anuncio
-  /// nativo nao aparece em release (so com o ID de teste em debug).
-  static const String nativeProdId = String.fromEnvironment('ADMOB_NATIVE_ID');
+  /// Bloco "Nativo avancado" (Proximos eventos na Home).
+  static const String nativeProdId = 'ca-app-pub-1515466936385187/8513244326';
 
   /// Usar IDs de teste em debug, IDs de producao em release.
   static bool get useTestIds => kDebugMode;
