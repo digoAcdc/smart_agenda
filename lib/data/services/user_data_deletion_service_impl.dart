@@ -1,3 +1,4 @@
+import 'dart:convert';
 import 'dart:io';
 
 import 'package:flutter/foundation.dart';
@@ -6,6 +7,7 @@ import 'package:shared_preferences/shared_preferences.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 
 import '../../core/config/supabase_config.dart';
+import '../../core/constants/billing_constants.dart';
 import '../../core/result/result.dart';
 import '../../domain/repositories/i_user_data_deletion_service.dart';
 import '../local/app_database.dart';
@@ -62,6 +64,49 @@ class UserDataDeletionServiceImpl implements IUserDataDeletionService {
       );
     }
 
+    return Result.success(null);
+  }
+
+  @override
+  Future<Result<void>> deleteAccount() async {
+    final client = _client;
+    final session = client?.auth.currentSession;
+    if (!SupabaseConfig.isConfigured || client == null || session == null) {
+      return Result.failure('Entre na sua conta para excluí-la.');
+    }
+    final http = HttpClient()..connectionTimeout = const Duration(seconds: 15);
+    try {
+      final request = await http.postUrl(
+        Uri.parse('${BillingConstants.billingApiBaseUrl}/account/delete'),
+      );
+      request.headers.set(HttpHeaders.authorizationHeader, 'Bearer ${session.accessToken}');
+      final response = await request.close().timeout(const Duration(seconds: 30));
+      final body = await response.transform(utf8.decoder).join();
+      if (response.statusCode != 200) {
+        final parsed = body.isEmpty ? null : jsonDecode(body) as Map<String, dynamic>;
+        return Result.failure(
+          response.statusCode == 409
+              ? (parsed?['error'] as String? ??
+                  'Você é dono de uma Família. Exclua a Família antes de excluir a conta.')
+              : 'Não foi possível excluir a conta agora. Tente novamente.',
+        );
+      }
+    } catch (e) {
+      debugPrint('[UserDataDeletion] excluir conta falhou: $e');
+      return Result.failure('Sem conexão. Tente novamente quando estiver online.');
+    } finally {
+      http.close();
+    }
+
+    // Conta excluida no servidor: limpa o aparelho e encerra a sessao local.
+    try {
+      await _deleteAllLocalRows();
+      await _clearLocalAttachmentsDirectory();
+      await _clearMigrationPrefs();
+      await client.auth.signOut(scope: SignOutScope.local);
+    } catch (e) {
+      debugPrint('[UserDataDeletion] limpeza local apos excluir conta: $e');
+    }
     return Result.success(null);
   }
 

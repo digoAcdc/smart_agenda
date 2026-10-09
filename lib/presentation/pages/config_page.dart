@@ -629,11 +629,121 @@ class _ConfigPageState extends State<ConfigPage> {
                   ),
                 ),
               ),
+              if (Get.find<AuthController>().isLoggedIn.value) ...[
+                const Divider(height: 1),
+                InkWell(
+                  onTap: _deletingData ? null : _runDeleteAccountFlow,
+                  borderRadius: BorderRadius.circular(DesignTokens.radiusMd),
+                  child: Padding(
+                    padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 12),
+                    child: Row(
+                      children: [
+                        Container(
+                          width: 44,
+                          height: 44,
+                          decoration: BoxDecoration(
+                            color: danger.withValues(alpha: 0.12),
+                            shape: BoxShape.circle,
+                          ),
+                          child: Icon(Icons.person_remove_outlined, color: danger, size: 22),
+                        ),
+                        const SizedBox(width: 16),
+                        Expanded(
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              Text(
+                                'Excluir minha conta',
+                                style: Theme.of(context).textTheme.titleSmall?.copyWith(
+                                      fontWeight: FontWeight.w600,
+                                      color: danger,
+                                    ),
+                              ),
+                              const SizedBox(height: 2),
+                              Text(
+                                'Exclui a conta de login e todos os seus dados.',
+                                style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                                      color: Theme.of(context).colorScheme.onSurfaceVariant,
+                                    ),
+                              ),
+                            ],
+                          ),
+                        ),
+                        Icon(Icons.chevron_right, size: 24, color: danger),
+                      ],
+                    ),
+                  ),
+                ),
+              ],
             ],
           ),
         ),
       ],
     );
+  }
+
+  Future<void> _runDeleteAccountFlow() async {
+    final confirmCtrl = TextEditingController();
+    final ok = await Get.dialog<bool>(
+      StatefulBuilder(
+        builder: (dialogContext, setLocal) => AlertDialog(
+          title: const Text('Excluir minha conta'),
+          scrollable: true,
+          content: Column(
+            mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              const Text(
+                'Isso exclui definitivamente a sua conta e os seus dados: agenda e '
+                'grades pessoais, anotações, turmas, fotos e a participação na Família. '
+                'Eventos que você criou na Família continuam com ela.\n\n'
+                'Se você tem uma assinatura, cancele no Google Play: excluir a conta '
+                'não cancela a cobrança.\n\n'
+                'Para confirmar, digite EXCLUIR:',
+              ),
+              const SizedBox(height: 8),
+              TextField(
+                controller: confirmCtrl,
+                autofocus: true,
+                textCapitalization: TextCapitalization.characters,
+                onChanged: (_) => setLocal(() {}),
+                decoration: const InputDecoration(hintText: 'EXCLUIR'),
+              ),
+            ],
+          ),
+          actions: [
+            TextButton(onPressed: () => Get.back(result: false), child: const Text('Cancelar')),
+            FilledButton(
+              style: FilledButton.styleFrom(
+                backgroundColor: Theme.of(dialogContext).colorScheme.error,
+              ),
+              onPressed: confirmCtrl.text.trim().toUpperCase() == 'EXCLUIR'
+                  ? () => Get.back(result: true)
+                  : null,
+              child: const Text('Excluir conta'),
+            ),
+          ],
+        ),
+      ),
+      barrierDismissible: false,
+    );
+    if (ok != true || !mounted) return;
+
+    setState(() => _deletingData = true);
+    final result = await Get.find<IUserDataDeletionService>().deleteAccount();
+    if (!mounted) return;
+    setState(() => _deletingData = false);
+    if (!result.isSuccess) {
+      Get.snackbar('Não foi possível excluir', result.errorMessage ?? 'Erro.',
+          snackPosition: SnackPosition.BOTTOM);
+      return;
+    }
+    try {
+      await Get.find<AuthController>().signOut();
+    } catch (_) {}
+    Get.offAllNamed(AppRoutes.home);
+    Get.snackbar('Conta excluída', 'Sua conta e seus dados foram excluídos.',
+        snackPosition: SnackPosition.BOTTOM);
   }
 
   Widget _buildFooter() {

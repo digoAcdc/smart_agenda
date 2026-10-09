@@ -17,6 +17,8 @@ import {
   sendRecoveryCode,
 } from "./recovery.js";
 import { startRecheckSchedule } from "./revalidation.js";
+import { deleteAccount, AccountDeletionError } from "./account.js";
+import { readFileSync } from "node:fs";
 
 dotenv.config();
 
@@ -90,6 +92,38 @@ app.get("/health", async () => {
     },
   };
 });
+
+// Pagina publica para o Play Console (exclusao de conta sem o app).
+const deleteAccountPage = readFileSync(new URL("./pages/excluir-conta.html", import.meta.url), "utf8");
+app.get("/excluir-conta", async (request, reply) =>
+  reply.type("text/html; charset=utf-8").send(deleteAccountPage)
+);
+
+app.post(
+  "/account/delete",
+  { config: { rateLimit: { max: 5, timeWindow: "15 minutes" } } },
+  async (request, reply) => {
+    try {
+      const { userId } = await verifySupabaseJwt(
+        request.headers.authorization,
+        process.env.SUPABASE_JWT_SECRET,
+        {
+          issuer: process.env.SUPABASE_JWT_ISSUER || undefined,
+          audience: process.env.SUPABASE_JWT_AUDIENCE || undefined,
+        }
+      );
+      await deleteAccount({ supabase, userId, log: request.log });
+      return reply.send({ ok: true });
+    } catch (error) {
+      if (error instanceof AuthError) return reply.code(401).send({ error: "Unauthorized" });
+      if (error instanceof AccountDeletionError) {
+        return reply.code(error.statusCode).send({ error: error.message, code: error.code });
+      }
+      request.log.error({ err: error.message }, "[account_delete_failed]");
+      return reply.code(500).send({ error: "Could not delete account" });
+    }
+  }
+);
 
 app.post(
   "/auth/password-recovery",
