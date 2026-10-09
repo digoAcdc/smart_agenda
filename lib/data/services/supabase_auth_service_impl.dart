@@ -147,7 +147,7 @@ class SupabaseAuthServiceImpl implements IAuthService {
       }
       if (msg.contains('user already registered') ||
           msg.contains('already registered')) {
-        return 'Este e-mail ja esta cadastrado. Faca login ou recupere sua senha.';
+        return 'Este e-mail já está cadastrado. Faça login ou recupere sua senha.';
       }
       if (msg.contains('password')) {
         return 'A senha deve ter pelo menos 6 caracteres.';
@@ -155,40 +155,40 @@ class SupabaseAuthServiceImpl implements IAuthService {
       if (msg.contains('error sending confirmation email') ||
           msg.contains('confirmation email') ||
           (msg.contains('unexpected_failure') && msg.contains('sending'))) {
-        return 'SMTP nao configurado. Tente fazer login - sua conta pode ter sido criada. No Supabase: Authentication > Providers > desative "Confirm email".';
+        return 'SMTP não configurado. Tente fazer login - sua conta pode ter sido criada. No Supabase: Authentication > Providers > desative "Confirm email".';
       }
       if (msg.contains('error sending') ||
           msg.contains('recovery') ||
           msg.contains('reset') ||
           msg.contains('password reset')) {
-        return 'SMTP nao configurado. O link de recuperacao nao pode ser enviado. Configure SMTP no Supabase (Project Settings > Auth > SMTP).';
+        return 'SMTP não configurado. O link de recuperação não pode ser enviado. Configure SMTP no Supabase (Project Settings > Auth > SMTP).';
       }
       if (msg.contains('route') &&
           (msg.contains('api/errors') || msg.contains('not-started'))) {
-        return 'Servico de recuperacao nao disponivel. Verifique a configuracao do Supabase (SMTP e Auth).';
+        return 'Serviço de recuperação não disponível. Verifique a configuração do Supabase (SMTP e Auth).';
       }
       if (msg.contains('otp_expired') ||
           msg.contains('token has expired') ||
           msg.contains('expired')) {
-        return 'Codigo expirado. Solicite um novo codigo.';
+        return 'Código expirado. Solicite um novo código.';
       }
       if (msg.contains('invalid_otp') ||
           msg.contains('invalid token') ||
           msg.contains('otp verification failed')) {
-        return 'Codigo invalido. Verifique e tente novamente.';
+        return 'Código inválido. Verifique e tente novamente.';
       }
       return e.message;
     }
     final str = e.toString().toLowerCase();
     if (str.contains('api/errors') || str.contains('not-started')) {
-      return 'Servico de recuperacao nao disponivel. Verifique a configuracao do Supabase (SMTP e Auth).';
+      return 'Serviço de recuperação não disponível. Verifique a configuração do Supabase (SMTP e Auth).';
     }
     if (str.contains('connection') ||
         str.contains('socket') ||
         str.contains('network') ||
         str.contains('timeout') ||
         str.contains('failed to connect')) {
-      return 'Sem conexao. Verifique sua internet e tente novamente.';
+      return 'Sem conexão. Verifique sua internet e tente novamente.';
     }
     return 'Ocorreu um erro. Tente novamente.';
   }

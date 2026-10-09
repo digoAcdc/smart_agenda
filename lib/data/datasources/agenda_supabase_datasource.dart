@@ -39,7 +39,7 @@ class AgendaSupabaseDataSource {
 
   String _requireUid() {
     final uid = currentUserId;
-    if (uid == null) throw StateError('Usuario nao autenticado');
+    if (uid == null) throw StateError('Usuário não autenticado');
     return uid;
   }
 

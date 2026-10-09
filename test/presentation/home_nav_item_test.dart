@@ -4,7 +4,7 @@ import 'package:smart_agenda/core/theme/app_theme.dart';
 import 'package:smart_agenda/presentation/pages/home_page.dart';
 
 void main() {
-  const labels = ['Início', 'Agenda', 'Matérias', 'Mais', 'Config'];
+  const labels = ['Início', 'Agenda', 'Aulas', 'Mais', 'Config'];
 
   for (final scale in [1.0, 1.3, 2.0]) {
     testWidgets('barra mostra os nomes em tela estreita (fonte x$scale)', (

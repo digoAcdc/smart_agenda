@@ -109,6 +109,11 @@ class _FamilyPageState extends State<FamilyPage> {
           child: const Text('Entrar na minha conta'),
         ),
         const SizedBox(height: DesignTokens.spaceSm),
+        OutlinedButton(
+          onPressed: () => Get.toNamed(AppRoutes.register),
+          child: const Text('Criar conta grátis'),
+        ),
+        const SizedBox(height: DesignTokens.spaceSm),
         Text(
           'Foi convidado para uma Família? Entre com o e-mail que recebeu o convite.',
           textAlign: TextAlign.center,
@@ -729,6 +734,7 @@ class _FamilyPageState extends State<FamilyPage> {
               child: const Text('Cancelar'),
             ),
             FilledButton(
+              style: FilledButton.styleFrom(minimumSize: const Size(0, 44)),
               onPressed: () {
                 if (formKey.currentState?.validate() == true) {
                   Navigator.pop(dialogContext, true);
@@ -833,6 +839,7 @@ class _FamilyPageState extends State<FamilyPage> {
               child: const Text('Cancelar'),
             ),
             FilledButton(
+              style: FilledButton.styleFrom(minimumSize: const Size(0, 44)),
               onPressed: () {
                 if (formKey.currentState?.validate() == true) {
                   Navigator.pop(dialogContext, true);
@@ -890,6 +897,7 @@ class _FamilyPageState extends State<FamilyPage> {
             child: const Text('Cancelar'),
           ),
           FilledButton(
+            style: FilledButton.styleFrom(minimumSize: const Size(0, 44)),
             onPressed: () => Navigator.pop(c, true),
             child: Text(action),
           ),
@@ -924,6 +932,7 @@ class _FamilyPageState extends State<FamilyPage> {
             child: const Text('Cancelar'),
           ),
           FilledButton(
+            style: FilledButton.styleFrom(minimumSize: const Size(0, 44)),
             onPressed: () {
               if (required && ctrl.text.trim().isEmpty) return;
               Navigator.pop(c, ctrl.text.trim());

@@ -19,7 +19,7 @@ class NoteCard extends StatelessWidget {
     final hasChecklist = note.checklistItems.isNotEmpty;
     final completedCount = note.checklistItems.where((i) => i.completed).length;
     final checklistPreview = hasChecklist
-        ? '$completedCount de ${note.checklistItems.length} concluidos'
+        ? '$completedCount de ${note.checklistItems.length} concluídos'
         : null;
 
     return AppSurfaceCard(

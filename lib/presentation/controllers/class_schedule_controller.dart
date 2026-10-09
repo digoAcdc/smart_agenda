@@ -32,6 +32,11 @@ class ClassScheduleController extends GetxController {
 
   static const weekdays = [1, 2, 3, 4, 5];
 
+  /// Dia mostrado no celular (uma coluna por vez). Abre no dia de hoje;
+  /// no fim de semana, na segunda.
+  final RxInt selectedWeekday =
+      (DateTime.now().weekday <= 5 ? DateTime.now().weekday : 1).obs;
+
   /// Materias sugeridas e usadas na grade modelo.
   static const defaultSubjects = [
     'Matemática',
@@ -73,12 +78,15 @@ class ClassScheduleController extends GetxController {
     final list = await _dataSource.getSchedules();
     schedules.assignAll(list);
     final current = selected.value;
-    final stillExists =
-        current != null ? list.firstWhereOrNull((g) => g.id == current.id) : null;
+    final stillExists = current != null
+        ? list.firstWhereOrNull((g) => g.id == current.id)
+        : null;
     selected.value = stillExists ?? (list.isEmpty ? null : list.first);
 
     final target = selected.value;
-    final data = target == null ? <ClassScheduleSlot>[] : await _dataSource.getSlots(target);
+    final data = target == null
+        ? <ClassScheduleSlot>[]
+        : await _dataSource.getSlots(target);
     if (selected.value?.id == target?.id) slots.assignAll(data);
     allSlots.assignAll(await _dataSource.getAllSlots());
     loading.value = false;

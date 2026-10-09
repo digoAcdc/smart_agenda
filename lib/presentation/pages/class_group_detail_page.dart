@@ -79,6 +79,7 @@ class _ClassGroupDetailPageState extends State<ClassGroupDetailPage> {
                         onPressed: () => Get.back(result: true),
                         style: FilledButton.styleFrom(
                           backgroundColor: Theme.of(context).colorScheme.error,
+                          minimumSize: const Size(0, 44),
                         ),
                         child: const Text('Excluir'),
                       ),
@@ -203,13 +204,13 @@ class _ClassGroupDetailPageState extends State<ClassGroupDetailPage> {
                     labelText: 'Nome da turma *',
                   ),
                   textCapitalization: TextCapitalization.sentences,
-                  validator: (v) => requiredValidator(v, 'Nome e obrigatorio'),
+                  validator: (v) => requiredValidator(v, 'Nome é obrigatório'),
                 ),
                 const SizedBox(height: 16),
                 TextFormField(
                   controller: descController,
                   decoration: const InputDecoration(
-                    labelText: 'Descricao (opcional)',
+                    labelText: 'Descrição (opcional)',
                   ),
                   maxLines: 2,
                   textCapitalization: TextCapitalization.sentences,
@@ -221,6 +222,7 @@ class _ClassGroupDetailPageState extends State<ClassGroupDetailPage> {
         actions: [
           TextButton(onPressed: Get.back, child: const Text('Cancelar')),
           FilledButton(
+            style: FilledButton.styleFrom(minimumSize: const Size(0, 44)),
             onPressed: () async {
               if (formKey.currentState?.validate() != true) return;
               final name = nameController.text.trim();
@@ -282,7 +284,7 @@ class _ClassGroupDetailPageState extends State<ClassGroupDetailPage> {
                   autofocus: true,
                   textCapitalization: TextCapitalization.words,
                   validator: (v) =>
-                      requiredValidator(v, 'Nome do contato e obrigatorio'),
+                      requiredValidator(v, 'Nome do contato é obrigatório'),
                 ),
                 const SizedBox(height: 12),
                 TextFormField(
@@ -307,14 +309,14 @@ class _ClassGroupDetailPageState extends State<ClassGroupDetailPage> {
                 ),
                 const SizedBox(height: 20),
                 Text(
-                  'Responsavel (opcional)',
+                  'Responsável (opcional)',
                   style: Theme.of(context).textTheme.titleSmall,
                 ),
                 const SizedBox(height: 8),
                 TextFormField(
                   controller: guardianNameController,
                   decoration: const InputDecoration(
-                    labelText: 'Nome do responsavel',
+                    labelText: 'Nome do responsável',
                   ),
                   textCapitalization: TextCapitalization.words,
                 ),
@@ -322,7 +324,7 @@ class _ClassGroupDetailPageState extends State<ClassGroupDetailPage> {
                 TextFormField(
                   controller: guardianEmailController,
                   decoration: const InputDecoration(
-                    labelText: 'Email do responsavel',
+                    labelText: 'Email do responsável',
                   ),
                   keyboardType: TextInputType.emailAddress,
                   validator: (v) => emailValidator(v),
@@ -331,7 +333,7 @@ class _ClassGroupDetailPageState extends State<ClassGroupDetailPage> {
                 TextFormField(
                   controller: guardianPhoneController,
                   decoration: const InputDecoration(
-                    labelText: 'Telefone do responsavel',
+                    labelText: 'Telefone do responsável',
                   ),
                   keyboardType: TextInputType.phone,
                   inputFormatters: phoneInputFormatters,
@@ -344,6 +346,7 @@ class _ClassGroupDetailPageState extends State<ClassGroupDetailPage> {
         actions: [
           TextButton(onPressed: Get.back, child: const Text('Cancelar')),
           FilledButton(
+            style: FilledButton.styleFrom(minimumSize: const Size(0, 44)),
             onPressed: () async {
               if (formKey.currentState?.validate() != true) return;
               final name = nameController.text.trim();
@@ -408,6 +411,7 @@ class _ClassGroupDetailPageState extends State<ClassGroupDetailPage> {
             onPressed: () => Get.back(result: true),
             style: FilledButton.styleFrom(
               backgroundColor: Theme.of(context).colorScheme.error,
+              minimumSize: const Size(0, 44),
             ),
             child: const Text('Excluir'),
           ),
@@ -419,7 +423,7 @@ class _ClassGroupDetailPageState extends State<ClassGroupDetailPage> {
       if (context.mounted) {
         ScaffoldMessenger.of(
           context,
-        ).showSnackBar(const SnackBar(content: Text('Contato excluido')));
+        ).showSnackBar(const SnackBar(content: Text('Contato excluído')));
       }
     }
   }
@@ -523,13 +527,13 @@ class _StudentCard extends StatelessWidget {
                         items.add(
                           const PopupMenuItem(
                             value: 'guardian_call',
-                            child: Text('Ligar responsavel'),
+                            child: Text('Ligar responsável'),
                           ),
                         );
                         items.add(
                           const PopupMenuItem(
                             value: 'guardian_whatsapp',
-                            child: Text('WhatsApp responsavel'),
+                            child: Text('WhatsApp responsável'),
                           ),
                         );
                       }

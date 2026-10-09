@@ -161,7 +161,7 @@ class _UpsertAgendaPageState extends State<UpsertAgendaPage> {
 
   Future<void> _addImageAttachment() async {
     if (!_canAttachImages) {
-      _showSaved('Upload de imagem e uma funcionalidade Premium.');
+      _showSaved('Anexar imagens é um recurso do plano Pro.');
       return;
     }
     final fileStorage = Get.find<IFileStorageService>();
@@ -207,7 +207,7 @@ class _UpsertAgendaPageState extends State<UpsertAgendaPage> {
     if (!permissionResult.isSuccess) {
       _showSaved(
         permissionResult.errorMessage ??
-            'Nao foi possivel solicitar permissao de notificacoes.',
+            'Não foi possível solicitar permissão de notificações.',
       );
       setState(() => reminderEnabled = false);
       return;
@@ -216,7 +216,7 @@ class _UpsertAgendaPageState extends State<UpsertAgendaPage> {
     final granted = permissionResult.data ?? false;
     if (!granted) {
       _showSaved(
-        'Permissao de notificacao negada. Ative nas configuracoes do sistema.',
+        'Permissão de notificação negada. Ative nas configurações do sistema.',
       );
       setState(() => reminderEnabled = false);
       return;
@@ -327,12 +327,13 @@ class _UpsertAgendaPageState extends State<UpsertAgendaPage> {
             ),
             autofocus: true,
             textCapitalization: TextCapitalization.sentences,
-            validator: (v) => requiredValidator(v, 'Nome e obrigatorio'),
+            validator: (v) => requiredValidator(v, 'Nome é obrigatório'),
           ),
         ),
         actions: [
           TextButton(onPressed: Get.back, child: const Text('Cancelar')),
           FilledButton(
+            style: FilledButton.styleFrom(minimumSize: const Size(0, 44)),
             onPressed: () async {
               if (formKey.currentState?.validate() != true) return;
               final canProceed =
@@ -413,12 +414,19 @@ class _UpsertAgendaPageState extends State<UpsertAgendaPage> {
                           if (mounted) Get.back();
                         },
                         icon: const Icon(Icons.copy_rounded),
+                        tooltip: 'Duplicar',
                         style: IconButton.styleFrom(
                           backgroundColor: inputNeutral,
                         ),
-                      )
-                    else
-                      const SizedBox(width: 48),
+                      ),
+                    // Salvar sem precisar rolar ate o fim do formulario.
+                    TextButton(
+                      onPressed: _save,
+                      child: const Text(
+                        'Salvar',
+                        style: TextStyle(fontWeight: FontWeight.w700),
+                      ),
+                    ),
                   ],
                 ),
                 const SizedBox(height: 12),
@@ -432,7 +440,7 @@ class _UpsertAgendaPageState extends State<UpsertAgendaPage> {
                         context,
                         children: [
                           Text(
-                            'TITULO DO EVENTO *',
+                            'TÍTULO DO EVENTO *',
                             style: Theme.of(context).textTheme.labelSmall
                                 ?.copyWith(
                                   fontWeight: FontWeight.w700,
@@ -446,10 +454,10 @@ class _UpsertAgendaPageState extends State<UpsertAgendaPage> {
                           TextFormField(
                             controller: titleController,
                             decoration: const InputDecoration(
-                              hintText: 'O que voce esta planejando?',
+                              hintText: 'O que você está planejando?',
                             ),
                             validator: (v) =>
-                                requiredValidator(v, 'Titulo e obrigatorio'),
+                                requiredValidator(v, 'Título é obrigatório'),
                           ),
                         ],
                       ),
@@ -466,7 +474,7 @@ class _UpsertAgendaPageState extends State<UpsertAgendaPage> {
                               ),
                               const SizedBox(width: 6),
                               Text(
-                                'Date & Time',
+                                'Data e hora',
                                 style: Theme.of(context).textTheme.titleSmall
                                     ?.copyWith(fontWeight: FontWeight.w700),
                               ),
@@ -504,7 +512,7 @@ class _UpsertAgendaPageState extends State<UpsertAgendaPage> {
                               children: [
                                 _dateLine(
                                   context,
-                                  label: 'INICIO',
+                                  label: 'INÍCIO',
                                   date: dateFmt.format(startAt),
                                   time: timeFmt.format(startAt),
                                   onTap: _pickStartDateTime,
@@ -540,16 +548,6 @@ class _UpsertAgendaPageState extends State<UpsertAgendaPage> {
                         _sectionCard(
                           context,
                           children: [
-                            Row(
-                              children: [
-                                Icon(
-                                  Icons.eco_outlined,
-                                  size: 16,
-                                  color: accentGreen,
-                                ),
-                                SizedBox(width: 6),
-                              ],
-                            ),
                             Text(
                               'Grupo',
                               style: Theme.of(context).textTheme.titleSmall
@@ -593,7 +591,7 @@ class _UpsertAgendaPageState extends State<UpsertAgendaPage> {
                         context,
                         children: [
                           Text(
-                            'Descricao (opcional)',
+                            'Descrição (opcional)',
                             style: Theme.of(context).textTheme.labelSmall
                                 ?.copyWith(
                                   fontWeight: FontWeight.w700,
@@ -690,40 +688,44 @@ class _UpsertAgendaPageState extends State<UpsertAgendaPage> {
                           ],
                         ],
                       ),
-                      _sectionCard(
-                        context,
-                        children: [
-                          Text(
-                            'Status',
-                            style: Theme.of(context).textTheme.titleSmall
-                                ?.copyWith(fontWeight: FontWeight.w700),
-                          ),
-                          const SizedBox(height: 8),
-                          DropdownButtonFormField<AgendaStatus>(
-                            initialValue: status,
-                            decoration: const InputDecoration(
-                              labelText: 'Status',
+                      // Evento novo sempre comeca pendente.
+                      if (editingItem != null)
+                        _sectionCard(
+                          context,
+                          children: [
+                            Text(
+                              'Status',
+                              style: Theme.of(context).textTheme.titleSmall
+                                  ?.copyWith(fontWeight: FontWeight.w700),
                             ),
-                            items: AgendaStatus.values
-                                .map(
-                                  (e) => DropdownMenuItem(
-                                    value: e,
-                                    child: Text(
-                                      e == AgendaStatus.pending
-                                          ? 'Pendente'
-                                          : e == AgendaStatus.done
-                                          ? 'Concluido'
-                                          : 'Cancelado',
+                            const SizedBox(height: 8),
+                            DropdownButtonFormField<AgendaStatus>(
+                              initialValue: status,
+                              decoration: const InputDecoration(
+                                labelText: 'Status',
+                              ),
+                              items: AgendaStatus.values
+                                  .map(
+                                    (e) => DropdownMenuItem(
+                                      value: e,
+                                      child: Text(
+                                        e == AgendaStatus.pending
+                                            ? 'Pendente'
+                                            : e == AgendaStatus.done
+                                            ? 'Concluído'
+                                            : 'Cancelado',
+                                      ),
                                     ),
-                                  ),
-                                )
-                                .toList(),
-                            onChanged: (value) {
-                              if (value != null) setState(() => status = value);
-                            },
-                          ),
-                        ],
-                      ),
+                                  )
+                                  .toList(),
+                              onChanged: (value) {
+                                if (value != null) {
+                                  setState(() => status = value);
+                                }
+                              },
+                            ),
+                          ],
+                        ),
                       const SizedBox(height: 12),
                       Row(
                         children: [
@@ -751,7 +753,7 @@ class _UpsertAgendaPageState extends State<UpsertAgendaPage> {
                               label: Text(
                                 editingItem == null
                                     ? 'Salvar evento'
-                                    : 'Salvar alteracoes',
+                                    : 'Salvar alterações',
                               ),
                             ),
                           ),
@@ -859,6 +861,12 @@ class _UpsertAgendaPageState extends State<UpsertAgendaPage> {
                     AgendaItemKind.task => 'Tarefa',
                     AgendaItemKind.reminder => 'Lembrete',
                   },
+                  icon: switch (k) {
+                    AgendaItemKind.event => Icons.event_rounded,
+                    AgendaItemKind.task => Icons.task_alt_rounded,
+                    AgendaItemKind.reminder => Icons.notifications_none_rounded,
+                  },
+                  perRow: 3,
                   selected: kind == k,
                   onTap: () => setState(() => kind = k),
                 ),
@@ -1019,7 +1027,7 @@ class _UpsertAgendaPageState extends State<UpsertAgendaPage> {
                     Icon(Icons.lock_outline, size: 14, color: scheme.outline),
                     const SizedBox(width: 4),
                     Text(
-                      'Premium',
+                      'Pro',
                       style: Theme.of(context).textTheme.labelSmall?.copyWith(
                         color: scheme.outline,
                         fontWeight: FontWeight.w600,
@@ -1031,7 +1039,7 @@ class _UpsertAgendaPageState extends State<UpsertAgendaPage> {
             FilledButton.tonalIcon(
               onPressed: _canAttachImages ? _addImageAttachment : null,
               icon: const Icon(Icons.attach_file_rounded),
-              label: const Text('Add Files'),
+              label: const Text('Adicionar'),
               style: FilledButton.styleFrom(
                 backgroundColor: const Color(0xFFF3F4F1),
                 foregroundColor: const Color(0xFF9CD64A),
@@ -1302,9 +1310,12 @@ class _UpsertAgendaPageState extends State<UpsertAgendaPage> {
     required bool selected,
     required VoidCallback onTap,
     bool outlined = false,
+    IconData? icon,
+    int perRow = 2,
   }) {
     final selectedColor = Theme.of(context).colorScheme.primary;
-    final width = (MediaQuery.of(context).size.width - 70) / 2;
+    final width =
+        (MediaQuery.of(context).size.width - 60 - 10 * perRow) / perRow;
     return InkWell(
       onTap: onTap,
       borderRadius: BorderRadius.circular(14),
@@ -1329,8 +1340,11 @@ class _UpsertAgendaPageState extends State<UpsertAgendaPage> {
         child: Column(
           children: [
             Icon(
-              title == 'Novo' ? Icons.add_rounded : Icons.folder_copy_outlined,
-              size: 16,
+              icon ??
+                  (title == 'Novo'
+                      ? Icons.add_rounded
+                      : Icons.folder_copy_outlined),
+              size: icon == null ? 16 : 20,
               color: selected
                   ? selectedColor
                   : Theme.of(context).colorScheme.onSurfaceVariant,

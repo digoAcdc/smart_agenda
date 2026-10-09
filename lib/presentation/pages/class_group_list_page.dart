@@ -39,7 +39,7 @@ class ClassGroupListPage extends GetView<ClassGroupController> {
               icon: Icons.group_outlined,
               title: 'Nenhuma turma ainda',
               message:
-                  'Crie turmas como Minha sala, Trabalho de ingles e adicione contatos.',
+                  'Crie turmas como Minha sala, Trabalho de inglês e adicione contatos.',
               ctaLabel: 'Criar turma',
               onTapCta: () => _openGroupForm(context),
             );
@@ -101,17 +101,17 @@ class ClassGroupListPage extends GetView<ClassGroupController> {
                   controller: nameController,
                   decoration: const InputDecoration(
                     labelText: 'Nome da turma *',
-                    hintText: 'Ex: Minha sala, Trabalho de ingles',
+                    hintText: 'Ex: Minha sala, Trabalho de inglês',
                   ),
                   autofocus: true,
                   textCapitalization: TextCapitalization.sentences,
-                  validator: (v) => requiredValidator(v, 'Nome e obrigatorio'),
+                  validator: (v) => requiredValidator(v, 'Nome é obrigatório'),
                 ),
                 const SizedBox(height: 16),
                 TextFormField(
                   controller: descController,
                   decoration: const InputDecoration(
-                    labelText: 'Descricao (opcional)',
+                    labelText: 'Descrição (opcional)',
                     hintText: 'Ex: Turma do 3o ano',
                   ),
                   maxLines: 2,
@@ -124,6 +124,7 @@ class ClassGroupListPage extends GetView<ClassGroupController> {
         actions: [
           TextButton(onPressed: Get.back, child: const Text('Cancelar')),
           FilledButton(
+            style: FilledButton.styleFrom(minimumSize: const Size(0, 44)),
             onPressed: () async {
               if (formKey.currentState?.validate() != true) return;
               final name = nameController.text.trim();
@@ -175,6 +176,7 @@ class ClassGroupListPage extends GetView<ClassGroupController> {
             onPressed: () => Get.back(result: true),
             style: FilledButton.styleFrom(
               backgroundColor: Theme.of(context).colorScheme.error,
+              minimumSize: const Size(0, 44),
             ),
             child: const Text('Excluir'),
           ),
@@ -186,7 +188,7 @@ class ClassGroupListPage extends GetView<ClassGroupController> {
       if (context.mounted) {
         ScaffoldMessenger.of(
           context,
-        ).showSnackBar(const SnackBar(content: Text('Turma excluida')));
+        ).showSnackBar(const SnackBar(content: Text('Turma excluída')));
       }
     }
   }

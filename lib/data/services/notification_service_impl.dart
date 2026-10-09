@@ -72,7 +72,7 @@ class NotificationServiceImpl implements INotificationService {
 
       return Result.success(null);
     } catch (e) {
-      return Result.failure('Falha ao inicializar notificacoes: $e');
+      return Result.failure('Falha ao inicializar notificações: $e');
     }
   }
 
@@ -133,7 +133,7 @@ class NotificationServiceImpl implements INotificationService {
 
       return Result.success(granted);
     } catch (e) {
-      return Result.failure('Falha ao solicitar permissao de notificacoes: $e');
+      return Result.failure('Falha ao solicitar permissão de notificações: $e');
     }
   }
 
@@ -142,10 +142,10 @@ class NotificationServiceImpl implements INotificationService {
     try {
       final permission = await ensurePermissions();
       if (!permission.isSuccess) {
-        return Result.failure(permission.errorMessage ?? 'Permissao negada');
+        return Result.failure(permission.errorMessage ?? 'Permissão negada');
       }
       if (!(permission.data ?? false)) {
-        return Result.failure('Permissao de notificacao nao concedida');
+        return Result.failure('Permissão de notificação não concedida');
       }
 
       final reminder = item.reminder;
@@ -201,7 +201,7 @@ class NotificationServiceImpl implements INotificationService {
 
       return Result.success(null);
     } catch (e) {
-      return Result.failure('Erro ao agendar notificacao: $e');
+      return Result.failure('Erro ao agendar notificação: $e');
     }
   }
 
@@ -216,7 +216,7 @@ class NotificationServiceImpl implements INotificationService {
       await _notificationsPlugin.cancel(notificationId);
       return Result.success(null);
     } catch (e) {
-      return Result.failure('Erro ao cancelar notificacao: $e');
+      return Result.failure('Erro ao cancelar notificação: $e');
     }
   }
 

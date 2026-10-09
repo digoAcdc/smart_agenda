@@ -40,7 +40,7 @@ class UpgradePage extends StatelessWidget {
           icon: const Icon(Icons.arrow_back_rounded),
           onPressed: () => _handleBack(ctrl),
         ),
-        title: const Text('Area Premium'),
+        title: const Text('Plano Pro'),
         actions: [
           IconButton(
             icon: const Icon(Icons.logout_rounded),
@@ -64,7 +64,7 @@ class UpgradePage extends StatelessWidget {
               ),
               const SizedBox(height: DesignTokens.spaceLg),
               Text(
-                isPremium ? 'Voce e Premium' : 'Plano Premium',
+                isPremium ? 'Você é Pro' : 'Plano Pro',
                 style: Theme.of(context).textTheme.headlineSmall?.copyWith(
                   fontWeight: FontWeight.w800,
                 ),
@@ -73,10 +73,10 @@ class UpgradePage extends StatelessWidget {
               const SizedBox(height: DesignTokens.spaceSm),
               Text(
                 isPremium
-                    ? 'Sua Familia, agenda compartilhada, sincronizacao e zero anuncios.'
-                    : 'Organize a rotina da familia: agenda compartilhada com ate 5 pessoas, '
-                          'varios filhos, permissoes, sincronizacao entre aparelhos e zero anuncios. '
-                          'Quem voce convidar nao precisa assinar.',
+                    ? 'Sua Família, agenda compartilhada, sincronização e zero anúncios.'
+                    : 'Organize a rotina da família: agenda compartilhada com até 5 pessoas, '
+                          'vários filhos, permissões, sincronização entre aparelhos e zero anúncios. '
+                          'Quem você convidar não precisa assinar.',
                 style: Theme.of(context).textTheme.bodyLarge?.copyWith(
                   color: Theme.of(context).colorScheme.onSurfaceVariant,
                 ),
@@ -91,8 +91,8 @@ class UpgradePage extends StatelessWidget {
                 ),
                 const SizedBox(height: DesignTokens.spaceXs),
                 Text(
-                  'O cancelamento e feito no Google Play. O Pro continua ate o fim do '
-                  'periodo ja pago. Depois disso a agenda da Familia fica disponivel '
+                  'O cancelamento é feito no Google Play. O Pro continua até o fim do '
+                  'período já pago. Depois disso a agenda da Família fica disponível '
                   'para consulta e nada e apagado.',
                   style: Theme.of(context).textTheme.bodySmall?.copyWith(
                     color: Theme.of(context).colorScheme.onSurfaceVariant,
@@ -253,8 +253,8 @@ class UpgradePage extends StatelessWidget {
                       const SizedBox(height: DesignTokens.spaceXs),
                       Text(
                         ctrl.isRuntimeConfigured.value
-                            ? 'A compra in-app esta disponivel apenas no Android. Em breve para outras plataformas.'
-                            : 'A cobranca in-app nao esta configurada neste build.',
+                            ? 'A compra in-app está disponível apenas no Android. Em breve para outras plataformas.'
+                            : 'A cobrança in-app não está configurada neste build.',
                         style: Theme.of(context).textTheme.bodyMedium?.copyWith(
                           color: Theme.of(context).colorScheme.onSurfaceVariant,
                         ),
@@ -284,7 +284,7 @@ class UpgradePage extends StatelessWidget {
                               color: Colors.white,
                             ),
                           )
-                        : const Text('Tornar-se Premium'),
+                        : const Text('Assinar o Pro'),
                   ),
                 ),
                 const SizedBox(height: DesignTokens.spaceSm),

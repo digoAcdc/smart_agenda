@@ -98,7 +98,7 @@ class _ResetPasswordPageState extends State<ResetPasswordPage> {
     if (ok) {
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
-          content: const Text('Senha alterada com sucesso! Faca login.'),
+          content: const Text('Senha alterada com sucesso! Faça login.'),
           backgroundColor: Theme.of(context).colorScheme.primaryContainer,
         ),
       );
@@ -208,7 +208,7 @@ class _ResetPasswordPageState extends State<ResetPasswordPage> {
                             if (!RegExp(
                               r'^[\w-\.]+@([\w-]+\.)+[\w-]{2,4}$',
                             ).hasMatch(v.trim())) {
-                              return 'E-mail invalido';
+                              return 'E-mail inválido';
                             }
                             return null;
                           },
@@ -218,7 +218,7 @@ class _ResetPasswordPageState extends State<ResetPasswordPage> {
                           () => PrimaryButton(
                             label: _cooldownSeconds > 0
                                 ? 'Aguarde $_cooldownSeconds s'
-                                : 'Enviar codigo',
+                                : 'Enviar código',
                             icon: Icons.send_rounded,
                             loading: authController.loading.value,
                             onPressed: _cooldownSeconds > 0
@@ -249,7 +249,7 @@ class _ResetPasswordPageState extends State<ResetPasswordPage> {
                   ),
                 ] else ...[
                   Text(
-                    'Digite o codigo',
+                    'Digite o código',
                     style: Theme.of(context).textTheme.titleLarge?.copyWith(
                       fontWeight: FontWeight.w700,
                     ),
@@ -287,14 +287,14 @@ class _ResetPasswordPageState extends State<ResetPasswordPage> {
                             FilteringTextInputFormatter.digitsOnly,
                           ],
                           decoration: const InputDecoration(
-                            labelText: 'Codigo',
+                            labelText: 'Código',
                             hintText: '000000',
                             prefixIcon: Icon(Icons.pin_rounded),
                             counterText: '',
                           ),
                           validator: (v) {
                             if (v == null || v.trim().length != 6) {
-                              return 'Digite o codigo de 6 digitos';
+                              return 'Digite o código de 6 dígitos';
                             }
                             return null;
                           },
@@ -306,7 +306,7 @@ class _ResetPasswordPageState extends State<ResetPasswordPage> {
                           autocorrect: false,
                           decoration: const InputDecoration(
                             labelText: 'Nova senha',
-                            hintText: 'Minimo 6 caracteres',
+                            hintText: 'Mínimo 6 caracteres',
                             prefixIcon: Icon(Icons.lock_outline),
                           ),
                           validator: (v) {
@@ -328,7 +328,7 @@ class _ResetPasswordPageState extends State<ResetPasswordPage> {
                           ),
                           validator: (v) {
                             if (v != _newPasswordController.text) {
-                              return 'As senhas nao coincidem';
+                              return 'As senhas não coincidem';
                             }
                             return null;
                           },
@@ -369,7 +369,7 @@ class _ResetPasswordPageState extends State<ResetPasswordPage> {
                           label: Text(
                             _cooldownSeconds > 0
                                 ? 'Reenviar em $_cooldownSeconds s'
-                                : 'Reenviar codigo',
+                                : 'Reenviar código',
                           ),
                         ),
                       ],

@@ -51,6 +51,7 @@ Future<bool> offerMoveToFamily(
           child: const Text('Agora não'),
         ),
         FilledButton(
+          style: FilledButton.styleFrom(minimumSize: const Size(0, 44)),
           onPressed: () => Navigator.pop(c, true),
           child: const Text('Levar para a Família'),
         ),

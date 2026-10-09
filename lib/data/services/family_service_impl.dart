@@ -175,7 +175,7 @@ class FamilyServiceImpl extends GetxController implements IFamilyService {
 
   Future<void> _requireFamily(Future<void> Function(String id) action) async {
     final id = _familyId;
-    if (id == null) throw StateError('Sem familia');
+    if (id == null) throw StateError('Sem família');
     await action(id);
   }
 

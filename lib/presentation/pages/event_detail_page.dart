@@ -26,13 +26,14 @@ class EventDetailPage extends StatelessWidget {
         body: const SafeArea(
           top: false,
           bottom: false,
-          child: Center(child: Text('Evento invalido.')),
+          child: Center(child: Text('Evento inválido.')),
         ),
       );
     }
     final agendaController = Get.find<AgendaController>();
     final groupsController = Get.find<GroupsController>();
-    final groupName = groupsController.groups
+    final groupName =
+        groupsController.groups
             .firstWhereOrNull((g) => g.id == arg.groupId)
             ?.name ??
         'Sem grupo';
@@ -48,9 +49,15 @@ class EventDetailPage extends StatelessWidget {
     final isShared = !FamilyItemLabels.canEdit(arg);
     final familyRows = <(IconData, String)>[
       if (FamilyItemLabels.subject(arg) != null)
-        (Icons.family_restroom_outlined, 'Para: ${FamilyItemLabels.subject(arg)}'),
+        (
+          Icons.family_restroom_outlined,
+          'Para: ${FamilyItemLabels.subject(arg)}',
+        ),
       if (FamilyItemLabels.assignee(arg) != null)
-        (Icons.assignment_ind_outlined, 'Responsável: ${FamilyItemLabels.assignee(arg)}'),
+        (
+          Icons.assignment_ind_outlined,
+          'Responsável: ${FamilyItemLabels.assignee(arg)}',
+        ),
       if (FamilyItemLabels.createdBy(arg) != null)
         (Icons.person_outline, 'Criado por ${FamilyItemLabels.createdBy(arg)}'),
       if (FamilyItemLabels.completedBy(arg) != null)
@@ -66,7 +73,8 @@ class EventDetailPage extends StatelessWidget {
           if (!isShared)
             IconButton(
               tooltip: 'Editar',
-              onPressed: () => Get.toNamed(AppRoutes.upsertAgenda, arguments: arg),
+              onPressed: () =>
+                  Get.toNamed(AppRoutes.upsertAgenda, arguments: arg),
               icon: const Icon(Icons.edit_outlined),
             ),
         ],
@@ -77,207 +85,222 @@ class EventDetailPage extends StatelessWidget {
         child: ListView(
           padding: const EdgeInsets.fromLTRB(0, 10, 0, 120),
           children: [
-          if (familyRows.isNotEmpty)
-            AppSurfaceCard(
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  for (final (icon, text) in familyRows)
-                    Padding(
-                      padding: const EdgeInsets.symmetric(vertical: 3),
-                      child: Row(
-                        children: [
-                          Icon(
-                            icon,
-                            size: 18,
-                            color: Theme.of(context).colorScheme.primary,
-                          ),
-                          const SizedBox(width: DesignTokens.spaceSm),
-                          Expanded(
-                            child: Text(
-                              text,
-                              style: Theme.of(context).textTheme.bodyMedium,
+            if (familyRows.isNotEmpty)
+              AppSurfaceCard(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    for (final (icon, text) in familyRows)
+                      Padding(
+                        padding: const EdgeInsets.symmetric(vertical: 3),
+                        child: Row(
+                          children: [
+                            Icon(
+                              icon,
+                              size: 18,
+                              color: Theme.of(context).colorScheme.primary,
                             ),
-                          ),
-                        ],
+                            const SizedBox(width: DesignTokens.spaceSm),
+                            Expanded(
+                              child: Text(
+                                text,
+                                style: Theme.of(context).textTheme.bodyMedium,
+                              ),
+                            ),
+                          ],
+                        ),
                       ),
-                    ),
-                ],
+                  ],
+                ),
               ),
-            ),
-          AppSurfaceCard(
-            child: Row(
-              children: [
-                StatusPill(status: arg.status),
-                const SizedBox(width: DesignTokens.spaceSm),
-                Expanded(
-                  child: GroupChip(
-                    label: groupName,
-                    color: _parseColor(groupColor),
-                  ),
-                ),
-              ],
-            ),
-          ),
-          AppSurfaceCard(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text(
-                  arg.title,
-                  style: Theme.of(context).textTheme.headlineSmall?.copyWith(
-                        fontWeight: FontWeight.w800,
-                      ),
-                ),
-                const SizedBox(height: DesignTokens.spaceXs),
-                Text(
-                  dateLabel,
-                  style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                        color: Theme.of(context).colorScheme.onSurfaceVariant,
-                      ),
-                ),
-                if ((arg.locationText ?? '').trim().isNotEmpty) ...[
-                  const SizedBox(height: DesignTokens.spaceSm),
-                  Row(
-                    children: [
-                      const Icon(Icons.location_on_outlined, size: 18),
-                      const SizedBox(width: DesignTokens.spaceXs),
-                      Expanded(child: Text(arg.locationText!.trim())),
-                    ],
-                  ),
-                ],
-              ],
-            ),
-          ),
-          if (!isShared)
             AppSurfaceCard(
               child: Row(
                 children: [
-                  Expanded(
-                    child: OutlinedButton(
-                      onPressed: () async {
-                        await agendaController.toggleStatus(
-                          arg.id,
-                          AgendaStatus.canceled,
-                        );
-                        Get.back();
-                      },
-                      child: const Text('Cancelar evento'),
-                    ),
-                  ),
+                  StatusPill(status: arg.status),
                   const SizedBox(width: DesignTokens.spaceSm),
                   Expanded(
-                    child: FilledButton.icon(
-                      onPressed: () async {
-                        await agendaController.toggleStatus(arg.id, AgendaStatus.done);
-                        Get.back();
-                      },
-                      icon: const Icon(Icons.check_rounded),
-                      label: const Text('Marcar concluido'),
+                    child: GroupChip(
+                      label: groupName,
+                      color: _parseColor(groupColor),
                     ),
                   ),
                 ],
               ),
             ),
-          if ((arg.description ?? '').trim().isNotEmpty)
             AppSurfaceCard(
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
                   Text(
-                    'Descricao',
-                    style: Theme.of(context).textTheme.titleMedium,
+                    arg.title,
+                    style: Theme.of(context).textTheme.headlineSmall?.copyWith(
+                      fontWeight: FontWeight.w800,
+                    ),
                   ),
                   const SizedBox(height: DesignTokens.spaceXs),
-                  Text(arg.description!.trim()),
+                  Text(
+                    dateLabel,
+                    style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+                      color: Theme.of(context).colorScheme.onSurfaceVariant,
+                    ),
+                  ),
+                  if ((arg.locationText ?? '').trim().isNotEmpty) ...[
+                    const SizedBox(height: DesignTokens.spaceSm),
+                    Row(
+                      children: [
+                        const Icon(Icons.location_on_outlined, size: 18),
+                        const SizedBox(width: DesignTokens.spaceXs),
+                        Expanded(child: Text(arg.locationText!.trim())),
+                      ],
+                    ),
+                  ],
                 ],
               ),
             ),
-          AppSurfaceCard(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text(
-                  'Anexos',
-                  style: Theme.of(context).textTheme.titleMedium,
+            if (!isShared)
+              AppSurfaceCard(
+                child: Row(
+                  children: [
+                    Expanded(
+                      child: OutlinedButton(
+                        onPressed: () async {
+                          await agendaController.toggleStatus(
+                            arg.id,
+                            AgendaStatus.canceled,
+                          );
+                          Get.back();
+                        },
+                        child: const Text('Cancelar evento'),
+                      ),
+                    ),
+                    const SizedBox(width: DesignTokens.spaceSm),
+                    Expanded(
+                      child: FilledButton.icon(
+                        onPressed: () async {
+                          await agendaController.toggleStatus(
+                            arg.id,
+                            AgendaStatus.done,
+                          );
+                          Get.back();
+                        },
+                        icon: const Icon(Icons.check_rounded),
+                        label: const Text('Marcar concluído'),
+                      ),
+                    ),
+                  ],
                 ),
-                const SizedBox(height: DesignTokens.spaceSm),
-                if (arg.attachments.isEmpty)
+              ),
+            if ((arg.description ?? '').trim().isNotEmpty)
+              AppSurfaceCard(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      'Descrição',
+                      style: Theme.of(context).textTheme.titleMedium,
+                    ),
+                    const SizedBox(height: DesignTokens.spaceXs),
+                    Text(arg.description!.trim()),
+                  ],
+                ),
+              ),
+            AppSurfaceCard(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
                   Text(
-                    'Sem anexos para este evento.',
-                    style: Theme.of(context).textTheme.bodySmall,
-                  )
-                else
-                  Column(
-                    children: arg.attachments.map((a) {
-                      final hasLocal = a.localPath != null &&
-                          File(a.localPath!).existsSync();
-                      final hasRemote = a.remoteUrl != null &&
-                          (a.remoteUrl!.startsWith('http://') ||
-                              a.remoteUrl!.startsWith('https://'));
-                      final hasImage = hasLocal || hasRemote;
-                      return InkWell(
-                        borderRadius: BorderRadius.circular(DesignTokens.radiusMd),
-                        onTap: () => _openAttachmentPreview(
-                          context,
-                          localPath: a.localPath,
-                          remoteUrl: a.remoteUrl,
-                        ),
-                        child: Container(
-                          margin: const EdgeInsets.only(bottom: DesignTokens.spaceXs),
-                          padding: const EdgeInsets.all(10),
-                          decoration: BoxDecoration(
-                            color: Theme.of(context).colorScheme.surface,
-                            borderRadius:
-                                BorderRadius.circular(DesignTokens.radiusMd),
+                    'Anexos',
+                    style: Theme.of(context).textTheme.titleMedium,
+                  ),
+                  const SizedBox(height: DesignTokens.spaceSm),
+                  if (arg.attachments.isEmpty)
+                    Text(
+                      'Sem anexos para este evento.',
+                      style: Theme.of(context).textTheme.bodySmall,
+                    )
+                  else
+                    Column(
+                      children: arg.attachments.map((a) {
+                        final hasLocal =
+                            a.localPath != null &&
+                            File(a.localPath!).existsSync();
+                        final hasRemote =
+                            a.remoteUrl != null &&
+                            (a.remoteUrl!.startsWith('http://') ||
+                                a.remoteUrl!.startsWith('https://'));
+                        final hasImage = hasLocal || hasRemote;
+                        return InkWell(
+                          borderRadius: BorderRadius.circular(
+                            DesignTokens.radiusMd,
                           ),
-                          child: Row(
-                            children: [
-                              if (hasImage)
-                                ClipRRect(
-                                  borderRadius: BorderRadius.circular(10),
-                                  child: hasLocal
-                                      ? Image.file(
-                                          File(a.localPath!),
-                                          width: 42,
-                                          height: 42,
-                                          fit: BoxFit.cover,
-                                        )
+                          onTap: () => _openAttachmentPreview(
+                            context,
+                            localPath: a.localPath,
+                            remoteUrl: a.remoteUrl,
+                          ),
+                          child: Container(
+                            margin: const EdgeInsets.only(
+                              bottom: DesignTokens.spaceXs,
+                            ),
+                            padding: const EdgeInsets.all(10),
+                            decoration: BoxDecoration(
+                              color: Theme.of(context).colorScheme.surface,
+                              borderRadius: BorderRadius.circular(
+                                DesignTokens.radiusMd,
+                              ),
+                            ),
+                            child: Row(
+                              children: [
+                                if (hasImage)
+                                  ClipRRect(
+                                    borderRadius: BorderRadius.circular(10),
+                                    child: hasLocal
+                                        ? Image.file(
+                                            File(a.localPath!),
+                                            width: 42,
+                                            height: 42,
+                                            fit: BoxFit.cover,
+                                          )
                                         : Image.network(
                                             a.remoteUrl!,
                                             width: 42,
                                             height: 42,
                                             fit: BoxFit.cover,
-                                            errorBuilder: (context, error, stackTrace) =>
-                                                const Icon(Icons.broken_image),
+                                            errorBuilder:
+                                                (context, error, stackTrace) =>
+                                                    const Icon(
+                                                      Icons.broken_image,
+                                                    ),
                                           ),
-                                )
-                              else
-                                const Icon(Icons.attachment_outlined),
-                              const SizedBox(width: DesignTokens.spaceXs),
-                              Expanded(
-                                child: Text(
-                                  a.title ?? 'Anexo',
-                                  maxLines: 1,
-                                  overflow: TextOverflow.ellipsis,
+                                  )
+                                else
+                                  const Icon(Icons.attachment_outlined),
+                                const SizedBox(width: DesignTokens.spaceXs),
+                                Expanded(
+                                  child: Text(
+                                    a.title ?? 'Anexo',
+                                    maxLines: 1,
+                                    overflow: TextOverflow.ellipsis,
+                                  ),
                                 ),
-                              ),
-                              Icon(
-                                hasImage
-                                    ? Icons.open_in_full_rounded
-                                    : Icons.error_outline_rounded,
-                                size: 18,
-                                color: Theme.of(context).colorScheme.onSurfaceVariant,
-                              ),
-                            ],
+                                Icon(
+                                  hasImage
+                                      ? Icons.open_in_full_rounded
+                                      : Icons.error_outline_rounded,
+                                  size: 18,
+                                  color: Theme.of(
+                                    context,
+                                  ).colorScheme.onSurfaceVariant,
+                                ),
+                              ],
+                            ),
                           ),
-                        ),
-                      );
-                    }).toList(),
-                  ),
-              ],
+                        );
+                      }).toList(),
+                    ),
+                ],
+              ),
             ),
-          ),
           ],
         ),
       ),
@@ -298,14 +321,14 @@ class EventDetailPage extends StatelessWidget {
     String? localPath,
     String? remoteUrl,
   }) async {
-    final hasLocal =
-        localPath != null && File(localPath).existsSync();
-    final hasRemote = remoteUrl != null &&
+    final hasLocal = localPath != null && File(localPath).existsSync();
+    final hasRemote =
+        remoteUrl != null &&
         (remoteUrl.startsWith('http://') || remoteUrl.startsWith('https://'));
 
     if (!hasLocal && !hasRemote) {
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Arquivo do anexo nao encontrado.')),
+        const SnackBar(content: Text('Arquivo do anexo não encontrado.')),
       );
       return;
     }
@@ -326,16 +349,14 @@ class EventDetailPage extends StatelessWidget {
                     minScale: 0.8,
                     maxScale: 4,
                     child: hasLocal
-                        ? Image.file(
-                            File(localPath),
-                            fit: BoxFit.contain,
-                          )
+                        ? Image.file(File(localPath), fit: BoxFit.contain)
                         : Image.network(
                             remoteUrl as String,
                             fit: BoxFit.contain,
-                            errorBuilder: (context, error, stackTrace) => const Center(
-                              child: Icon(Icons.broken_image, size: 64),
-                            ),
+                            errorBuilder: (context, error, stackTrace) =>
+                                const Center(
+                                  child: Icon(Icons.broken_image, size: 64),
+                                ),
                           ),
                   ),
                 ),

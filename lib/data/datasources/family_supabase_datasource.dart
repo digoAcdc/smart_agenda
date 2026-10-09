@@ -177,7 +177,7 @@ class FamilySupabaseDataSource {
 
   Future<void> updateMyNickname(String familyId, String? nickname) async {
     final uid = currentUserId;
-    if (uid == null) throw StateError('Usuario nao autenticado');
+    if (uid == null) throw StateError('Usuário não autenticado');
     await _client
         .from('family_members')
         .update({'nickname': nickname})

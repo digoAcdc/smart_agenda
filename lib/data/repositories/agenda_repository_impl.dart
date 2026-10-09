@@ -84,7 +84,7 @@ class AgendaRepositoryImpl implements IAgendaRepository {
   Future<Result<void>> deleteItemSoft(String itemId) async {
     try {
       final existing = await _local.getById(itemId);
-      if (existing == null) return Result.failure('Item nao encontrado.');
+      if (existing == null) return Result.failure('Item não encontrado.');
       final denied = _denyFamilyWrite(existing.item.familyId);
       if (denied != null) return Result.failure(denied);
 
@@ -100,7 +100,7 @@ class AgendaRepositoryImpl implements IAgendaRepository {
   Future<Result<void>> setStatus(String itemId, AgendaStatus status) async {
     try {
       final existing = await _local.getById(itemId);
-      if (existing == null) return Result.failure('Item nao encontrado.');
+      if (existing == null) return Result.failure('Item não encontrado.');
       final denied = _denyFamilyWrite(existing.item.familyId);
       if (denied != null) return Result.failure(denied);
 

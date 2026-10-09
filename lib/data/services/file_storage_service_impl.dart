@@ -19,7 +19,7 @@ class FileStorageServiceImpl implements IFileStorageService {
       prepared = await ImageCompressUtils.prepareImageForStorage(sourcePath);
       final source = File(prepared.path);
       if (!source.existsSync()) {
-        return Result.failure('Arquivo de origem nao encontrado');
+        return Result.failure('Arquivo de origem não encontrado');
       }
 
       final dir = await getApplicationDocumentsDirectory();
@@ -47,5 +47,5 @@ class FileStorageServiceImpl implements IFileStorageService {
   Future<Result<String>> uploadToCloud(
     String localPath, {
     String? familyId,
-  }) async => Result.failure('Nuvem nao configurada');
+  }) async => Result.failure('Nuvem não configurada');
 }

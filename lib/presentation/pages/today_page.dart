@@ -76,6 +76,12 @@ class _TodayPageState extends State<TodayPage> {
     if (mode == AgendaHomeViewMode.week) {
       calendarFormat = CalendarFormat.week;
     }
+    // Aba Agenda: o calendario acompanha o modo (Mes = mes inteiro).
+    if (isAgendaTabMode) {
+      calendarFormat = mode == AgendaHomeViewMode.month
+          ? CalendarFormat.month
+          : CalendarFormat.week;
+    }
     if (widget.initialDate != null) {
       selectedDate = DateUtilsEx.startOfDay(widget.initialDate!);
       focusedDay = DateUtilsEx.startOfDay(widget.initialDate!);
@@ -159,12 +165,12 @@ class _TodayPageState extends State<TodayPage> {
                       ButtonSegment(
                         value: HomeLandingView.dashboard,
                         icon: Icon(Icons.home_outlined),
-                        label: Text('Inicio'),
+                        label: Text('Início'),
                       ),
                       ButtonSegment(
                         value: HomeLandingView.calendar,
                         icon: Icon(Icons.calendar_month_outlined),
-                        label: Text('Calendario'),
+                        label: Text('Calendário'),
                       ),
                     ],
                     selected: {landingView},
@@ -176,7 +182,7 @@ class _TodayPageState extends State<TodayPage> {
               const SizedBox(height: 8),
               SectionHeader(
                 title: isAgendaTabMode
-                    ? 'Calendario completo'
+                    ? 'Calendário completo'
                     : mode == AgendaHomeViewMode.day
                     ? 'Agenda do dia'
                     : mode == AgendaHomeViewMode.week
@@ -195,7 +201,7 @@ class _TodayPageState extends State<TodayPage> {
                         });
                       },
                       tooltip: calendarFormat == CalendarFormat.week
-                          ? 'Expandir para mes'
+                          ? 'Expandir para mês'
                           : 'Ver somente semana',
                       icon: Icon(
                         calendarFormat == CalendarFormat.week
@@ -209,8 +215,8 @@ class _TodayPageState extends State<TodayPage> {
                           () => isCalendarExpanded = !isCalendarExpanded,
                         ),
                         tooltip: isCalendarExpanded
-                            ? 'Recolher calendario'
-                            : 'Expandir calendario',
+                            ? 'Recolher calendário'
+                            : 'Expandir calendário',
                         icon: Icon(
                           isCalendarExpanded
                               ? Icons.keyboard_arrow_up_rounded
@@ -251,7 +257,7 @@ class _TodayPageState extends State<TodayPage> {
                         TextButton(
                           onPressed: () =>
                               setState(() => isCalendarExpanded = true),
-                          child: const Text('Abrir calendario'),
+                          child: const Text('Abrir calendário'),
                         ),
                       ],
                     ),
@@ -273,7 +279,7 @@ class _TodayPageState extends State<TodayPage> {
                       ),
                       ButtonSegment(
                         value: AgendaHomeViewMode.month,
-                        label: Text('Mes'),
+                        label: Text('Mês'),
                       ),
                     ],
                     selected: {mode},
@@ -305,163 +311,95 @@ class _TodayPageState extends State<TodayPage> {
     required AgendaController agendaController,
     required GroupsController groupsController,
   }) {
+    final today = DateUtilsEx.startOfDay(DateTime.now());
+    final isTodaySelected = isSameDay(selectedDate, today);
     return Container(
       color: context.palette.appBackground,
-      child: Column(
-        children: [
-          Padding(
-            padding: const EdgeInsets.fromLTRB(16, 12, 16, 8),
-            child: Column(
-              children: [
-                SizedBox(
-                  height: 40,
-                  child: Center(
-                    child: Text(
-                      'Agenda',
-                      style: Theme.of(context).textTheme.titleLarge?.copyWith(
-                        fontWeight: FontWeight.w700,
-                      ),
+      child: SafeArea(
+        bottom: false,
+        child: Column(
+          children: [
+            Expanded(
+              child: Column(
+                children: [
+                  // Um titulo so; o calendario fica sempre visivel e acompanha
+                  // o modo (Dia/Semana = semana, Mes = mes inteiro).
+                  SectionHeader(
+                    title: 'Agenda',
+                    subtitle: toBeginningOfSentenceCase(
+                      DateFormat('EEEE, d MMMM', 'pt_BR').format(selectedDate),
+                    ),
+                    trailing: isTodaySelected
+                        ? null
+                        : TextButton.icon(
+                            onPressed: () {
+                              setState(() {
+                                selectedDate = today;
+                                focusedDay = today;
+                              });
+                              _reloadByMode(agendaController);
+                            },
+                            icon: const Icon(Icons.today_rounded, size: 18),
+                            label: const Text('Hoje'),
+                          ),
+                  ),
+                  _buildCalendarCard(context, agendaController),
+                  const SizedBox(height: 8),
+                  Padding(
+                    padding: const EdgeInsets.fromLTRB(16, 0, 16, 10),
+                    child: SegmentedButton<AgendaHomeViewMode>(
+                      segments: const [
+                        ButtonSegment(
+                          value: AgendaHomeViewMode.day,
+                          label: Text('Dia'),
+                        ),
+                        ButtonSegment(
+                          value: AgendaHomeViewMode.week,
+                          label: Text('Semana'),
+                        ),
+                        ButtonSegment(
+                          value: AgendaHomeViewMode.month,
+                          label: Text('Mês'),
+                        ),
+                      ],
+                      selected: {mode},
+                      onSelectionChanged: (value) {
+                        setState(() {
+                          mode = value.first;
+                          calendarFormat = mode == AgendaHomeViewMode.month
+                              ? CalendarFormat.month
+                              : CalendarFormat.week;
+                        });
+                        _reloadByMode(agendaController);
+                      },
                     ),
                   ),
-                ),
-                const SizedBox(height: 8),
-              ],
-            ),
-          ),
-          const Divider(height: 1),
-          Expanded(
-            child: Column(
-              children: [
-                SectionHeader(
-                  title: 'Calendario completo',
-                  subtitle: DateFormat('EEEE, dd MMMM').format(selectedDate),
-                  trailing: Row(
-                    mainAxisSize: MainAxisSize.min,
-                    children: [
-                      IconButton(
-                        onPressed: () {
-                          setState(() {
-                            calendarFormat =
-                                calendarFormat == CalendarFormat.week
-                                ? CalendarFormat.month
-                                : CalendarFormat.week;
-                          });
-                        },
-                        tooltip: calendarFormat == CalendarFormat.week
-                            ? 'Calendario maior'
-                            : 'Calendario menor',
-                        icon: Icon(
-                          calendarFormat == CalendarFormat.week
-                              ? Icons.open_in_full_rounded
-                              : Icons.close_fullscreen_rounded,
-                        ),
-                      ),
-                      IconButton(
-                        onPressed: () => setState(
-                          () => isCalendarExpanded = !isCalendarExpanded,
-                        ),
-                        tooltip: isCalendarExpanded
-                            ? 'Recolher calendario'
-                            : 'Expandir calendario',
-                        icon: Icon(
-                          isCalendarExpanded
-                              ? Icons.keyboard_arrow_up_rounded
-                              : Icons.keyboard_arrow_down_rounded,
-                        ),
-                      ),
-                    ],
-                  ),
-                ),
-                AnimatedCrossFade(
-                  duration: DesignTokens.motionStandard,
-                  crossFadeState: isCalendarExpanded
-                      ? CrossFadeState.showFirst
-                      : CrossFadeState.showSecond,
-                  firstChild: _buildCalendarCard(context, agendaController),
-                  secondChild: Padding(
-                    padding: const EdgeInsets.symmetric(horizontal: 16),
-                    child: Container(
-                      width: double.infinity,
-                      padding: const EdgeInsets.symmetric(
-                        horizontal: 14,
-                        vertical: 12,
-                      ),
-                      decoration: BoxDecoration(
-                        color: Theme.of(
-                          context,
-                        ).colorScheme.surfaceContainerLow,
-                        borderRadius: BorderRadius.circular(16),
-                      ),
-                      child: Row(
-                        children: [
-                          const Icon(Icons.today_rounded, size: 18),
-                          const SizedBox(width: 8),
-                          Expanded(
-                            child: Text(
-                              DateFormat('dd/MM/yyyy').format(selectedDate),
-                              style: Theme.of(context).textTheme.bodyMedium,
-                            ),
+                  Expanded(
+                    child: mode == AgendaHomeViewMode.day
+                        ? _buildSelectedDayTimeline(
+                            agendaController: agendaController,
+                            groupsController: groupsController,
+                          )
+                        : mode == AgendaHomeViewMode.week
+                        ? _buildRangeByDayAndGroup(
+                            agendaController: agendaController,
+                            groupsController: groupsController,
+                            items: agendaController.weekItems,
+                            emptyMessage:
+                                'Semana livre por enquanto. Que tal criar um evento?',
+                          )
+                        : _buildRangeByDayAndGroup(
+                            agendaController: agendaController,
+                            groupsController: groupsController,
+                            items: agendaController.monthItems,
+                            emptyMessage: 'Nenhum evento para este mês.',
                           ),
-                          TextButton(
-                            onPressed: () =>
-                                setState(() => isCalendarExpanded = true),
-                            child: const Text('Abrir calendario'),
-                          ),
-                        ],
-                      ),
-                    ),
                   ),
-                ),
-                const SizedBox(height: 8),
-                Padding(
-                  padding: const EdgeInsets.fromLTRB(16, 0, 16, 10),
-                  child: SegmentedButton<AgendaHomeViewMode>(
-                    segments: const [
-                      ButtonSegment(
-                        value: AgendaHomeViewMode.day,
-                        label: Text('Dia'),
-                      ),
-                      ButtonSegment(
-                        value: AgendaHomeViewMode.week,
-                        label: Text('Semana'),
-                      ),
-                      ButtonSegment(
-                        value: AgendaHomeViewMode.month,
-                        label: Text('Mes'),
-                      ),
-                    ],
-                    selected: {mode},
-                    onSelectionChanged: (value) {
-                      setState(() => mode = value.first);
-                      _reloadByMode(agendaController);
-                    },
-                  ),
-                ),
-                Expanded(
-                  child: mode == AgendaHomeViewMode.day
-                      ? _buildSelectedDayTimeline(
-                          agendaController: agendaController,
-                          groupsController: groupsController,
-                        )
-                      : mode == AgendaHomeViewMode.week
-                      ? _buildRangeByDayAndGroup(
-                          agendaController: agendaController,
-                          groupsController: groupsController,
-                          items: agendaController.weekItems,
-                          emptyMessage:
-                              'Sua semana esta leve. Que tal criar um novo evento?',
-                        )
-                      : _buildRangeByDayAndGroup(
-                          agendaController: agendaController,
-                          groupsController: groupsController,
-                          items: agendaController.monthItems,
-                          emptyMessage: 'Nenhum evento para este mes.',
-                        ),
-                ),
-              ],
+                ],
+              ),
             ),
-          ),
-        ],
+          ],
+        ),
       ),
     );
   }
@@ -520,6 +458,16 @@ class _TodayPageState extends State<TodayPage> {
       return childSchedules.length > 1 ? '$child · ${g.name}' : child;
     }
 
+    // Primeiro uso: nada criado ainda. Um unico convite para comecar no
+    // lugar de varias secoes vazias.
+    final isFirstUse =
+        todayEvents.isEmpty &&
+        agendaDoDia.isEmpty &&
+        upcoming.isEmpty &&
+        schedules.isEmpty;
+    final hasSchedules = schedules.isNotEmpty;
+    void openSchedules() => Get.find<HomeController>().setIndex(2);
+
     final timelineItems = selectedTimelineGroupId == null
         ? upcoming
         : upcoming.where((e) => e.groupId == selectedTimelineGroupId).toList();
@@ -557,17 +505,24 @@ class _TodayPageState extends State<TodayPage> {
                         Expanded(
                           child: Obx(() {
                             final authController = Get.find<AuthController>();
+                            // Sem conta: so a saudacao ("Boa tarde!").
+                            final email = authController.userEmail.value;
+                            final greeting = _greetingByTime();
                             final displayName =
-                                authController.userEmail.value ?? 'Usuário';
+                                email ??
+                                '${greeting[0]}${greeting.substring(1).toLowerCase()}!';
                             final isPremium = authController.isPremium.value;
                             return Column(
                               crossAxisAlignment: CrossAxisAlignment.start,
                               children: [
-                                Text(
-                                  _greetingByTime(),
-                                  style: Theme.of(context).textTheme.labelSmall
-                                      ?.copyWith(letterSpacing: 1.1),
-                                ),
+                                if (email != null)
+                                  Text(
+                                    greeting,
+                                    style: Theme.of(context)
+                                        .textTheme
+                                        .labelSmall
+                                        ?.copyWith(letterSpacing: 1.1),
+                                  ),
                                 Text(
                                   displayName,
                                   style: Theme.of(context).textTheme.titleMedium
@@ -590,7 +545,7 @@ class _TodayPageState extends State<TodayPage> {
                                       borderRadius: BorderRadius.circular(999),
                                     ),
                                     child: Text(
-                                      'Premium',
+                                      'Pro',
                                       style: Theme.of(context)
                                           .textTheme
                                           .labelSmall
@@ -615,187 +570,273 @@ class _TodayPageState extends State<TodayPage> {
                   const SizedBox(height: 8),
                   _buildWeekStrip(agendaController, accentGreen),
                   const SizedBox(height: 10),
-                  _sectionTitle(
-                    context,
-                    _dayAgendaTitle(selectedDate),
-                    trailing: isTodaySelected ? null : 'Voltar para hoje',
-                    onTrailingTap: isTodaySelected
-                        ? null
-                        : () {
-                            final today = DateUtilsEx.startOfDay(
-                              DateTime.now(),
-                            );
-                            setState(() => selectedDate = today);
-                            agendaController.loadByDay(today);
-                          },
-                  ),
-                  const SizedBox(height: 8),
-                  if (agendaDoDiaExibida.isEmpty)
-                    _buildDashboardEmpty(context, accentGreen)
-                  else
-                    ...agendaDoDiaExibida.map(
-                      (item) => Padding(
-                        padding: const EdgeInsets.only(bottom: 8),
-                        child: _buildDashboardEventTile(
-                          context,
-                          item: item,
-                          groupName: groupNameById[item.groupId] ?? 'Sem grupo',
-                          accentColor: Theme.of(context).colorScheme.primary,
-                        ),
-                      ),
+                  if (isFirstUse && isTodaySelected)
+                    _buildWelcomeCard(context, onOpenSchedules: openSchedules)
+                  else ...[
+                    _sectionTitle(
+                      context,
+                      _dayAgendaTitle(selectedDate),
+                      trailing: isTodaySelected ? null : 'Voltar para hoje',
+                      onTrailingTap: isTodaySelected
+                          ? null
+                          : () {
+                              final today = DateUtilsEx.startOfDay(
+                                DateTime.now(),
+                              );
+                              setState(() => selectedDate = today);
+                              agendaController.loadByDay(today);
+                            },
                     ),
-                  const SizedBox(height: 8),
-                  if (overdue.isNotEmpty)
-                    Container(
-                      padding: const EdgeInsets.all(12),
-                      decoration: BoxDecoration(
-                        color: Theme.of(context).colorScheme.surface,
-                        borderRadius: BorderRadius.circular(18),
-                        border: Border.all(
-                          color: context.semanticColors.danger.withValues(
-                            alpha: 0.2,
+                    const SizedBox(height: 8),
+                    if (agendaDoDiaExibida.isEmpty)
+                      _buildDashboardEmpty(
+                        context,
+                        accentGreen,
+                        message: isTodaySelected
+                            ? 'Nada marcado para hoje.'
+                            : 'Nada marcado para este dia.',
+                      )
+                    else
+                      ...agendaDoDiaExibida.map(
+                        (item) => Padding(
+                          padding: const EdgeInsets.only(bottom: 8),
+                          child: _buildDashboardEventTile(
+                            context,
+                            item: item,
+                            groupName:
+                                groupNameById[item.groupId] ?? 'Sem grupo',
+                            accentColor: Theme.of(context).colorScheme.primary,
                           ),
                         ),
                       ),
-                      child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          Text(
-                            'ATENCAO NECESSARIA',
-                            style: Theme.of(context).textTheme.labelSmall
-                                ?.copyWith(
-                                  color: context.semanticColors.danger,
-                                  fontWeight: FontWeight.w700,
-                                  letterSpacing: 0.8,
-                                ),
+                    const SizedBox(height: 8),
+                    if (overdue.isNotEmpty)
+                      Container(
+                        padding: const EdgeInsets.all(12),
+                        decoration: BoxDecoration(
+                          color: Theme.of(context).colorScheme.surface,
+                          borderRadius: BorderRadius.circular(18),
+                          border: Border.all(
+                            color: context.semanticColors.danger.withValues(
+                              alpha: 0.2,
+                            ),
                           ),
-                          const SizedBox(height: 8),
-                          _buildDashboardEventTile(
+                        ),
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Text(
+                              'ATENÇÃO NECESSÁRIA',
+                              style: Theme.of(context).textTheme.labelSmall
+                                  ?.copyWith(
+                                    color: context.semanticColors.danger,
+                                    fontWeight: FontWeight.w700,
+                                    letterSpacing: 0.8,
+                                  ),
+                            ),
+                            const SizedBox(height: 8),
+                            _buildDashboardEventTile(
+                              context,
+                              item: overdue.first,
+                              groupName:
+                                  groupNameById[overdue.first.groupId] ??
+                                  'Sem grupo',
+                              accentColor: context.semanticColors.danger,
+                            ),
+                          ],
+                        ),
+                      ),
+                    const SizedBox(height: 14),
+                    _sectionTitle(
+                      context,
+                      'Aulas de hoje',
+                      trailing: hasSchedules ? 'Ver grade' : null,
+                      onTrailingTap: hasSchedules ? openSchedules : null,
+                    ),
+                    const SizedBox(height: 8),
+                    if (classes.isEmpty)
+                      _buildDashboardEmpty(
+                        context,
+                        accentGreen,
+                        message: hasSchedules
+                            ? 'Sem aulas hoje.'
+                            : 'Monte a grade de aulas para ver aqui as aulas do dia.',
+                        actionLabel: hasSchedules ? null : 'Montar grade',
+                        onAction: hasSchedules ? null : openSchedules,
+                      )
+                    else
+                      ...classes.map(
+                        (item) => Padding(
+                          padding: const EdgeInsets.only(bottom: 8),
+                          child: _buildClassCard(
                             context,
-                            item: overdue.first,
-                            groupName:
-                                groupNameById[overdue.first.groupId] ??
-                                'Sem grupo',
-                            accentColor: context.semanticColors.danger,
+                            startMinutes: item.startMinutes,
+                            endMinutes: item.endMinutes,
+                            subject: item.subject ?? 'Matéria',
+                            ownerLabel: showClassOwner
+                                ? classOwnerLabel(item.scheduleId)
+                                : null,
+                            ownerColorHex: FamilyItemLabels.childColorHex(
+                              item.childId,
+                            ),
+                          ),
+                        ),
+                      ),
+                    const SizedBox(height: 12),
+                    _sectionTitle(context, 'Próximos eventos'),
+                    const SizedBox(height: 8),
+                    // Filtro por grupo so quando ha grupos.
+                    if (groupsController.groups.isNotEmpty)
+                      Row(
+                        children: [
+                          _filterChip(
+                            context,
+                            'Todos',
+                            selected: selectedTimelineGroupId == null,
+                            onTap: () =>
+                                setState(() => selectedTimelineGroupId = null),
+                          ),
+                          ...groupsController.groups.map(
+                            (group) => _filterChip(
+                              context,
+                              group.name,
+                              selected: selectedTimelineGroupId == group.id,
+                              onTap: () => setState(
+                                () => selectedTimelineGroupId = group.id,
+                              ),
+                            ),
                           ),
                         ],
                       ),
-                    ),
-                  const SizedBox(height: 14),
-                  _sectionTitle(context, 'Aulas de hoje', trailing: 'Ver tudo'),
-                  const SizedBox(height: 8),
-                  if (classes.isEmpty)
-                    _buildDashboardEmpty(context, accentGreen)
-                  else
-                    ...classes.map(
-                      (item) => Padding(
-                        padding: const EdgeInsets.only(bottom: 8),
-                        child: _buildClassCard(
-                          context,
-                          startMinutes: item.startMinutes,
-                          endMinutes: item.endMinutes,
-                          subject: item.subject ?? 'Materia',
-                          ownerLabel: showClassOwner
-                              ? classOwnerLabel(item.scheduleId)
-                              : null,
-                          ownerColorHex: FamilyItemLabels.childColorHex(
-                            item.childId,
-                          ),
-                        ),
-                      ),
-                    ),
-                  const SizedBox(height: 12),
-                  _sectionTitle(context, 'Próximos eventos'),
-                  const SizedBox(height: 8),
-                  Row(
-                    children: [
-                      _filterChip(
+                    const SizedBox(height: 10),
+                    if (timelineItems.isEmpty)
+                      _buildDashboardEmpty(
                         context,
-                        'Todos',
-                        selected: selectedTimelineGroupId == null,
-                        onTap: () =>
-                            setState(() => selectedTimelineGroupId = null),
-                      ),
-                      ...groupsController.groups.map(
-                        (group) => _filterChip(
-                          context,
-                          group.name,
-                          selected: selectedTimelineGroupId == group.id,
-                          onTap: () => setState(
-                            () => selectedTimelineGroupId = group.id,
+                        accentGreen,
+                        message: 'Nenhum evento nos próximos dias.',
+                      )
+                    else
+                      for (final (index, item) in timelineItems.indexed) ...[
+                        Padding(
+                          padding: const EdgeInsets.only(bottom: 10),
+                          child: _buildTimelineTile(
+                            context,
+                            item: item,
+                            groupName:
+                                groupNameById[item.groupId] ?? 'Sem grupo',
+                            accentGreen: accentGreen,
                           ),
                         ),
-                      ),
-                    ],
-                  ),
-                  const SizedBox(height: 10),
-                  if (timelineItems.isEmpty)
-                    _buildDashboardEmpty(context, accentGreen)
-                  else
-                    for (final (index, item) in timelineItems.indexed) ...[
-                      Padding(
-                        padding: const EdgeInsets.only(bottom: 10),
-                        child: _buildTimelineTile(
-                          context,
-                          item: item,
-                          groupName: groupNameById[item.groupId] ?? 'Sem grupo',
-                          accentGreen: accentGreen,
-                        ),
-                      ),
-                      // Plano Free: um anuncio nativo depois do 2o evento
-                      // (ou do ultimo, se houver menos).
-                      if (index == (timelineItems.length < 2 ? timelineItems.length - 1 : 1))
-                        const NativeAdCard(),
-                    ],
-                  const SizedBox(height: 8),
-                  Container(
-                    padding: const EdgeInsets.all(16),
-                    decoration: BoxDecoration(
-                      color: accentGreen,
-                      borderRadius: BorderRadius.circular(18),
-                    ),
-                    child: Row(
-                      children: [
-                        Expanded(
-                          child: Column(
-                            crossAxisAlignment: CrossAxisAlignment.start,
-                            children: [
-                              Text(
-                                'Total de eventos',
-                                style: Theme.of(context).textTheme.bodySmall
-                                    ?.copyWith(
-                                      color: Theme.of(
-                                        context,
-                                      ).colorScheme.onPrimary,
-                                    ),
-                              ),
-                              const SizedBox(height: 4),
-                              Text(
-                                '${todayEvents.length}',
-                                style: Theme.of(context).textTheme.headlineSmall
-                                    ?.copyWith(
-                                      color: Theme.of(
-                                        context,
-                                      ).colorScheme.onPrimary,
-                                      fontWeight: FontWeight.w800,
-                                    ),
-                              ),
-                            ],
-                          ),
-                        ),
-                        Text(
-                          '+${todayEvents.where((e) => e.status == AgendaStatus.pending).length} pendentes',
-                          style: Theme.of(context).textTheme.bodySmall
-                              ?.copyWith(
-                                color: Theme.of(context).colorScheme.onPrimary,
-                              ),
-                        ),
+                        // Plano Free: um anuncio nativo depois do 2o evento
+                        // (ou do ultimo, se houver menos).
+                        if (index ==
+                            (timelineItems.length < 2
+                                ? timelineItems.length - 1
+                                : 1))
+                          const NativeAdCard(),
                       ],
-                    ),
-                  ),
+                    const SizedBox(height: 8),
+                    if (todayEvents.isNotEmpty)
+                      Container(
+                        padding: const EdgeInsets.all(16),
+                        decoration: BoxDecoration(
+                          color: accentGreen,
+                          borderRadius: BorderRadius.circular(18),
+                        ),
+                        child: Row(
+                          children: [
+                            Expanded(
+                              child: Column(
+                                crossAxisAlignment: CrossAxisAlignment.start,
+                                children: [
+                                  Text(
+                                    'Eventos de hoje',
+                                    style: Theme.of(context).textTheme.bodySmall
+                                        ?.copyWith(
+                                          color: Theme.of(
+                                            context,
+                                          ).colorScheme.onPrimary,
+                                        ),
+                                  ),
+                                  const SizedBox(height: 4),
+                                  Text(
+                                    '${todayEvents.length}',
+                                    style: Theme.of(context)
+                                        .textTheme
+                                        .headlineSmall
+                                        ?.copyWith(
+                                          color: Theme.of(
+                                            context,
+                                          ).colorScheme.onPrimary,
+                                          fontWeight: FontWeight.w800,
+                                        ),
+                                  ),
+                                ],
+                              ),
+                            ),
+                            Text(
+                              '${todayEvents.where((e) => e.status == AgendaStatus.pending).length} pendentes',
+                              style: Theme.of(context).textTheme.bodySmall
+                                  ?.copyWith(
+                                    color: Theme.of(
+                                      context,
+                                    ).colorScheme.onPrimary,
+                                  ),
+                            ),
+                          ],
+                        ),
+                      ),
+                  ],
                 ],
               ),
             ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  /// Primeiro uso: atalhos para o que a pessoa provavelmente quer fazer.
+  Widget _buildWelcomeCard(
+    BuildContext context, {
+    required VoidCallback onOpenSchedules,
+  }) {
+    final theme = Theme.of(context);
+    final scheme = theme.colorScheme;
+    return Container(
+      padding: const EdgeInsets.all(18),
+      decoration: BoxDecoration(
+        color: scheme.surface,
+        borderRadius: BorderRadius.circular(20),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Text(
+            'Comece por aqui',
+            style: theme.textTheme.titleMedium?.copyWith(
+              fontWeight: FontWeight.w800,
+            ),
+          ),
+          const SizedBox(height: 6),
+          Text(
+            'Anote compromissos, tarefas e lembretes, e monte a grade de '
+            'aulas. Tudo do dia aparece nesta tela.',
+            style: theme.textTheme.bodyMedium?.copyWith(
+              color: scheme.onSurfaceVariant,
+            ),
+          ),
+          const SizedBox(height: 14),
+          FilledButton.icon(
+            onPressed: () => Get.toNamed(AppRoutes.upsertAgenda),
+            icon: const Icon(Icons.add_rounded),
+            label: const Text('Criar primeiro evento'),
+          ),
+          const SizedBox(height: 8),
+          OutlinedButton.icon(
+            onPressed: onOpenSchedules,
+            icon: const Icon(Icons.menu_book_rounded),
+            label: const Text('Montar grade de aulas'),
           ),
         ],
       ),
@@ -1002,7 +1043,7 @@ class _TodayPageState extends State<TodayPage> {
                   ),
                   const SizedBox(height: 2),
                   Text(
-                    'Horario ${DateFormat('HH:mm').format(item.startAt)}',
+                    'Horário ${DateFormat('HH:mm').format(item.startAt)}',
                     style: Theme.of(context).textTheme.bodySmall,
                   ),
                   const SizedBox(height: 2),
@@ -1038,11 +1079,16 @@ class _TodayPageState extends State<TodayPage> {
   }) {
     final start = _formatMinutes(startMinutes);
     final end = _formatMinutes(endMinutes);
+    final now = DateTime.now();
+    final nowMinutes = now.hour * 60 + now.minute;
+    final isNow = nowMinutes >= startMinutes && nowMinutes < endMinutes;
+    final scheme = Theme.of(context).colorScheme;
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
       decoration: BoxDecoration(
-        color: Theme.of(context).colorScheme.surface,
+        color: scheme.surface,
         borderRadius: BorderRadius.circular(16),
+        border: isNow ? Border.all(color: scheme.primary, width: 1.5) : null,
       ),
       child: Row(
         children: [
@@ -1071,9 +1117,10 @@ class _TodayPageState extends State<TodayPage> {
                 ),
                 const SizedBox(height: 2),
                 Text(
-                  '$start - $end',
+                  isNow ? 'Agora · até $end' : 'até $end',
                   style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                    color: Theme.of(context).colorScheme.onSurfaceVariant,
+                    color: isNow ? scheme.primary : scheme.onSurfaceVariant,
+                    fontWeight: isNow ? FontWeight.w700 : null,
                   ),
                 ),
               ],
@@ -1229,7 +1276,7 @@ class _TodayPageState extends State<TodayPage> {
                   Text(
                     item.description?.trim().isNotEmpty == true
                         ? item.description!.trim()
-                        : 'Sem descricao',
+                        : 'Sem descrição',
                     maxLines: 2,
                     overflow: TextOverflow.ellipsis,
                     style: Theme.of(context).textTheme.bodySmall?.copyWith(
@@ -1245,7 +1292,13 @@ class _TodayPageState extends State<TodayPage> {
     );
   }
 
-  Widget _buildDashboardEmpty(BuildContext context, Color accentGreen) {
+  Widget _buildDashboardEmpty(
+    BuildContext context,
+    Color accentGreen, {
+    String message = 'Nada marcado por aqui.',
+    String? actionLabel,
+    VoidCallback? onAction,
+  }) {
     return Container(
       padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
@@ -1257,11 +1310,10 @@ class _TodayPageState extends State<TodayPage> {
           Icon(Icons.info_outline_rounded, color: accentGreen),
           const SizedBox(width: 10),
           Expanded(
-            child: Text(
-              'Nada agendado por aqui no momento.',
-              style: Theme.of(context).textTheme.bodyMedium,
-            ),
+            child: Text(message, style: Theme.of(context).textTheme.bodyMedium),
           ),
+          if (actionLabel != null && onAction != null)
+            TextButton(onPressed: onAction, child: Text(actionLabel)),
         ],
       ),
     );
@@ -1291,14 +1343,14 @@ class _TodayPageState extends State<TodayPage> {
         agendaController: agendaController,
         groupsController: groupsController,
         items: agendaController.weekItems,
-        emptyMessage: 'Sua semana esta leve. Que tal criar um novo evento?',
+        emptyMessage: 'Semana livre por enquanto. Que tal criar um evento?',
       );
     }
     return _buildRangeByDayAndGroup(
       agendaController: agendaController,
       groupsController: groupsController,
       items: agendaController.monthItems,
-      emptyMessage: 'Nenhum evento para este mes.',
+      emptyMessage: 'Nenhum evento para este mês.',
     );
   }
 
@@ -1599,7 +1651,7 @@ class _TodayPageState extends State<TodayPage> {
         EmptyStateWidget(
           icon: Icons.event_note_rounded,
           title: 'Dia livre',
-          message: 'Nao ha eventos para a data selecionada.',
+          message: 'Não há eventos para a data selecionada.',
           ctaLabel: 'Criar evento',
           onTapCta: () => Get.toNamed(AppRoutes.upsertAgenda),
         ),
@@ -1841,7 +1893,7 @@ class _TodayPageState extends State<TodayPage> {
           calendarFormat: calendarFormat,
           availableCalendarFormats: const {
             CalendarFormat.week: 'Semana',
-            CalendarFormat.month: 'Mes',
+            CalendarFormat.month: 'Mês',
           },
           headerStyle: HeaderStyle(
             formatButtonVisible: false,
@@ -1894,13 +1946,14 @@ class _TodayPageState extends State<TodayPage> {
       context: context,
       builder: (context) => AlertDialog(
         title: const Text('Excluir evento?'),
-        content: const Text('Essa acao move o evento para exclusao logica.'),
+        content: const Text('O evento sai da agenda.'),
         actions: [
           TextButton(
             onPressed: () => Navigator.pop(context, false),
             child: const Text('Cancelar'),
           ),
           FilledButton(
+            style: FilledButton.styleFrom(minimumSize: const Size(0, 44)),
             onPressed: () => Navigator.pop(context, true),
             child: const Text('Excluir'),
           ),

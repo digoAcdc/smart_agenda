@@ -60,6 +60,10 @@ class _LoginPageState extends State<LoginPage> {
     final authController = Get.find<AuthController>();
     return Scaffold(
       backgroundColor: context.palette.appBackground,
+      // Botao de voltar quando a tela foi aberta por cima de outra.
+      appBar: Navigator.of(context).canPop()
+          ? AppBar(backgroundColor: Colors.transparent, elevation: 0)
+          : null,
       body: SafeArea(
         child: SingleChildScrollView(
           padding: const EdgeInsets.symmetric(horizontal: DesignTokens.spaceMd),
@@ -67,7 +71,11 @@ class _LoginPageState extends State<LoginPage> {
             key: _formKey,
             child: Column(
               children: [
-                const SizedBox(height: DesignTokens.spaceXl * 2),
+                SizedBox(
+                  height: Navigator.of(context).canPop()
+                      ? DesignTokens.spaceSm
+                      : DesignTokens.spaceXl * 2,
+                ),
                 Icon(
                   Icons.calendar_month_rounded,
                   size: 64,
@@ -75,7 +83,7 @@ class _LoginPageState extends State<LoginPage> {
                 ),
                 const SizedBox(height: DesignTokens.spaceLg),
                 Text(
-                  'Bem-vindo de volta!',
+                  'Entrar',
                   style: Theme.of(context).textTheme.headlineSmall?.copyWith(
                     fontWeight: FontWeight.w800,
                   ),
@@ -83,7 +91,7 @@ class _LoginPageState extends State<LoginPage> {
                 ),
                 const SizedBox(height: DesignTokens.spaceXs),
                 Text(
-                  'Entre na sua conta do Smart Agenda',
+                  'Use sua conta do Smart Agenda',
                   style: Theme.of(context).textTheme.bodyLarge?.copyWith(
                     color: Theme.of(context).colorScheme.onSurfaceVariant,
                   ),
@@ -111,7 +119,7 @@ class _LoginPageState extends State<LoginPage> {
                           if (!RegExp(
                             r'^[\w-\.]+@([\w-]+\.)+[\w-]{2,4}$',
                           ).hasMatch(v.trim())) {
-                            return 'E-mail invalido';
+                            return 'E-mail inválido';
                           }
                           return null;
                         },
@@ -202,7 +210,7 @@ class _LoginPageState extends State<LoginPage> {
                   mainAxisAlignment: MainAxisAlignment.center,
                   children: [
                     Text(
-                      'Nao tem conta? ',
+                      'Não tem conta? ',
                       style: Theme.of(context).textTheme.bodyMedium,
                     ),
                     TextButton(

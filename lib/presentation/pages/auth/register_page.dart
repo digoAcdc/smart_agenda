@@ -108,7 +108,7 @@ class _RegisterPageState extends State<RegisterPage> {
                           if (!RegExp(
                             r'^[\w-\.]+@([\w-]+\.)+[\w-]{2,4}$',
                           ).hasMatch(v.trim())) {
-                            return 'E-mail invalido';
+                            return 'E-mail inválido';
                           }
                           return null;
                         },
@@ -119,7 +119,7 @@ class _RegisterPageState extends State<RegisterPage> {
                         obscureText: true,
                         decoration: const InputDecoration(
                           labelText: 'Senha',
-                          hintText: 'Minimo 6 caracteres',
+                          hintText: 'Mínimo 6 caracteres',
                           prefixIcon: Icon(Icons.lock_outline),
                         ),
                         validator: (v) {
@@ -146,7 +146,7 @@ class _RegisterPageState extends State<RegisterPage> {
                             return 'Confirme sua senha';
                           }
                           if (v != _passwordController.text) {
-                            return 'As senhas nao coincidem';
+                            return 'As senhas não coincidem';
                           }
                           return null;
                         },
@@ -186,7 +186,7 @@ class _RegisterPageState extends State<RegisterPage> {
                   mainAxisAlignment: MainAxisAlignment.center,
                   children: [
                     Text(
-                      'Ja tem conta? ',
+                      'Já tem conta? ',
                       style: Theme.of(context).textTheme.bodyMedium,
                     ),
                     TextButton(

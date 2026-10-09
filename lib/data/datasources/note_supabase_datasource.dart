@@ -13,7 +13,7 @@ class NoteSupabaseDataSource {
 
   Future<void> upsertNote(Note note) async {
     final uid = _userId;
-    if (uid == null) throw StateError('Usuario nao autenticado');
+    if (uid == null) throw StateError('Usuário não autenticado');
 
     await _client
         .from('notes')
@@ -26,7 +26,7 @@ class NoteSupabaseDataSource {
     List<ChecklistItem> items,
   ) async {
     final uid = _userId;
-    if (uid == null) throw StateError('Usuario nao autenticado');
+    if (uid == null) throw StateError('Usuário não autenticado');
 
     if (items.isEmpty) return;
 
@@ -51,7 +51,7 @@ class NoteSupabaseDataSource {
 
   Future<void> deleteNote(String id) async {
     final uid = _userId;
-    if (uid == null) throw StateError('Usuario nao autenticado');
+    if (uid == null) throw StateError('Usuário não autenticado');
 
     await _client
         .from('note_checklist_items')

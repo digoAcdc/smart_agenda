@@ -68,7 +68,7 @@ void main() {
     expect(controller.getCell(3, 430, 480)!.subject, before);
     expect(controller.getCell(3, 420, 470), isNull);
     expect(await controller.updateTimeRange(430, 480, 470, 520),
-        'Ja existe uma linha com esse horario');
+        'Já existe uma linha com esse horário');
   });
 
   test('sugestoes incluem as 6 materias principais', () {

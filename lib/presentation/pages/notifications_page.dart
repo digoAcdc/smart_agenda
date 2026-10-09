@@ -264,7 +264,7 @@ Widget _buildPremiumSwitchTile({
                       ),
                       const SizedBox(width: 4),
                       Text(
-                        'Premium',
+                        'Pro',
                         style: Theme.of(context).textTheme.labelSmall?.copyWith(
                           color: Theme.of(context).colorScheme.outline,
                           fontWeight: FontWeight.w600,
@@ -293,21 +293,21 @@ void _showPremiumNotificationModal(BuildContext context, String tipo) {
       content =
           'Receba um resumo da sua agenda pela manhã, '
           'para começar o dia organizado.\n\n'
-          'É um recurso exclusivo Premium. Torne-se Premium e desbloqueie essa e outras funcionalidades.';
+          'É um recurso do plano Pro. Assine o Pro para liberar este e outros recursos.';
       break;
     case 'amanhã':
       title = 'Resumo de amanhã';
       content =
           'Receba um resumo da sua agenda de amanhã no fim do dia, '
           'para você se preparar com antecedência.\n\n'
-          'É um recurso exclusivo Premium. Torne-se Premium e desbloqueie essa e outras funcionalidades.';
+          'É um recurso do plano Pro. Assine o Pro para liberar este e outros recursos.';
       break;
     default:
       title = 'Resumo da semana';
       content =
           'Receba um resumo semanal da sua agenda no domingo, '
           'para planejar a semana que vem.\n\n'
-          'É um recurso exclusivo Premium. Torne-se Premium e desbloqueie essa e outras funcionalidades.';
+          'É um recurso do plano Pro. Assine o Pro para liberar este e outros recursos.';
   }
   showDialog<void>(
     context: context,
@@ -327,6 +327,7 @@ void _showPremiumNotificationModal(BuildContext context, String tipo) {
           child: const Text('Entendi'),
         ),
         FilledButton(
+          style: FilledButton.styleFrom(minimumSize: const Size(0, 44)),
           onPressed: () {
             Navigator.of(ctx).pop();
             if (!Get.isRegistered<AuthController>()) return;
@@ -337,7 +338,7 @@ void _showPremiumNotificationModal(BuildContext context, String tipo) {
               Get.toNamed(AppRoutes.login, arguments: {'from': 'premium'});
             }
           },
-          child: const Text('Tornar-se Premium'),
+          child: const Text('Assinar o Pro'),
         ),
       ],
     ),

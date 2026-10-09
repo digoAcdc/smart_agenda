@@ -36,7 +36,9 @@ class HomePage extends StatelessWidget {
       }
 
       const navHeight = 74.0;
-      const barStackHeight = navHeight + 42;
+      final showAddButton = homeController.currentIndex.value <= 1;
+      // Espaco extra acima da barra so quando o "+" aparece.
+      final barStackHeight = navHeight + (showAddButton ? 42 : 0);
       final initialDate = homeController.initialDateValueForAgenda;
       final initialModeRaw = homeController.initialModeValueForAgenda;
       final initialMode = initialModeRaw == 'week'
@@ -67,7 +69,7 @@ class HomePage extends StatelessWidget {
         Icons.apps_rounded,
         Icons.settings_rounded,
       ];
-      const navLabels = ['Início', 'Agenda', 'Matérias', 'Mais', 'Config'];
+      const navLabels = ['Início', 'Agenda', 'Aulas', 'Mais', 'Config'];
 
       return Scaffold(
         body: AnimatedSwitcher(
@@ -138,39 +140,41 @@ class HomePage extends StatelessWidget {
                         ),
                       ),
                     ),
-                    Positioned(
-                      top: 0,
-                      right: 22,
-                      child: Material(
-                        color: Colors.transparent,
-                        child: InkWell(
-                          borderRadius: BorderRadius.circular(30),
-                          onTap: () => Get.toNamed(AppRoutes.upsertAgenda),
-                          child: Container(
-                            width: 58,
-                            height: 58,
-                            decoration: BoxDecoration(
-                              color: const Color(0xFF0B1633),
-                              shape: BoxShape.circle,
-                              boxShadow: [
-                                BoxShadow(
-                                  color: const Color(
-                                    0xFF0B1633,
-                                  ).withValues(alpha: 0.30),
-                                  blurRadius: 18,
-                                  offset: const Offset(0, 8),
-                                ),
-                              ],
-                            ),
-                            child: Icon(
-                              Icons.add_rounded,
-                              color: Colors.white,
-                              size: 30,
+                    // "+" cria evento: so faz sentido em Inicio e Agenda.
+                    if (showAddButton)
+                      Positioned(
+                        top: 0,
+                        right: 22,
+                        child: Material(
+                          color: Colors.transparent,
+                          child: InkWell(
+                            borderRadius: BorderRadius.circular(30),
+                            onTap: () => Get.toNamed(AppRoutes.upsertAgenda),
+                            child: Container(
+                              width: 58,
+                              height: 58,
+                              decoration: BoxDecoration(
+                                color: const Color(0xFF0B1633),
+                                shape: BoxShape.circle,
+                                boxShadow: [
+                                  BoxShadow(
+                                    color: const Color(
+                                      0xFF0B1633,
+                                    ).withValues(alpha: 0.30),
+                                    blurRadius: 18,
+                                    offset: const Offset(0, 8),
+                                  ),
+                                ],
+                              ),
+                              child: Icon(
+                                Icons.add_rounded,
+                                color: Colors.white,
+                                size: 30,
+                              ),
                             ),
                           ),
                         ),
                       ),
-                    ),
                   ],
                 ),
               ),
@@ -237,11 +241,10 @@ class HomeNavItem extends StatelessWidget {
                   label,
                   maxLines: 1,
                   style: Theme.of(context).textTheme.labelMedium?.copyWith(
-                        color: color,
-                        fontSize: 11.5,
-                        fontWeight:
-                            isActive ? FontWeight.w700 : FontWeight.w500,
-                      ),
+                    color: color,
+                    fontSize: 11.5,
+                    fontWeight: isActive ? FontWeight.w700 : FontWeight.w500,
+                  ),
                 ),
               ),
             ),

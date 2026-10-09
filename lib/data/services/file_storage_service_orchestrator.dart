@@ -25,7 +25,7 @@ class FileStorageServiceOrchestrator implements IFileStorageService {
       prepared = await ImageCompressUtils.prepareImageForStorage(sourcePath);
       final source = File(prepared.path);
       if (!source.existsSync()) {
-        return Result.failure('Arquivo de origem nao encontrado');
+        return Result.failure('Arquivo de origem não encontrado');
       }
       return _copyLocal(source);
     } catch (e) {
@@ -58,14 +58,14 @@ class FileStorageServiceOrchestrator implements IFileStorageService {
   }) async {
     final source = File(localPath);
     if (!source.existsSync()) {
-      return Result.failure('Arquivo local nao encontrado');
+      return Result.failure('Arquivo local não encontrado');
     }
     try {
       final client = _client;
-      if (client == null) return Result.failure('Supabase nao configurado');
+      if (client == null) return Result.failure('Supabase não configurado');
       final uid = client.auth.currentUser?.id;
       if (uid == null) {
-        return Result.failure('Usuario nao autenticado');
+        return Result.failure('Usuário não autenticado');
       }
 
       final extension = source.path.contains('.')

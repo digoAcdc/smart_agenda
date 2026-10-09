@@ -183,7 +183,7 @@ class ClassScheduleLocalDataSource implements IClassScheduleDataSource {
     int start,
     int end,
   ) async {
-    if (end <= start) return 'Fim deve ser maior que inicio';
+    if (end <= start) return 'Fim deve ser maior que início';
 
     final now = DateTime.now();
     for (final day in _weekdays) {
@@ -277,7 +277,7 @@ class ClassScheduleLocalDataSource implements IClassScheduleDataSource {
     int newStart,
     int newEnd,
   ) async {
-    if (newEnd <= newStart) return 'Fim deve ser maior que inicio';
+    if (newEnd <= newStart) return 'Fim deve ser maior que início';
     if (oldStart == newStart && oldEnd == newEnd) return null;
     final clash =
         await (_db.select(_db.classScheduleSlotsTable)
@@ -289,7 +289,7 @@ class ClassScheduleLocalDataSource implements IClassScheduleDataSource {
               )
               ..limit(1))
             .getSingleOrNull();
-    if (clash != null) return 'Ja existe uma linha com esse horario';
+    if (clash != null) return 'Já existe uma linha com esse horário';
 
     await (_db.update(_db.classScheduleSlotsTable)..where(
           (t) =>

@@ -80,7 +80,7 @@ class _UpsertNotePageState extends State<UpsertNotePage> {
       if (!mounted) return;
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(
-          content: Text('Upload de imagem e uma funcionalidade Premium.'),
+          content: Text('Anexar imagens é um recurso do plano Pro.'),
         ),
       );
       return;
@@ -184,7 +184,7 @@ class _UpsertNotePageState extends State<UpsertNotePage> {
     if (mounted) {
       ScaffoldMessenger.of(
         context,
-      ).showSnackBar(const SnackBar(content: Text('Anotacao salva')));
+      ).showSnackBar(const SnackBar(content: Text('Anotação salva')));
       Get.back();
     }
   }
@@ -193,8 +193,8 @@ class _UpsertNotePageState extends State<UpsertNotePage> {
     if (_editingNote == null) return;
     final ok = await Get.dialog<bool>(
       AlertDialog(
-        title: const Text('Excluir anotacao?'),
-        content: const Text('Esta acao nao pode ser desfeita.'),
+        title: const Text('Excluir anotação?'),
+        content: const Text('Esta ação não pode ser desfeita.'),
         actions: [
           TextButton(
             onPressed: () => Get.back(result: false),
@@ -204,6 +204,7 @@ class _UpsertNotePageState extends State<UpsertNotePage> {
             onPressed: () => Get.back(result: true),
             style: FilledButton.styleFrom(
               backgroundColor: Theme.of(context).colorScheme.error,
+              minimumSize: const Size(0, 44),
             ),
             child: const Text('Excluir'),
           ),
@@ -215,7 +216,7 @@ class _UpsertNotePageState extends State<UpsertNotePage> {
     if (mounted) {
       ScaffoldMessenger.of(
         context,
-      ).showSnackBar(const SnackBar(content: Text('Anotacao excluida')));
+      ).showSnackBar(const SnackBar(content: Text('Anotação excluída')));
     }
     Get.back();
   }
@@ -227,7 +228,7 @@ class _UpsertNotePageState extends State<UpsertNotePage> {
 
     return Scaffold(
       appBar: AppBar(
-        title: Text(isEditing ? 'Editar anotacao' : 'Nova anotacao'),
+        title: Text(isEditing ? 'Editar anotação' : 'Nova anotação'),
         actions: [
           TextButton(onPressed: _save, child: const Text('Salvar')),
           if (isEditing)
@@ -246,18 +247,18 @@ class _UpsertNotePageState extends State<UpsertNotePage> {
             TextFormField(
               controller: _titleController,
               decoration: const InputDecoration(
-                labelText: 'Titulo *',
+                labelText: 'Título *',
                 hintText: 'Ex: Ideias para o projeto',
               ),
               textCapitalization: TextCapitalization.sentences,
-              validator: (v) => requiredValidator(v, 'Titulo e obrigatorio'),
+              validator: (v) => requiredValidator(v, 'Título é obrigatório'),
             ),
             const SizedBox(height: DesignTokens.spaceMd),
             TextFormField(
               controller: _bodyController,
               decoration: const InputDecoration(
                 labelText: 'Texto (opcional)',
-                hintText: 'Escreva suas anotacoes aqui...',
+                hintText: 'Escreva suas anotações aqui...',
                 alignLabelWithHint: true,
               ),
               maxLines: 4,
@@ -324,7 +325,7 @@ class _UpsertNotePageState extends State<UpsertNotePage> {
                     ),
                     const SizedBox(width: 4),
                     Text(
-                      'Premium',
+                      'Pro',
                       style: theme.textTheme.labelSmall?.copyWith(
                         color: theme.colorScheme.outline,
                         fontWeight: FontWeight.w600,

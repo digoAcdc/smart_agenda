@@ -27,15 +27,15 @@ class AgendaTransferBundle extends Equatable {
   final List<ClassScheduleTransferSlot> classScheduleSlots;
 
   String? validate() {
-    if (schemaVersion <= 0) return 'Versao do schema invalida.';
+    if (schemaVersion <= 0) return 'Versão do schema inválida.';
     if (schemaVersion > currentSchemaVersion) {
-      return 'Arquivo de agenda usa uma versao mais nova do formato.';
+      return 'Arquivo de agenda usa uma versão mais nova do formato.';
     }
 
     final groupIds = groups.map((e) => e.id).toSet();
     for (final item in items) {
       if (item.title.trim().isEmpty) {
-        return 'Evento com titulo vazio encontrado no arquivo.';
+        return 'Evento com título vazio encontrado no arquivo.';
       }
       if (item.groupId != null && !groupIds.contains(item.groupId)) {
         return 'Evento referencia grupo inexistente.';
@@ -43,10 +43,10 @@ class AgendaTransferBundle extends Equatable {
     }
     for (final slot in classScheduleSlots) {
       if (slot.dayOfWeek < 1 || slot.dayOfWeek > 7) {
-        return 'Slot da grade horaria com dia da semana invalido.';
+        return 'Slot da grade horária com dia da semana inválido.';
       }
       if (slot.endMinutes <= slot.startMinutes) {
-        return 'Slot da grade horaria com horario invalido.';
+        return 'Slot da grade horária com horário inválido.';
       }
     }
     return null;

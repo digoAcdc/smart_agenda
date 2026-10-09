@@ -92,13 +92,13 @@ class AgendaTransferServiceImpl implements IAgendaTransferService {
     try {
       final file = File(filePath);
       if (!file.existsSync()) {
-        return Result.failure('Arquivo selecionado nao existe.');
+        return Result.failure('Arquivo selecionado não existe.');
       }
 
       final raw = await file.readAsString();
       final decoded = jsonDecode(raw);
       if (decoded is! Map<String, dynamic>) {
-        return Result.failure('Arquivo invalido para importacao.');
+        return Result.failure('Arquivo inválido para importação.');
       }
 
       final bundle = AgendaTransferBundle.fromJson(decoded);

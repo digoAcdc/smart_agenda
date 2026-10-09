@@ -35,11 +35,12 @@ class DuplicateAgendaItem {
     final currentResult = await _repository.getItemById(itemId);
     if (!currentResult.isSuccess) {
       return Result.failure(
-          currentResult.errorMessage ?? 'Falha ao duplicar item');
+        currentResult.errorMessage ?? 'Falha ao duplicar item',
+      );
     }
     final current = currentResult.data;
     if (current == null) {
-      return Result.failure('Item nao encontrado para duplicacao');
+      return Result.failure('Item não encontrado para duplicação');
     }
 
     final now = DateTime.now();

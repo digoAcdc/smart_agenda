@@ -20,7 +20,7 @@ class ClassSchedulePage extends GetView<ClassScheduleController> {
 
   static const dayLabels = <int, String>{
     1: 'Segunda',
-    2: 'Terca',
+    2: 'Terça',
     3: 'Quarta',
     4: 'Quinta',
     5: 'Sexta',
@@ -58,7 +58,7 @@ class ClassSchedulePage extends GetView<ClassScheduleController> {
             Obx(() {
               final current = controller.selected.value;
               return SectionHeader(
-                title: 'Grade horaria',
+                title: 'Aulas',
                 subtitle: current == null
                     ? 'Monte a semana de aulas'
                     : _canEdit
@@ -72,10 +72,10 @@ class ClassSchedulePage extends GetView<ClassScheduleController> {
                           IconButton(
                             onPressed: () => _openAddTimeRangeDialog(context),
                             icon: const Icon(Icons.add),
-                            tooltip: 'Adicionar horario',
+                            tooltip: 'Adicionar horário',
                           ),
                           PopupMenuButton<String>(
-                            tooltip: 'Opcoes da grade',
+                            tooltip: 'Opções da grade',
                             onSelected: (v) => v == 'rename'
                                 ? _openRenameDialog(context, current)
                                 : _confirmDelete(context, current),
@@ -105,8 +105,8 @@ class ClassSchedulePage extends GetView<ClassScheduleController> {
                     icon: Icons.view_week_outlined,
                     title: 'Nenhuma grade ainda',
                     message:
-                        'Crie uma grade para voce ou para um filho. Ela ja vem com '
-                        '6 materias de segunda a sexta; depois e so ajustar.',
+                        'Crie uma grade para você ou para um filho. Ela já vem com '
+                        '6 matérias de segunda a sexta; depois é só ajustar.',
                     ctaLabel: 'Criar grade',
                     onTapCta: () => _openNewScheduleDialog(context),
                   );
@@ -117,7 +117,7 @@ class ClassSchedulePage extends GetView<ClassScheduleController> {
                     return const EmptyStateWidget(
                       icon: Icons.view_week_outlined,
                       title: 'Sem grade ainda',
-                      message: 'Esta grade ainda nao tem aulas.',
+                      message: 'Esta grade ainda não tem aulas.',
                     );
                   }
                   return SingleChildScrollView(
@@ -128,14 +128,14 @@ class ClassSchedulePage extends GetView<ClassScheduleController> {
                           title: 'Sem grade ainda',
                           message:
                               'Comece pela grade modelo: 6 aulas de segunda a sexta com '
-                              'Matematica, Portugues, Ciencias, Historia, Geografia e Ingles. '
-                              'Depois e so tocar para trocar materias e horarios.',
+                              'Matemática, Português, Ciências, História, Geografia e Inglês. '
+                              'Depois é só tocar para trocar matérias e horários.',
                           ctaLabel: 'Usar grade modelo',
                           onTapCta: controller.applyTemplate,
                         ),
                         TextButton(
                           onPressed: () => _openAddTimeRangeDialog(context),
-                          child: const Text('Comecar do zero'),
+                          child: const Text('Começar do zero'),
                         ),
                       ],
                     ),
@@ -144,12 +144,15 @@ class ClassSchedulePage extends GetView<ClassScheduleController> {
 
                 return LayoutBuilder(
                   builder: (context, constraints) {
-                    final compact = constraints.maxWidth < 420;
-                    final minContentWidth = compact
-                        ? (_timeColWidth +
-                              (_dayColWidth *
-                                  ClassScheduleController.weekdays.length))
-                        : constraints.maxWidth;
+                    final minContentWidth =
+                        _timeColWidth +
+                        _dayColWidth * ClassScheduleController.weekdays.length +
+                        24;
+                    // No celular a semana inteira nao cabe: mostra um dia por
+                    // vez, com abas de segunda a sexta.
+                    if (constraints.maxWidth < minContentWidth) {
+                      return _buildDayView(context, ranges);
+                    }
                     return SingleChildScrollView(
                       padding: const EdgeInsets.fromLTRB(12, 6, 12, 120),
                       child: SingleChildScrollView(
@@ -180,6 +183,141 @@ class ClassSchedulePage extends GetView<ClassScheduleController> {
         ),
       ),
     );
+  }
+
+  /// Celular: abas Seg-Sex e as aulas do dia escolhido em lista.
+  Widget _buildDayView(BuildContext context, List<TimeRange> ranges) {
+    final theme = Theme.of(context);
+    final scheme = theme.colorScheme;
+    final palette = context.palette;
+    return Obx(() {
+      final day = controller.selectedWeekday.value;
+      final today = DateTime.now().weekday;
+      return Column(
+        children: [
+          Padding(
+            padding: const EdgeInsets.fromLTRB(12, 0, 12, 8),
+            child: Row(
+              children: [
+                for (final d in ClassScheduleController.weekdays)
+                  Expanded(
+                    child: Padding(
+                      padding: const EdgeInsets.symmetric(horizontal: 3),
+                      child: Semantics(
+                        selected: d == day,
+                        button: true,
+                        label: dayLabels[d],
+                        excludeSemantics: true,
+                        child: InkWell(
+                          borderRadius: BorderRadius.circular(14),
+                          onTap: () => controller.selectedWeekday.value = d,
+                          child: AnimatedContainer(
+                            duration: DesignTokens.motionStandard,
+                            padding: const EdgeInsets.symmetric(vertical: 10),
+                            decoration: BoxDecoration(
+                              color: d == day
+                                  ? scheme.primary
+                                  : palette.surfaceSoft,
+                              borderRadius: BorderRadius.circular(14),
+                            ),
+                            child: Column(
+                              children: [
+                                Text(
+                                  dayLabels[d]!.substring(0, 3),
+                                  style: theme.textTheme.labelLarge?.copyWith(
+                                    fontWeight: FontWeight.w700,
+                                    color: d == day
+                                        ? scheme.onPrimary
+                                        : scheme.onSurface,
+                                  ),
+                                ),
+                                if (d == today)
+                                  Text(
+                                    'hoje',
+                                    style: theme.textTheme.labelSmall?.copyWith(
+                                      color: d == day
+                                          ? scheme.onPrimary
+                                          : scheme.primary,
+                                    ),
+                                  ),
+                              ],
+                            ),
+                          ),
+                        ),
+                      ),
+                    ),
+                  ),
+              ],
+            ),
+          ),
+          Expanded(
+            child: ListView(
+              padding: const EdgeInsets.fromLTRB(12, 4, 12, 120),
+              children: [
+                for (final r in ranges)
+                  Padding(
+                    padding: const EdgeInsets.only(bottom: 8),
+                    child: Row(
+                      children: [
+                        SizedBox(
+                          width: 76,
+                          child: InkWell(
+                            onTap: _canEdit
+                                ? () => _openEditTimeRangeDialog(
+                                    context,
+                                    r.start,
+                                    r.end,
+                                  )
+                                : null,
+                            borderRadius: BorderRadius.circular(10),
+                            child: Padding(
+                              padding: const EdgeInsets.symmetric(vertical: 8),
+                              child: Column(
+                                children: [
+                                  Text(
+                                    controller.formatMinutes(r.start),
+                                    style: theme.textTheme.bodyMedium?.copyWith(
+                                      fontWeight: FontWeight.w700,
+                                    ),
+                                  ),
+                                  Text(
+                                    controller.formatMinutes(r.end),
+                                    style: theme.textTheme.bodySmall?.copyWith(
+                                      color: scheme.onSurfaceVariant,
+                                    ),
+                                  ),
+                                ],
+                              ),
+                            ),
+                          ),
+                        ),
+                        const SizedBox(width: 8),
+                        Expanded(
+                          child: _buildEditableCell(
+                            context,
+                            day,
+                            r.start,
+                            r.end,
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                if (_canEdit)
+                  Text(
+                    'Toque na matéria para editar e no horário para mudar ou '
+                    'excluir. O horário vale para todos os dias.',
+                    textAlign: TextAlign.center,
+                    style: theme.textTheme.bodySmall?.copyWith(
+                      color: scheme.onSurfaceVariant,
+                    ),
+                  ),
+              ],
+            ),
+          ),
+        ],
+      );
+    });
   }
 
   /// Uma etiqueta por grade + "Nova grade".
@@ -259,7 +397,7 @@ class ClassSchedulePage extends GetView<ClassScheduleController> {
                   textCapitalization: TextCapitalization.sentences,
                   decoration: const InputDecoration(
                     labelText: 'Nome',
-                    hintText: 'Ex.: Escola, Ingles, Cursinho',
+                    hintText: 'Ex.: Escola, Inglês, Cursinho',
                   ),
                   validator: (v) => (v == null || v.trim().isEmpty)
                       ? 'Informe um nome'
@@ -305,13 +443,13 @@ class ClassSchedulePage extends GetView<ClassScheduleController> {
                 if (inFamily) ...[
                   const SizedBox(height: 6),
                   Text(
-                    'A Familia ve e edita esta grade conforme o papel de cada um.',
+                    'A Família vê e edita esta grade conforme o papel de cada um.',
                     style: Theme.of(dialogContext).textTheme.bodySmall,
                   ),
                 ] else if (ctx?.hasFamily ?? false) ...[
                   const SizedBox(height: 6),
                   Text(
-                    'A agenda da Familia esta so para consulta; esta grade ficara so para voce.',
+                    'A agenda da Família está só para consulta; esta grade ficará só para você.',
                     style: Theme.of(dialogContext).textTheme.bodySmall,
                   ),
                 ],
@@ -320,8 +458,8 @@ class ClassSchedulePage extends GetView<ClassScheduleController> {
                   contentPadding: EdgeInsets.zero,
                   value: withTemplate,
                   onChanged: (v) => setLocal(() => withTemplate = v ?? true),
-                  title: const Text('Comecar com a grade modelo'),
-                  subtitle: const Text('6 materias de segunda a sexta'),
+                  title: const Text('Começar com a grade modelo'),
+                  subtitle: const Text('6 matérias de segunda a sexta'),
                 ),
               ],
             ),
@@ -329,6 +467,7 @@ class ClassSchedulePage extends GetView<ClassScheduleController> {
           actions: [
             TextButton(onPressed: Get.back, child: const Text('Cancelar')),
             FilledButton(
+              style: FilledButton.styleFrom(minimumSize: const Size(0, 44)),
               onPressed: () async {
                 if (formKey.currentState?.validate() != true) return;
                 Get.back();
@@ -360,6 +499,7 @@ class ClassSchedulePage extends GetView<ClassScheduleController> {
         actions: [
           TextButton(onPressed: Get.back, child: const Text('Cancelar')),
           FilledButton(
+            style: FilledButton.styleFrom(minimumSize: const Size(0, 44)),
             onPressed: () async {
               if (nameController.text.trim().isEmpty) return;
               Get.back();
@@ -378,7 +518,7 @@ class ClassSchedulePage extends GetView<ClassScheduleController> {
         title: Text('Excluir "${_scheduleLabel(g)}"?'),
         content: Text(
           g.isFamily
-              ? 'A grade e as aulas saem para toda a Familia.'
+              ? 'A grade e as aulas saem para toda a Família.'
               : 'A grade e as aulas serao apagadas.',
         ),
         actions: [
@@ -387,6 +527,7 @@ class ClassSchedulePage extends GetView<ClassScheduleController> {
             child: const Text('Cancelar'),
           ),
           FilledButton(
+            style: FilledButton.styleFrom(minimumSize: const Size(0, 44)),
             onPressed: () => Get.back(result: true),
             child: const Text('Excluir'),
           ),
@@ -416,7 +557,7 @@ class ClassSchedulePage extends GetView<ClassScheduleController> {
           const SizedBox(
             width: _timeColWidth,
             child: Text(
-              'Horario',
+              'Horário',
               textAlign: TextAlign.center,
               style: TextStyle(fontWeight: FontWeight.w700),
             ),
@@ -481,16 +622,6 @@ class ClassSchedulePage extends GetView<ClassScheduleController> {
                     ),
                   ),
                 ),
-                const SizedBox(height: 6),
-                if (_canEdit)
-                  InkWell(
-                    onTap: () => controller.removeTimeRange(start, end),
-                    borderRadius: BorderRadius.circular(20),
-                    child: const Padding(
-                      padding: EdgeInsets.symmetric(horizontal: 8, vertical: 2),
-                      child: Icon(Icons.delete_outline, size: 16),
-                    ),
-                  ),
               ],
             ),
           ),
@@ -550,14 +681,14 @@ class ClassSchedulePage extends GetView<ClassScheduleController> {
     await Get.dialog(
       StatefulBuilder(
         builder: (dialogContext, setLocal) => AlertDialog(
-          title: const Text('Horario da aula'),
+          title: const Text('Horário da aula'),
           content: Column(
             mainAxisSize: MainAxisSize.min,
             children: [
               ListTile(
                 contentPadding: EdgeInsets.zero,
                 leading: const Icon(Icons.schedule),
-                title: const Text('Inicio'),
+                title: const Text('Início'),
                 trailing: Text(controller.formatMinutes(newStart)),
                 onTap: () async {
                   final picked = await showTimePicker(
@@ -589,8 +720,40 @@ class ClassSchedulePage extends GetView<ClassScheduleController> {
             ],
           ),
           actions: [
+            TextButton(
+              onPressed: () async {
+                final ok = await Get.dialog<bool>(
+                  AlertDialog(
+                    title: const Text('Excluir este horário?'),
+                    content: Text(
+                      'O horário ${controller.formatMinutes(start)}–'
+                      '${controller.formatMinutes(end)} sai de todos os dias, '
+                      'com as aulas dele.',
+                    ),
+                    actions: [
+                      TextButton(
+                        onPressed: () => Get.back(result: false),
+                        child: const Text('Cancelar'),
+                      ),
+                      TextButton(
+                        onPressed: () => Get.back(result: true),
+                        child: const Text('Excluir'),
+                      ),
+                    ],
+                  ),
+                );
+                if (ok != true) return;
+                await controller.removeTimeRange(start, end);
+                Get.back();
+              },
+              style: TextButton.styleFrom(
+                foregroundColor: Theme.of(dialogContext).colorScheme.error,
+              ),
+              child: const Text('Excluir'),
+            ),
             TextButton(onPressed: Get.back, child: const Text('Cancelar')),
             FilledButton(
+              style: FilledButton.styleFrom(minimumSize: const Size(0, 44)),
               onPressed: () async {
                 final error = await controller.updateTimeRange(
                   start,
@@ -632,7 +795,7 @@ class ClassSchedulePage extends GetView<ClassScheduleController> {
 
     await Get.dialog(
       AlertDialog(
-        title: const Text('Adicionar horario'),
+        title: const Text('Adicionar horário'),
         content: Column(
           mainAxisSize: MainAxisSize.min,
           children: [
@@ -640,7 +803,7 @@ class ClassSchedulePage extends GetView<ClassScheduleController> {
               controller: startController,
               readOnly: true,
               onTap: () => pickTime(startController),
-              decoration: const InputDecoration(labelText: 'Inicio (HH:mm)'),
+              decoration: const InputDecoration(labelText: 'Início (HH:mm)'),
             ),
             const SizedBox(height: 10),
             TextField(
@@ -654,6 +817,7 @@ class ClassSchedulePage extends GetView<ClassScheduleController> {
         actions: [
           TextButton(onPressed: Get.back, child: const Text('Cancelar')),
           FilledButton(
+            style: FilledButton.styleFrom(minimumSize: const Size(0, 44)),
             onPressed: () async {
               final start = _parseTime(startController.text);
               final end = _parseTime(endController.text);
@@ -706,7 +870,7 @@ class ClassSchedulePage extends GetView<ClassScheduleController> {
   ) async {
     final items = <Widget>[];
     if (cell.subject?.isNotEmpty == true) {
-      items.add(_detailRow(label: 'Materia', value: cell.subject!));
+      items.add(_detailRow(label: 'Matéria', value: cell.subject!));
     }
     if (cell.professorName?.isNotEmpty == true) {
       items.add(_detailRow(label: 'Professor', value: cell.professorName!));
@@ -741,6 +905,7 @@ class ClassSchedulePage extends GetView<ClassScheduleController> {
           TextButton(onPressed: Get.back, child: const Text('Fechar')),
           if (_canEdit)
             FilledButton(
+              style: FilledButton.styleFrom(minimumSize: const Size(0, 44)),
               onPressed: () {
                 Get.back();
                 _openSubjectEditDialog(context, day, cell);
@@ -824,7 +989,7 @@ class ClassSchedulePage extends GetView<ClassScheduleController> {
                     DropdownButtonFormField<String?>(
                       initialValue: dropdownValue,
                       decoration: const InputDecoration(
-                        labelText: 'Materia (opcional)',
+                        labelText: 'Matéria (opcional)',
                         isDense: true,
                         contentPadding: EdgeInsets.symmetric(
                           horizontal: 12,
@@ -844,7 +1009,7 @@ class ClassSchedulePage extends GetView<ClassScheduleController> {
                         ),
                         const DropdownMenuItem<String?>(
                           value: _novaMateriaValue,
-                          child: Text('+ Nova materia'),
+                          child: Text('+ Nova matéria'),
                         ),
                       ],
                       onChanged: (v) {
@@ -856,8 +1021,8 @@ class ClassSchedulePage extends GetView<ClassScheduleController> {
                       TextField(
                         controller: subjectController,
                         decoration: const InputDecoration(
-                          labelText: 'Nome da materia',
-                          hintText: 'Ex: Matematica',
+                          labelText: 'Nome da matéria',
+                          hintText: 'Ex: Matemática',
                           isDense: true,
                           contentPadding: EdgeInsets.symmetric(
                             horizontal: 12,
@@ -926,6 +1091,7 @@ class ClassSchedulePage extends GetView<ClassScheduleController> {
           ),
           TextButton(onPressed: Get.back, child: const Text('Cancelar')),
           FilledButton(
+            style: FilledButton.styleFrom(minimumSize: const Size(0, 44)),
             onPressed: () async {
               if (formKey.currentState?.validate() != true) return;
               final subject = dropdownValue == _novaMateriaValue

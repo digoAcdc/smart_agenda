@@ -15,6 +15,7 @@ import '../controllers/class_schedule_controller.dart';
 import '../controllers/groups_controller.dart';
 import '../controllers/note_controller.dart';
 import '../controllers/notifications_controller.dart';
+import '../widgets/section_header.dart';
 import '../widgets/ui_primitives.dart';
 import '../controllers/billing_controller.dart';
 import '../controllers/ads_controller.dart';
@@ -110,13 +111,13 @@ class _ConfigPageState extends State<ConfigPage> {
         content: Text(
           hasCloud
               ? 'Isso apaga permanentemente no seu aparelho e na nuvem: eventos, '
-                    'grupos, anotacoes, notificacoes e turmas. Se voce participa de '
-                    'uma Familia, voce sai dela (os eventos da Familia continuam com ela). '
+                    'grupos, anotações, notificações e turmas. Se você participa de '
+                    'uma Família, você sai dela (os eventos da Família continuam com ela). '
                     'Sua conta de login continua ativa.\n\n'
-                    'Esta acao nao pode ser desfeita.'
+                    'Esta ação não pode ser desfeita.'
               : 'Isso apaga permanentemente no seu aparelho: eventos, grupos, '
-                    'anotacoes e demais dados salvos localmente.\n\n'
-                    'Esta acao nao pode ser desfeita.',
+                    'anotações e demais dados salvos localmente.\n\n'
+                    'Esta ação não pode ser desfeita.',
         ),
         actions: [
           TextButton(
@@ -124,6 +125,7 @@ class _ConfigPageState extends State<ConfigPage> {
             child: const Text('Cancelar'),
           ),
           FilledButton(
+            style: FilledButton.styleFrom(minimumSize: const Size(0, 44)),
             onPressed: () => Get.back(result: true),
             child: const Text('Continuar'),
           ),
@@ -170,6 +172,7 @@ class _ConfigPageState extends State<ConfigPage> {
           FilledButton(
             style: FilledButton.styleFrom(
               backgroundColor: Theme.of(context).colorScheme.error,
+              minimumSize: const Size(0, 44),
               foregroundColor: Theme.of(context).colorScheme.onError,
             ),
             onPressed: () {
@@ -195,7 +198,7 @@ class _ConfigPageState extends State<ConfigPage> {
       if (!mounted) return;
       if (!result.isSuccess) {
         Get.snackbar(
-          'Nao foi possivel apagar',
+          'Não foi possível apagar',
           result.errorMessage ?? 'Tente novamente.',
           snackPosition: SnackPosition.BOTTOM,
         );
@@ -232,9 +235,9 @@ class _ConfigPageState extends State<ConfigPage> {
           bottom: DesignTokens.bottomNavHeight + 16,
         ),
         children: [
+          const SectionHeader(title: 'Configurações'),
           _buildProfileCard(),
           if (!_isPremium) _buildPremiumCard(),
-          _buildGeralSection(),
           _buildPrivacySection(),
           _buildFooter(),
         ],
@@ -291,7 +294,7 @@ class _ConfigPageState extends State<ConfigPage> {
                           borderRadius: BorderRadius.circular(999),
                         ),
                         child: Text(
-                          'Premium',
+                          'Pro',
                           style: Theme.of(context).textTheme.labelSmall
                               ?.copyWith(
                                 color: Theme.of(context).colorScheme.outline,
@@ -358,7 +361,7 @@ class _ConfigPageState extends State<ConfigPage> {
               ),
               const SizedBox(width: 8),
               Text(
-                'Plano Premium',
+                'Plano Pro',
                 style: Theme.of(context).textTheme.titleMedium?.copyWith(
                   fontWeight: FontWeight.w700,
                   color: scheme.onSurface,
@@ -391,7 +394,7 @@ class _ConfigPageState extends State<ConfigPage> {
           ),
           const SizedBox(height: 8),
           Text(
-            'Familia com agenda compartilhada, varios filhos, sincronizacao e zero anuncios.',
+            'Família com agenda compartilhada, vários filhos, sincronização e zero anúncios.',
             style: Theme.of(
               context,
             ).textTheme.bodySmall?.copyWith(color: scheme.onSurfaceVariant),
@@ -401,157 +404,11 @@ class _ConfigPageState extends State<ConfigPage> {
             width: double.infinity,
             child: FilledButton(
               onPressed: _openAreaPremium,
-              child: const Text('Tornar-se Premium'),
+              child: const Text('Assinar o Pro'),
             ),
           ),
         ],
       ),
-    );
-  }
-
-  Widget _buildAgendaActionTile({
-    required IconData icon,
-    required Color iconColor,
-    required String title,
-    required String subtitle,
-    VoidCallback? onTap,
-    bool loading = false,
-    bool isPremiumLocked = false,
-    double opacity = 1.0,
-  }) {
-    return Opacity(
-      opacity: opacity,
-      child: InkWell(
-        onTap: onTap,
-        borderRadius: BorderRadius.circular(DesignTokens.radiusMd),
-        child: Padding(
-          padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 12),
-          child: Row(
-            children: [
-              Container(
-                width: 44,
-                height: 44,
-                decoration: BoxDecoration(
-                  color: iconColor.withValues(alpha: 0.12),
-                  shape: BoxShape.circle,
-                ),
-                child: Icon(icon, color: iconColor, size: 22),
-              ),
-              const SizedBox(width: 16),
-              Expanded(
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    if (isPremiumLocked)
-                      Padding(
-                        padding: const EdgeInsets.only(bottom: 4),
-                        child: Container(
-                          padding: const EdgeInsets.symmetric(
-                            horizontal: 8,
-                            vertical: 2,
-                          ),
-                          decoration: BoxDecoration(
-                            color: Theme.of(
-                              context,
-                            ).colorScheme.outline.withValues(alpha: 0.12),
-                            borderRadius: BorderRadius.circular(999),
-                          ),
-                          child: Row(
-                            mainAxisSize: MainAxisSize.min,
-                            children: [
-                              Icon(
-                                Icons.lock_outline,
-                                size: 14,
-                                color: Theme.of(context).colorScheme.outline,
-                              ),
-                              const SizedBox(width: 4),
-                              Text(
-                                'Premium',
-                                style: Theme.of(context).textTheme.labelSmall
-                                    ?.copyWith(
-                                      color: Theme.of(
-                                        context,
-                                      ).colorScheme.outline,
-                                      fontWeight: FontWeight.w600,
-                                    ),
-                              ),
-                            ],
-                          ),
-                        ),
-                      ),
-                    Text(
-                      title,
-                      style: Theme.of(context).textTheme.titleSmall?.copyWith(
-                        fontWeight: FontWeight.w600,
-                      ),
-                      overflow: TextOverflow.ellipsis,
-                    ),
-                    const SizedBox(height: 2),
-                    Text(
-                      subtitle,
-                      style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                        color: Theme.of(context).colorScheme.onSurfaceVariant,
-                      ),
-                    ),
-                  ],
-                ),
-              ),
-              if (loading)
-                const SizedBox(
-                  width: 24,
-                  height: 24,
-                  child: CircularProgressIndicator(strokeWidth: 2),
-                )
-              else
-                Icon(Icons.chevron_right, size: 24, color: iconColor),
-            ],
-          ),
-        ),
-      ),
-    );
-  }
-
-  Widget _buildGeralSection() {
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        Padding(
-          padding: const EdgeInsets.fromLTRB(16, 16, 16, 8),
-          child: Text(
-            'GERAL',
-            style: Theme.of(context).textTheme.labelMedium?.copyWith(
-              color: Theme.of(context).colorScheme.outline,
-              fontWeight: FontWeight.w700,
-              letterSpacing: 0.8,
-            ),
-          ),
-        ),
-        AppSurfaceCard(
-          child: Column(
-            children: [
-              _buildAgendaActionTile(
-                icon: Icons.family_restroom_outlined,
-                iconColor: Theme.of(context).colorScheme.primary,
-                title: 'Família',
-                subtitle: 'Pessoas, filhos e convites',
-                onTap: () => Get.toNamed(AppRoutes.family),
-              ),
-              if (Get.find<AuthController>().isLoggedIn.value &&
-                  SupabaseConfig.isConfigured &&
-                  Get.isRegistered<NotificationsController>()) ...[
-                const Divider(height: 1),
-                _buildAgendaActionTile(
-                  icon: Icons.notifications_outlined,
-                  iconColor: Theme.of(context).colorScheme.tertiary,
-                  title: 'Resumos da agenda',
-                  subtitle: 'Notificacoes diarias e semanais',
-                  onTap: () => Get.toNamed(AppRoutes.notifications),
-                ),
-              ],
-            ],
-          ),
-        ),
-      ],
     );
   }
 
@@ -594,128 +451,167 @@ class _ConfigPageState extends State<ConfigPage> {
                   ],
                 );
               }),
-              Opacity(
-                opacity: _deletingData ? 0.6 : 1,
-                child: InkWell(
-                  onTap: _deletingData ? null : _runDeleteAllDataFlow,
-                  borderRadius: BorderRadius.circular(DesignTokens.radiusMd),
-                  child: Padding(
-                    padding: const EdgeInsets.symmetric(
-                      horizontal: 12,
-                      vertical: 12,
-                    ),
-                    child: Row(
-                      children: [
-                        Container(
-                          width: 44,
-                          height: 44,
-                          decoration: BoxDecoration(
-                            color: danger.withValues(alpha: 0.12),
-                            shape: BoxShape.circle,
+              // Acoes destrutivas recolhidas: continuam acessiveis, sem chamar
+              // atencao na tela.
+              Theme(
+                data: Theme.of(
+                  context,
+                ).copyWith(dividerColor: Colors.transparent),
+                child: ExpansionTile(
+                  leading: const Icon(Icons.manage_accounts_outlined),
+                  title: Text(
+                    'Apagar dados ou excluir conta',
+                    style: Theme.of(context).textTheme.titleSmall,
+                  ),
+                  childrenPadding: EdgeInsets.zero,
+                  children: [
+                    Opacity(
+                      opacity: _deletingData ? 0.6 : 1,
+                      child: InkWell(
+                        onTap: _deletingData ? null : _runDeleteAllDataFlow,
+                        borderRadius: BorderRadius.circular(
+                          DesignTokens.radiusMd,
+                        ),
+                        child: Padding(
+                          padding: const EdgeInsets.symmetric(
+                            horizontal: 12,
+                            vertical: 12,
                           ),
-                          child: Icon(
-                            Icons.delete_forever_outlined,
-                            color: danger,
-                            size: 22,
+                          child: Row(
+                            children: [
+                              Container(
+                                width: 44,
+                                height: 44,
+                                decoration: BoxDecoration(
+                                  color: danger.withValues(alpha: 0.12),
+                                  shape: BoxShape.circle,
+                                ),
+                                child: Icon(
+                                  Icons.delete_forever_outlined,
+                                  color: danger,
+                                  size: 22,
+                                ),
+                              ),
+                              const SizedBox(width: 16),
+                              Expanded(
+                                child: Column(
+                                  crossAxisAlignment: CrossAxisAlignment.start,
+                                  children: [
+                                    Text(
+                                      'Apagar todos os meus dados',
+                                      style: Theme.of(context)
+                                          .textTheme
+                                          .titleSmall
+                                          ?.copyWith(
+                                            fontWeight: FontWeight.w600,
+                                            color: danger,
+                                          ),
+                                    ),
+                                    const SizedBox(height: 2),
+                                    Text(
+                                      'Remove dados do aparelho e da nuvem (se estiver logado). '
+                                      'A conta de login permanece.',
+                                      style: Theme.of(context)
+                                          .textTheme
+                                          .bodySmall
+                                          ?.copyWith(
+                                            color: Theme.of(
+                                              context,
+                                            ).colorScheme.onSurfaceVariant,
+                                          ),
+                                    ),
+                                  ],
+                                ),
+                              ),
+                              if (_deletingData)
+                                const SizedBox(
+                                  width: 24,
+                                  height: 24,
+                                  child: CircularProgressIndicator(
+                                    strokeWidth: 2,
+                                  ),
+                                )
+                              else
+                                Icon(
+                                  Icons.chevron_right,
+                                  size: 24,
+                                  color: danger,
+                                ),
+                            ],
                           ),
                         ),
-                        const SizedBox(width: 16),
-                        Expanded(
-                          child: Column(
-                            crossAxisAlignment: CrossAxisAlignment.start,
+                      ),
+                    ),
+                    if (Get.find<AuthController>().isLoggedIn.value) ...[
+                      const Divider(height: 1),
+                      InkWell(
+                        onTap: _deletingData ? null : _runDeleteAccountFlow,
+                        borderRadius: BorderRadius.circular(
+                          DesignTokens.radiusMd,
+                        ),
+                        child: Padding(
+                          padding: const EdgeInsets.symmetric(
+                            horizontal: 12,
+                            vertical: 12,
+                          ),
+                          child: Row(
                             children: [
-                              Text(
-                                'Apagar todos os meus dados',
-                                style: Theme.of(context).textTheme.titleSmall
-                                    ?.copyWith(
-                                      fontWeight: FontWeight.w600,
-                                      color: danger,
-                                    ),
+                              Container(
+                                width: 44,
+                                height: 44,
+                                decoration: BoxDecoration(
+                                  color: danger.withValues(alpha: 0.12),
+                                  shape: BoxShape.circle,
+                                ),
+                                child: Icon(
+                                  Icons.person_remove_outlined,
+                                  color: danger,
+                                  size: 22,
+                                ),
                               ),
-                              const SizedBox(height: 2),
-                              Text(
-                                'Remove dados do aparelho e da nuvem (se estiver logado). '
-                                'A conta de login permanece.',
-                                style: Theme.of(context).textTheme.bodySmall
-                                    ?.copyWith(
-                                      color: Theme.of(
-                                        context,
-                                      ).colorScheme.onSurfaceVariant,
+                              const SizedBox(width: 16),
+                              Expanded(
+                                child: Column(
+                                  crossAxisAlignment: CrossAxisAlignment.start,
+                                  children: [
+                                    Text(
+                                      'Excluir minha conta',
+                                      style: Theme.of(context)
+                                          .textTheme
+                                          .titleSmall
+                                          ?.copyWith(
+                                            fontWeight: FontWeight.w600,
+                                            color: danger,
+                                          ),
                                     ),
+                                    const SizedBox(height: 2),
+                                    Text(
+                                      'Exclui a conta de login e todos os seus dados.',
+                                      style: Theme.of(context)
+                                          .textTheme
+                                          .bodySmall
+                                          ?.copyWith(
+                                            color: Theme.of(
+                                              context,
+                                            ).colorScheme.onSurfaceVariant,
+                                          ),
+                                    ),
+                                  ],
+                                ),
+                              ),
+                              Icon(
+                                Icons.chevron_right,
+                                size: 24,
+                                color: danger,
                               ),
                             ],
                           ),
                         ),
-                        if (_deletingData)
-                          const SizedBox(
-                            width: 24,
-                            height: 24,
-                            child: CircularProgressIndicator(strokeWidth: 2),
-                          )
-                        else
-                          Icon(Icons.chevron_right, size: 24, color: danger),
-                      ],
-                    ),
-                  ),
+                      ),
+                    ],
+                  ],
                 ),
               ),
-              if (Get.find<AuthController>().isLoggedIn.value) ...[
-                const Divider(height: 1),
-                InkWell(
-                  onTap: _deletingData ? null : _runDeleteAccountFlow,
-                  borderRadius: BorderRadius.circular(DesignTokens.radiusMd),
-                  child: Padding(
-                    padding: const EdgeInsets.symmetric(
-                      horizontal: 12,
-                      vertical: 12,
-                    ),
-                    child: Row(
-                      children: [
-                        Container(
-                          width: 44,
-                          height: 44,
-                          decoration: BoxDecoration(
-                            color: danger.withValues(alpha: 0.12),
-                            shape: BoxShape.circle,
-                          ),
-                          child: Icon(
-                            Icons.person_remove_outlined,
-                            color: danger,
-                            size: 22,
-                          ),
-                        ),
-                        const SizedBox(width: 16),
-                        Expanded(
-                          child: Column(
-                            crossAxisAlignment: CrossAxisAlignment.start,
-                            children: [
-                              Text(
-                                'Excluir minha conta',
-                                style: Theme.of(context).textTheme.titleSmall
-                                    ?.copyWith(
-                                      fontWeight: FontWeight.w600,
-                                      color: danger,
-                                    ),
-                              ),
-                              const SizedBox(height: 2),
-                              Text(
-                                'Exclui a conta de login e todos os seus dados.',
-                                style: Theme.of(context).textTheme.bodySmall
-                                    ?.copyWith(
-                                      color: Theme.of(
-                                        context,
-                                      ).colorScheme.onSurfaceVariant,
-                                    ),
-                              ),
-                            ],
-                          ),
-                        ),
-                        Icon(Icons.chevron_right, size: 24, color: danger),
-                      ],
-                    ),
-                  ),
-                ),
-              ],
             ],
           ),
         ),
@@ -760,6 +656,7 @@ class _ConfigPageState extends State<ConfigPage> {
             FilledButton(
               style: FilledButton.styleFrom(
                 backgroundColor: Theme.of(dialogContext).colorScheme.error,
+                minimumSize: const Size(0, 44),
               ),
               onPressed: confirmCtrl.text.trim().toUpperCase() == 'EXCLUIR'
                   ? () => Get.back(result: true)

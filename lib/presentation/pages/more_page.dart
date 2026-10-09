@@ -4,6 +4,7 @@ import 'package:get/get.dart';
 import '../../core/config/supabase_config.dart';
 import '../../core/routes/app_routes.dart';
 import '../../core/theme/design_tokens.dart';
+import '../widgets/section_header.dart';
 import '../widgets/ui_primitives.dart';
 import '../../domain/repositories/i_family_service.dart';
 
@@ -16,76 +17,87 @@ class MorePage extends StatelessWidget {
   Widget build(BuildContext context) {
     final primary = Theme.of(context).colorScheme.primary;
     return Scaffold(
-      appBar: AppBar(title: const Text('Mais')),
       body: SafeArea(
-        top: false,
         bottom: false,
-        child: ListView(
-          padding: const EdgeInsets.all(DesignTokens.spaceMd),
+        child: Column(
           children: [
-            Padding(
-              padding: const EdgeInsets.fromLTRB(0, 0, 0, 8),
-              child: Text(
-                'FUNCIONALIDADES',
-                style: Theme.of(context).textTheme.labelMedium?.copyWith(
-                  color: Theme.of(context).colorScheme.outline,
-                  fontWeight: FontWeight.w700,
-                  letterSpacing: 0.8,
+            // Mesmo cabecalho das outras abas.
+            const SectionHeader(title: 'Mais'),
+            Expanded(
+              child: ListView(
+                padding: const EdgeInsets.fromLTRB(
+                  DesignTokens.spaceMd,
+                  0,
+                  DesignTokens.spaceMd,
+                  DesignTokens.spaceMd,
                 ),
-              ),
-            ),
-            AppSurfaceCard(
-              padding: EdgeInsets.zero,
-              child: Column(
                 children: [
-                  _buildActionTile(
-                    context: context,
-                    icon: Icons.group_rounded,
-                    iconColor: primary,
-                    title: 'Turmas',
-                    subtitle: 'Turmas, salas e contatos',
-                    onTap: () => Get.toNamed(AppRoutes.classGroups),
+                  Padding(
+                    padding: const EdgeInsets.fromLTRB(0, 0, 0, 8),
+                    child: Text(
+                      'FUNCIONALIDADES',
+                      style: Theme.of(context).textTheme.labelMedium?.copyWith(
+                        color: Theme.of(context).colorScheme.outline,
+                        fontWeight: FontWeight.w700,
+                        letterSpacing: 0.8,
+                      ),
+                    ),
                   ),
-                  const Divider(height: 1),
-                  _buildActionTile(
-                    context: context,
-                    icon: Icons.note_rounded,
-                    iconColor: primary,
-                    title: 'Anotacoes',
-                    subtitle: 'Notas rapidas e checklist',
-                    onTap: () => Get.toNamed(AppRoutes.notes),
+                  AppSurfaceCard(
+                    padding: EdgeInsets.zero,
+                    child: Column(
+                      children: [
+                        _buildActionTile(
+                          context: context,
+                          icon: Icons.group_rounded,
+                          iconColor: primary,
+                          title: 'Turmas',
+                          subtitle: 'Turmas, salas e contatos',
+                          onTap: () => Get.toNamed(AppRoutes.classGroups),
+                        ),
+                        const Divider(height: 1),
+                        _buildActionTile(
+                          context: context,
+                          icon: Icons.note_rounded,
+                          iconColor: primary,
+                          title: 'Anotações',
+                          subtitle: 'Notas rápidas e checklist',
+                          onTap: () => Get.toNamed(AppRoutes.notes),
+                        ),
+                        const Divider(height: 1),
+                        _buildActionTile(
+                          context: context,
+                          icon: Icons.notifications_rounded,
+                          iconColor: primary,
+                          title: 'Notificações',
+                          subtitle: 'Preferências de push',
+                          onTap: () => Get.toNamed(AppRoutes.notifications),
+                        ),
+                        if (SupabaseConfig.isConfigured) ...[
+                          const Divider(height: 1),
+                          Obx(() {
+                            final family = Get.find<IFamilyService>();
+                            final ctx = family.context;
+                            final invites = family.myInvites.length;
+                            return _buildActionTile(
+                              context: context,
+                              icon: Icons.family_restroom_rounded,
+                              iconColor: primary,
+                              title: 'Família',
+                              subtitle: ctx.hasFamily
+                                  ? ctx.familyName ?? 'Sua Família'
+                                  : invites > 0
+                                  ? (invites == 1
+                                        ? '1 convite pendente'
+                                        : '$invites convites pendentes')
+                                  : 'Agenda compartilhada da família',
+                              onTap: () => Get.toNamed(AppRoutes.family),
+                            );
+                          }),
+                        ],
+                      ],
+                    ),
                   ),
-                  const Divider(height: 1),
-                  _buildActionTile(
-                    context: context,
-                    icon: Icons.notifications_rounded,
-                    iconColor: primary,
-                    title: 'Notificacoes',
-                    subtitle: 'Preferencias de push',
-                    onTap: () => Get.toNamed(AppRoutes.notifications),
-                  ),
-                  if (SupabaseConfig.isConfigured) ...[
-                    const Divider(height: 1),
-                    Obx(() {
-                      final family = Get.find<IFamilyService>();
-                      final ctx = family.context;
-                      final invites = family.myInvites.length;
-                      return _buildActionTile(
-                        context: context,
-                        icon: Icons.family_restroom_rounded,
-                        iconColor: primary,
-                        title: 'Família',
-                        subtitle: ctx.hasFamily
-                            ? ctx.familyName ?? 'Sua Família'
-                            : invites > 0
-                            ? (invites == 1
-                                  ? '1 convite pendente'
-                                  : '$invites convites pendentes')
-                            : 'Agenda compartilhada da família',
-                        onTap: () => Get.toNamed(AppRoutes.family),
-                      );
-                    }),
-                  ],
                 ],
               ),
             ),
@@ -152,7 +164,7 @@ class MorePage extends StatelessWidget {
                               ),
                               const SizedBox(width: 4),
                               Text(
-                                'Premium',
+                                'Pro',
                                 style: Theme.of(context).textTheme.labelSmall
                                     ?.copyWith(
                                       color: Theme.of(

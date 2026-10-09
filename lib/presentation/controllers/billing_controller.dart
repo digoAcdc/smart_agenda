@@ -155,7 +155,7 @@ class BillingController extends GetxController {
     final ok = await _billingService.purchase();
     if (!ok) {
       purchaseStatus.value = BillingPurchaseStatus.error;
-      errorMessage.value = 'Nao foi possivel iniciar a compra.';
+      errorMessage.value = 'Não foi possível iniciar a compra.';
     }
   }
 
@@ -191,7 +191,7 @@ class BillingController extends GetxController {
     } catch (e) {
       debugPrint('[billing_restore_failed] source=user_action error=$e');
       purchaseStatus.value = BillingPurchaseStatus.error;
-      errorMessage.value = 'Nao foi possivel restaurar compras agora.';
+      errorMessage.value = 'Não foi possível restaurar compras agora.';
     }
     // O purchaseStream vai receber as compras restauradas e chamar _validateAndRefresh
   }

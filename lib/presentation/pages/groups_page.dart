@@ -90,7 +90,7 @@ class GroupsPage extends StatelessWidget {
                                       ),
                                       validator: (v) => requiredValidator(
                                         v,
-                                        'Nome e obrigatorio',
+                                        'Nome é obrigatório',
                                       ),
                                     ),
                                   ),
@@ -100,6 +100,9 @@ class GroupsPage extends StatelessWidget {
                                       child: const Text('Cancelar'),
                                     ),
                                     FilledButton(
+                                      style: FilledButton.styleFrom(
+                                        minimumSize: const Size(0, 44),
+                                      ),
                                       onPressed: () async {
                                         if (formKey.currentState?.validate() !=
                                             true) {
@@ -171,12 +174,13 @@ class GroupsPage extends StatelessWidget {
               hintText: 'Ex: Trabalho, Pessoal',
             ),
             autofocus: true,
-            validator: (v) => requiredValidator(v, 'Nome e obrigatorio'),
+            validator: (v) => requiredValidator(v, 'Nome é obrigatório'),
           ),
         ),
         actions: [
           TextButton(onPressed: Get.back, child: const Text('Cancelar')),
           FilledButton(
+            style: FilledButton.styleFrom(minimumSize: const Size(0, 44)),
             onPressed: () async {
               if (formKey.currentState?.validate() != true) return;
               final canProceed =

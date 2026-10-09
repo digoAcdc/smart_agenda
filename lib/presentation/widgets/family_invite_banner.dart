@@ -36,6 +36,7 @@ class _FamilyInviteBannerState extends State<FamilyInviteBanner> {
               child: const Text('Cancelar'),
             ),
             FilledButton(
+              style: FilledButton.styleFrom(minimumSize: const Size(0, 44)),
               onPressed: () => Navigator.pop(c, true),
               child: const Text('Recusar'),
             ),

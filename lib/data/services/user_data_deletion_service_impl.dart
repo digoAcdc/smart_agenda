@@ -44,7 +44,7 @@ class UserDataDeletionServiceImpl implements IUserDataDeletionService {
         } catch (e, st) {
           debugPrint('[UserDataDeletion] Remoto falhou: $e\n$st');
           return Result.failure(
-            'Nao foi possivel apagar os dados na nuvem. Verifique a conexao e tente novamente.',
+            'Não foi possível apagar os dados na nuvem. Verifique a conexão e tente novamente.',
           );
         }
       }

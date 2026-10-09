@@ -16,12 +16,12 @@ class NoteListPage extends GetView<NoteController> {
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        title: const Text('Anotacoes'),
+        title: const Text('Anotações'),
         actions: [
           IconButton(
             icon: const Icon(Icons.add),
             onPressed: () => _openUpsert(context),
-            tooltip: 'Nova anotacao',
+            tooltip: 'Nova anotação',
           ),
         ],
       ),
@@ -35,16 +35,16 @@ class NoteListPage extends GetView<NoteController> {
           if (controller.notes.isEmpty) {
             return EmptyStateWidget(
               icon: Icons.note_outlined,
-              title: 'Nenhuma anotacao',
-              message: 'Crie anotacoes rapidas com titulo, texto e checklist.',
-              ctaLabel: 'Nova anotacao',
+              title: 'Nenhuma anotação',
+              message: 'Crie anotações rápidas com título, texto e checklist.',
+              ctaLabel: 'Nova anotação',
               onTapCta: () => _openUpsert(context),
             );
           }
           return Column(
             children: [
               const SectionHeader(
-                title: 'Suas anotacoes',
+                title: 'Suas anotações',
                 subtitle: 'Toque para editar',
               ),
               Expanded(
@@ -68,7 +68,7 @@ class NoteListPage extends GetView<NoteController> {
       floatingActionButton: FloatingActionButton.extended(
         onPressed: () => _openUpsert(context),
         icon: const Icon(Icons.add),
-        label: const Text('Nova anotacao'),
+        label: const Text('Nova anotação'),
       ),
     );
   }
@@ -80,9 +80,9 @@ class NoteListPage extends GetView<NoteController> {
   Future<bool?> _confirmDelete(Note note) async {
     final ok = await Get.dialog<bool>(
       AlertDialog(
-        title: const Text('Excluir anotacao?'),
+        title: const Text('Excluir anotação?'),
         content: Text(
-          'A anotacao "${note.title}" sera excluida. Esta acao nao pode ser desfeita.',
+          'A anotação "${note.title}" será excluída. Esta ação não pode ser desfeita.',
         ),
         actions: [
           TextButton(
@@ -93,6 +93,7 @@ class NoteListPage extends GetView<NoteController> {
             onPressed: () => Get.back(result: true),
             style: FilledButton.styleFrom(
               backgroundColor: Get.theme.colorScheme.error,
+              minimumSize: const Size(0, 44),
             ),
             child: const Text('Excluir'),
           ),
@@ -102,9 +103,9 @@ class NoteListPage extends GetView<NoteController> {
     if (ok == true) {
       await controller.deleteNote(note.id);
       if (Get.context != null) {
-        ScaffoldMessenger.of(Get.context!).showSnackBar(
-          const SnackBar(content: Text('Anotacao excluida')),
-        );
+        ScaffoldMessenger.of(
+          Get.context!,
+        ).showSnackBar(const SnackBar(content: Text('Anotação excluída')));
       }
     }
     return ok;

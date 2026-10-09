@@ -25,7 +25,7 @@ class SubscriptionSupabaseDataSource {
     final session = _client.auth.currentSession;
     if (session == null) {
       debugPrint('[subscription_revalidation_failed] reason=no_session');
-      throw StateError('Usuario nao autenticado');
+      throw StateError('Usuário não autenticado');
     }
 
     final baseUrl = BillingConstants.billingApiBaseUrl.trim();
@@ -34,7 +34,7 @@ class SubscriptionSupabaseDataSource {
         '[billing_config_missing] BILLING_API_BASE_URL ausente no app',
       );
       throw Exception(
-        'Configuracao de cobranca ausente neste app. '
+        'Configuração de cobrança ausente neste app. '
         'Use --dart-define=BILLING_API_BASE_URL=... em um build configurado.',
       );
     }
