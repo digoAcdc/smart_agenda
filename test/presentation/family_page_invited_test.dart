@@ -1,4 +1,5 @@
 import 'package:flutter_test/flutter_test.dart';
+import 'package:smart_agenda/core/theme/app_theme.dart';
 import 'package:get/get.dart';
 import 'package:smart_agenda/data/services/family_service_stub.dart';
 import 'package:smart_agenda/domain/entities/family.dart';
@@ -50,7 +51,7 @@ void main() {
   tearDown(Get.reset);
 
   testWidgets('tela Familia abre para convidado sem Familia', (tester) async {
-    await tester.pumpWidget(const GetMaterialApp(home: FamilyPage()));
+    await tester.pumpWidget(GetMaterialApp(theme: AppTheme.light(), home: const FamilyPage()));
     await tester.pump(const Duration(milliseconds: 100));
     expect(tester.takeException(), isNull);
     expect(find.text('silveira'), findsOneWidget);

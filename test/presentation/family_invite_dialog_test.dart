@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
+import 'package:smart_agenda/core/theme/app_theme.dart';
 import 'package:get/get.dart';
 import 'package:smart_agenda/data/services/family_service_stub.dart';
 import 'package:smart_agenda/domain/entities/family.dart';
@@ -64,7 +65,7 @@ void main() {
     tester.view.devicePixelRatio = 1;
     addTearDown(tester.view.reset);
 
-    await tester.pumpWidget(const GetMaterialApp(home: FamilyPage()));
+    await tester.pumpWidget(GetMaterialApp(theme: AppTheme.light(), home: const FamilyPage()));
     await tester.pump();
 
     final inviteButton = find.textContaining('Convidar pessoa');

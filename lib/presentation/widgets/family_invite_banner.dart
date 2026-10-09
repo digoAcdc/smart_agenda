@@ -131,6 +131,11 @@ class _FamilyInviteBannerState extends State<FamilyInviteBanner> {
                       ),
                       const SizedBox(width: 8),
                       FilledButton(
+                        // O tema usa largura infinita (botao de formulario);
+                        // lado a lado numa Row isso quebra o layout.
+                        style: FilledButton.styleFrom(
+                          minimumSize: const Size(0, 44),
+                        ),
                         onPressed: _busyInviteId != null
                             ? null
                             : () => _respond(invite, accept: true),

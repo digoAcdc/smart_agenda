@@ -225,6 +225,7 @@ class _FamilyPageState extends State<FamilyPage> {
               ),
               const SizedBox(width: 8),
               FilledButton(
+                style: FilledButton.styleFrom(minimumSize: const Size(0, 44)),
                 onPressed: _busy
                     ? null
                     : () async {

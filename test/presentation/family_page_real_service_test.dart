@@ -1,6 +1,7 @@
 import 'dart:convert';
 
 import 'package:flutter_test/flutter_test.dart';
+import 'package:smart_agenda/core/theme/app_theme.dart';
 import 'package:get/get.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
@@ -67,7 +68,7 @@ void main() {
   tearDown(Get.reset);
 
   testWidgets('tela Familia com servico real nao trava e mostra o convite', (tester) async {
-    await tester.pumpWidget(const GetMaterialApp(home: FamilyPage()));
+    await tester.pumpWidget(GetMaterialApp(theme: AppTheme.light(), home: const FamilyPage()));
     for (var i = 0; i < 20; i++) {
       await tester.pump(const Duration(milliseconds: 100));
     }

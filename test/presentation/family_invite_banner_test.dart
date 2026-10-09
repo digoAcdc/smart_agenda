@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
+import 'package:smart_agenda/core/theme/app_theme.dart';
 import 'package:get/get.dart';
 import 'package:smart_agenda/core/result/result.dart';
 import 'package:smart_agenda/data/services/family_service_stub.dart';
@@ -44,7 +45,7 @@ void main() {
   tearDown(Get.reset);
 
   testWidgets('mostra o convite na Home e aceita com um toque', (tester) async {
-    await tester.pumpWidget(const MaterialApp(home: Scaffold(body: FamilyInviteBanner())));
+    await tester.pumpWidget(MaterialApp(theme: AppTheme.light(), home: const Scaffold(body: FamilyInviteBanner())));
 
     expect(find.text('Convite para a Família silveira'), findsOneWidget);
     expect(find.textContaining('Rodrigo convidou você como editor'), findsOneWidget);
@@ -58,7 +59,7 @@ void main() {
 
   testWidgets('sem convites nao mostra nada', (tester) async {
     family.invites.clear();
-    await tester.pumpWidget(const MaterialApp(home: Scaffold(body: FamilyInviteBanner())));
+    await tester.pumpWidget(MaterialApp(theme: AppTheme.light(), home: const Scaffold(body: FamilyInviteBanner())));
     expect(find.byType(FilledButton), findsNothing);
   });
 }
