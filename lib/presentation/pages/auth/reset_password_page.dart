@@ -69,10 +69,7 @@ class _ResetPasswordPageState extends State<ResetPasswordPage> {
         _step = 2;
       });
       ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          content: const Text('Código enviado! Confira seu e-mail.'),
-          backgroundColor: Theme.of(context).colorScheme.primaryContainer,
-        ),
+        SnackBar(content: const Text('Código enviado! Confira seu e-mail.')),
       );
     } else {
       final msg = authController.errorMessage.value ?? 'Erro ao enviar e-mail.';
@@ -99,7 +96,6 @@ class _ResetPasswordPageState extends State<ResetPasswordPage> {
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
           content: const Text('Senha alterada com sucesso! Faça login.'),
-          backgroundColor: Theme.of(context).colorScheme.primaryContainer,
         ),
       );
       Get.back();
@@ -124,7 +120,6 @@ class _ResetPasswordPageState extends State<ResetPasswordPage> {
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
           content: const Text('Novo código enviado! Verifique seu e-mail.'),
-          backgroundColor: Theme.of(context).colorScheme.primaryContainer,
         ),
       );
     } else {

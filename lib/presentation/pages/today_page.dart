@@ -8,6 +8,7 @@ import '../../core/theme/design_tokens.dart';
 import '../../core/utils/date_utils.dart';
 import '../../domain/entities/agenda_enums.dart';
 import '../../domain/entities/agenda_item.dart';
+import '../../domain/entities/class_schedule_slot.dart';
 import '../controllers/agenda_controller.dart';
 import '../controllers/auth_controller.dart';
 import '../controllers/class_schedule_controller.dart';
@@ -633,22 +634,14 @@ class _TodayPageState extends State<TodayPage> {
                         onAction: hasSchedules ? null : openSchedules,
                       )
                     else
-                      ...classes.map(
-                        (item) => Padding(
-                          padding: const EdgeInsets.only(bottom: 8),
-                          child: _buildClassCard(
-                            context,
-                            startMinutes: item.startMinutes,
-                            endMinutes: item.endMinutes,
-                            subject: item.subject ?? 'Matéria',
-                            ownerLabel: showClassOwner
-                                ? classOwnerLabel(item.scheduleId)
-                                : null,
-                            ownerColorHex: FamilyItemLabels.childColorHex(
-                              item.childId,
-                            ),
-                          ),
-                        ),
+                      // Faixa horizontal: as aulas do dia ocupavam a tela
+                      // inteira em lista. Abre na aula atual ou na proxima.
+                      _buildClassStrip(
+                        context,
+                        classes: classes,
+                        ownerLabelOf: (slot) => showClassOwner
+                            ? classOwnerLabel(slot.scheduleId)
+                            : null,
                       ),
                     const SizedBox(height: 12),
                     _sectionTitle(context, 'Próximos eventos'),
@@ -1037,6 +1030,47 @@ class _TodayPageState extends State<TodayPage> {
     );
   }
 
+  static const double _classCardWidth = 118;
+  static const double _classCardGap = 8;
+
+  Widget _buildClassStrip(
+    BuildContext context, {
+    required List<ClassScheduleSlot> classes,
+    required String? Function(ClassScheduleSlot) ownerLabelOf,
+  }) {
+    final now = DateTime.now();
+    final nowMinutes = now.hour * 60 + now.minute;
+    // Aula em andamento ou a proxima; depois da ultima, mostra o fim.
+    var focusIndex = classes.indexWhere((c) => c.endMinutes > nowMinutes);
+    if (focusIndex < 0) focusIndex = classes.length - 1;
+    final hasOwner = classes.any((c) => ownerLabelOf(c) != null);
+    return SizedBox(
+      height: hasOwner ? 96 : 76,
+      child: ListView.separated(
+        // A chave muda com o dia/quantidade: reposiciona ao trocar de dia.
+        key: ValueKey('classes-${now.weekday}-${classes.length}'),
+        controller: ScrollController(
+          initialScrollOffset: focusIndex * (_classCardWidth + _classCardGap),
+        ),
+        scrollDirection: Axis.horizontal,
+        itemCount: classes.length,
+        separatorBuilder: (_, _) => const SizedBox(width: _classCardGap),
+        itemBuilder: (context, i) {
+          final slot = classes[i];
+          return _buildClassCard(
+            context,
+            startMinutes: slot.startMinutes,
+            endMinutes: slot.endMinutes,
+            subject: slot.subject ?? 'Matéria',
+            ownerLabel: ownerLabelOf(slot),
+            ownerColorHex: FamilyItemLabels.childColorHex(slot.childId),
+            isPast: slot.endMinutes <= nowMinutes,
+          );
+        },
+      ),
+    );
+  }
+
   Widget _buildClassCard(
     BuildContext context, {
     required int startMinutes,
@@ -1044,6 +1078,7 @@ class _TodayPageState extends State<TodayPage> {
     required String subject,
     String? ownerLabel,
     String? ownerColorHex,
+    bool isPast = false,
   }) {
     final start = _formatMinutes(startMinutes);
     final end = _formatMinutes(endMinutes);
@@ -1051,58 +1086,60 @@ class _TodayPageState extends State<TodayPage> {
     final nowMinutes = now.hour * 60 + now.minute;
     final isNow = nowMinutes >= startMinutes && nowMinutes < endMinutes;
     final scheme = Theme.of(context).colorScheme;
-    return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
-      decoration: BoxDecoration(
-        color: scheme.surface,
-        borderRadius: BorderRadius.circular(16),
-        border: isNow ? Border.all(color: scheme.primary, width: 1.5) : null,
-      ),
-      child: Row(
-        children: [
-          Container(
-            width: 58,
-            alignment: Alignment.center,
-            child: Text(
-              start,
-              style: Theme.of(
-                context,
-              ).textTheme.bodySmall?.copyWith(fontWeight: FontWeight.w700),
+    final textTheme = Theme.of(context).textTheme;
+    return Opacity(
+      // Aulas que ja passaram ficam apagadas.
+      opacity: isPast ? 0.55 : 1,
+      child: Container(
+        width: _classCardWidth,
+        padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 8),
+        decoration: BoxDecoration(
+          color: isNow
+              ? scheme.primary.withValues(alpha: 0.12)
+              : scheme.surface,
+          borderRadius: BorderRadius.circular(14),
+          border: isNow ? Border.all(color: scheme.primary, width: 1.5) : null,
+        ),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            Text(
+              isNow ? 'Agora · até $end' : '$start–$end',
+              maxLines: 1,
+              overflow: TextOverflow.ellipsis,
+              style: textTheme.labelSmall?.copyWith(
+                color: isNow ? scheme.primary : scheme.onSurfaceVariant,
+                fontWeight: FontWeight.w700,
+              ),
             ),
-          ),
-          const SizedBox(width: 10),
-          Expanded(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text(
-                  subject,
-                  maxLines: 1,
-                  overflow: TextOverflow.ellipsis,
-                  style: Theme.of(
-                    context,
-                  ).textTheme.titleSmall?.copyWith(fontWeight: FontWeight.w700),
-                ),
-                const SizedBox(height: 2),
-                Text(
-                  isNow ? 'Agora · até $end' : 'até $end',
-                  style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                    color: isNow ? scheme.primary : scheme.onSurfaceVariant,
-                    fontWeight: isNow ? FontWeight.w700 : null,
-                  ),
-                ),
-              ],
+            const SizedBox(height: 4),
+            Text(
+              subject,
+              maxLines: 1,
+              overflow: TextOverflow.ellipsis,
+              style: textTheme.titleSmall?.copyWith(
+                fontWeight: FontWeight.w700,
+              ),
             ),
-          ),
-          if (ownerLabel != null)
-            _ownerBadge(context, ownerLabel, ownerColorHex),
-        ],
+            if (ownerLabel != null) ...[
+              const SizedBox(height: 4),
+              // Cabe na largura do cartao (118 - padding).
+              _ownerBadge(context, ownerLabel, ownerColorHex, maxTextWidth: 64),
+            ],
+          ],
+        ),
       ),
     );
   }
 
   /// Etiqueta "de quem e" (filho/Familia/membro) com a cor do filho.
-  Widget _ownerBadge(BuildContext context, String label, String? colorHex) {
+  Widget _ownerBadge(
+    BuildContext context,
+    String label,
+    String? colorHex, {
+    double maxTextWidth = 110,
+  }) {
     final color = _hexColor(colorHex) ?? Theme.of(context).colorScheme.primary;
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
@@ -1116,7 +1153,7 @@ class _TodayPageState extends State<TodayPage> {
           CircleAvatar(radius: 4, backgroundColor: color),
           const SizedBox(width: 5),
           ConstrainedBox(
-            constraints: const BoxConstraints(maxWidth: 110),
+            constraints: BoxConstraints(maxWidth: maxTextWidth),
             child: Text(
               label,
               maxLines: 1,

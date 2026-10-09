@@ -254,64 +254,81 @@ class _ConfigPageState extends State<ConfigPage> {
         final isPremium = authController.isPremium.value;
 
         if (isLoggedIn) {
-          return Row(
+          final scheme = Theme.of(context).colorScheme;
+          // Pro em verde (ativo); Gratis em cinza.
+          final badgeColor = isPremium ? scheme.primary : scheme.outline;
+          return Column(
+            crossAxisAlignment: CrossAxisAlignment.stretch,
             children: [
-              CircleAvatar(
-                radius: 28,
-                backgroundColor: Theme.of(
-                  context,
-                ).colorScheme.surfaceContainerHigh,
-                child: Icon(
-                  Icons.person,
-                  size: 32,
-                  color: Theme.of(context).colorScheme.onSurfaceVariant,
-                ),
-              ),
-              const SizedBox(width: 16),
-              Expanded(
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Text(
-                      email ?? 'Usuário',
-                      style: Theme.of(context).textTheme.titleMedium?.copyWith(
-                        fontWeight: FontWeight.w700,
-                      ),
-                      maxLines: 1,
-                      overflow: TextOverflow.ellipsis,
+              Row(
+                children: [
+                  CircleAvatar(
+                    radius: 26,
+                    backgroundColor: scheme.surfaceContainerHigh,
+                    child: Icon(
+                      Icons.person,
+                      size: 30,
+                      color: scheme.onSurfaceVariant,
                     ),
-                    if (isPremium) ...[
-                      const SizedBox(height: 4),
-                      Container(
-                        padding: const EdgeInsets.symmetric(
-                          horizontal: 8,
-                          vertical: 2,
+                  ),
+                  const SizedBox(width: 14),
+                  Expanded(
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        // E-mail inteiro (quebra em 2 linhas se precisar).
+                        Text(
+                          email ?? 'Minha conta',
+                          style: Theme.of(context).textTheme.titleSmall
+                              ?.copyWith(fontWeight: FontWeight.w700),
+                          maxLines: 2,
+                          overflow: TextOverflow.ellipsis,
                         ),
-                        decoration: BoxDecoration(
-                          color: Theme.of(
-                            context,
-                          ).colorScheme.outline.withValues(alpha: 0.12),
-                          borderRadius: BorderRadius.circular(999),
-                        ),
-                        child: Text(
-                          'Pro',
-                          style: Theme.of(context).textTheme.labelSmall
-                              ?.copyWith(
-                                color: Theme.of(context).colorScheme.outline,
-                                fontWeight: FontWeight.w700,
+                        const SizedBox(height: 6),
+                        Container(
+                          padding: const EdgeInsets.symmetric(
+                            horizontal: 10,
+                            vertical: 3,
+                          ),
+                          decoration: BoxDecoration(
+                            color: badgeColor.withValues(alpha: 0.14),
+                            borderRadius: BorderRadius.circular(999),
+                          ),
+                          child: Row(
+                            mainAxisSize: MainAxisSize.min,
+                            children: [
+                              Icon(
+                                isPremium
+                                    ? Icons.workspace_premium_rounded
+                                    : Icons.person_outline_rounded,
+                                size: 14,
+                                color: badgeColor,
                               ),
+                              const SizedBox(width: 4),
+                              Text(
+                                isPremium ? 'Pro ativo' : 'Grátis',
+                                style: Theme.of(context).textTheme.labelSmall
+                                    ?.copyWith(
+                                      color: badgeColor,
+                                      fontWeight: FontWeight.w700,
+                                    ),
+                              ),
+                            ],
+                          ),
                         ),
-                      ),
-                    ],
-                  ],
-                ),
+                      ],
+                    ),
+                  ),
+                ],
               ),
-              IconButton(
-                onPressed: () async {
-                  await authController.signOut();
-                },
-                icon: const Icon(Icons.logout_rounded),
-                tooltip: 'Sair',
+              const SizedBox(height: 10),
+              Align(
+                alignment: Alignment.centerRight,
+                child: TextButton.icon(
+                  onPressed: () => _confirmSignOut(authController),
+                  icon: const Icon(Icons.logout_rounded, size: 18),
+                  label: const Text('Sair da conta'),
+                ),
               ),
             ],
           );
@@ -338,6 +355,29 @@ class _ConfigPageState extends State<ConfigPage> {
         );
       }),
     );
+  }
+
+  Future<void> _confirmSignOut(AuthController authController) async {
+    final ok = await Get.dialog<bool>(
+      AlertDialog(
+        title: const Text('Sair da conta?'),
+        content: const Text(
+          'Você pode entrar de novo quando quiser com o mesmo e-mail.',
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Get.back(result: false),
+            child: const Text('Cancelar'),
+          ),
+          FilledButton(
+            style: FilledButton.styleFrom(minimumSize: const Size(0, 44)),
+            onPressed: () => Get.back(result: true),
+            child: const Text('Sair'),
+          ),
+        ],
+      ),
+    );
+    if (ok == true) await authController.signOut();
   }
 
   Widget _buildPremiumCard() {

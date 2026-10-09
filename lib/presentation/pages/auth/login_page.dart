@@ -214,7 +214,11 @@ class _LoginPageState extends State<LoginPage> {
                       style: Theme.of(context).textTheme.bodyMedium,
                     ),
                     TextButton(
-                      onPressed: () => Get.toNamed(AppRoutes.register),
+                      // Repassa a origem (ex.: veio de Assinar o Pro) para o cadastro.
+                      onPressed: () => Get.toNamed(
+                        AppRoutes.register,
+                        arguments: Get.arguments,
+                      ),
                       child: const Text('Registre-se'),
                     ),
                   ],

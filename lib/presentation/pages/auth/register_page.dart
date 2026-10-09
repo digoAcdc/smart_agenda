@@ -38,15 +38,14 @@ class _RegisterPageState extends State<RegisterPage> {
     );
     if (!mounted) return;
     if (ok) {
+      // A conta ja nasce confirmada e logada: nada de mandar para o login.
       ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          content: const Text(
-            'Conta criada! Verifique seu e-mail para confirmar.',
-          ),
-          backgroundColor: Theme.of(context).colorScheme.primaryContainer,
+        const SnackBar(
+          content: Text('Conta criada! Bem-vindo(a) ao Smart Agenda.'),
         ),
       );
-      Get.offAllNamed(AppRoutes.login);
+      final from = Get.arguments is Map ? (Get.arguments as Map)['from'] : null;
+      Get.offAllNamed(from == 'premium' ? AppRoutes.upgrade : AppRoutes.home);
     } else {
       final msg = authController.errorMessage.value ?? 'Erro ao cadastrar.';
       ScaffoldMessenger.of(context).showSnackBar(
