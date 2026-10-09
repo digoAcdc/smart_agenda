@@ -7,12 +7,7 @@ import '../../domain/entities/note.dart';
 import 'ui_primitives.dart';
 
 class NoteCard extends StatelessWidget {
-  const NoteCard({
-    super.key,
-    required this.note,
-    this.onTap,
-    this.onDelete,
-  });
+  const NoteCard({super.key, required this.note, this.onTap, this.onDelete});
 
   final Note note;
   final VoidCallback? onTap;
@@ -22,10 +17,9 @@ class NoteCard extends StatelessWidget {
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
     final hasChecklist = note.checklistItems.isNotEmpty;
-    final completedCount =
-        note.checklistItems.where((i) => i.completed).length;
+    final completedCount = note.checklistItems.where((i) => i.completed).length;
     final checklistPreview = hasChecklist
-        ? '$completedCount de ${note.checklistItems.length} concluidos'
+        ? '$completedCount de ${note.checklistItems.length} concluídos'
         : null;
 
     return AppSurfaceCard(
@@ -44,8 +38,9 @@ class NoteCard extends StatelessWidget {
                 children: [
                   if (note.imagePath != null || note.imageUrl != null) ...[
                     ClipRRect(
-                      borderRadius:
-                          BorderRadius.circular(DesignTokens.radiusMd),
+                      borderRadius: BorderRadius.circular(
+                        DesignTokens.radiusMd,
+                      ),
                       child: _buildThumbnail(context),
                     ),
                     const SizedBox(width: DesignTokens.spaceMd),

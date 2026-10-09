@@ -10,6 +10,15 @@ import {
   logPurchaseValidation,
   SupabasePersistenceError,
 } from "./supabase.js";
+import {
+  createMailerFromEnv,
+  isValidEmail,
+  RecoveryConfigError,
+  sendRecoveryCode,
+} from "./recovery.js";
+import { startRecheckSchedule } from "./revalidation.js";
+import { deleteAccount, AccountDeletionError } from "./account.js";
+import { readFileSync } from "node:fs";
 
 dotenv.config();
 
@@ -44,6 +53,13 @@ const supabase = createSupabaseAdminClient({
   serviceRoleKey: process.env.SUPABASE_SERVICE_ROLE_KEY,
 });
 
+// SMTP opcional: sem ele, a recuperacao de senha responde 503 e o app usa o
+// envio padrao do Supabase.
+const mailer = createMailerFromEnv(process.env);
+if (!mailer) {
+  app.log.warn("SMTP not configured: /auth/password-recovery disabled");
+}
+
 function maskToken(token) {
   if (!token || token.length < 8) return "***";
   return `${token.slice(0, 4)}...${token.slice(-4)}`;
@@ -67,8 +83,90 @@ const allowedProductIds = new Set(
 );
 
 app.get("/health", async () => {
-  return { status: "ok" };
+  return {
+    status: "ok",
+    config_ok: true,
+    billing: {
+      android_package_name: process.env.ANDROID_PACKAGE_NAME,
+      allowed_product_ids_count: allowedProductIds.size,
+    },
+  };
 });
+
+// Pagina publica para o Play Console (exclusao de conta sem o app).
+const deleteAccountPage = readFileSync(new URL("./pages/excluir-conta.html", import.meta.url), "utf8");
+app.get("/excluir-conta", async (request, reply) =>
+  reply.type("text/html; charset=utf-8").send(deleteAccountPage)
+);
+// app-ads.txt: o AdMob confere no site do desenvolvedor (ficha da Play Store)
+// que esta conta de anuncios e a dona do app.
+app.get("/app-ads.txt", async (request, reply) =>
+  reply
+    .type("text/plain; charset=utf-8")
+    .send("google.com, pub-1515466936385187, DIRECT, f08c47fec0942fa0\n")
+);
+
+const privacyPage = readFileSync(new URL("./pages/privacidade.html", import.meta.url), "utf8");
+app.get("/privacidade", async (request, reply) =>
+  reply.type("text/html; charset=utf-8").send(privacyPage)
+);
+
+app.post(
+  "/account/delete",
+  { config: { rateLimit: { max: 5, timeWindow: "15 minutes" } } },
+  async (request, reply) => {
+    try {
+      const { userId } = await verifySupabaseJwt(
+        request.headers.authorization,
+        process.env.SUPABASE_JWT_SECRET,
+        {
+          issuer: process.env.SUPABASE_JWT_ISSUER || undefined,
+          audience: process.env.SUPABASE_JWT_AUDIENCE || undefined,
+        }
+      );
+      await deleteAccount({ supabase, userId, log: request.log });
+      return reply.send({ ok: true });
+    } catch (error) {
+      if (error instanceof AuthError) return reply.code(401).send({ error: "Unauthorized" });
+      if (error instanceof AccountDeletionError) {
+        return reply.code(error.statusCode).send({ error: error.message, code: error.code });
+      }
+      request.log.error({ err: error.message }, "[account_delete_failed]");
+      return reply.code(500).send({ error: "Could not delete account" });
+    }
+  }
+);
+
+app.post(
+  "/auth/password-recovery",
+  {
+    config: {
+      rateLimit: { max: 5, timeWindow: "15 minutes" },
+    },
+  },
+  async (request, reply) => {
+    if (!mailer) {
+      return reply.code(503).send({ error: "Password recovery unavailable" });
+    }
+    const email = request.body?.email;
+    if (!isValidEmail(email)) {
+      return reply.code(400).send({ error: "Invalid email" });
+    }
+    try {
+      await sendRecoveryCode({ supabase, mailer, email, log: request.log });
+      // Mesma resposta exista ou nao a conta.
+      return reply.send({ ok: true });
+    } catch (error) {
+      if (error instanceof RecoveryConfigError) {
+        // App cai no envio padrao do Supabase.
+        request.log.error({ err: error.message }, "[recovery_config_error]");
+        return reply.code(503).send({ error: "Password recovery unavailable" });
+      }
+      request.log.error({ err: error.message }, "[recovery_send_failed]");
+      return reply.code(502).send({ error: "Could not send email. Please retry." });
+    }
+  }
+);
 
 app.post(
   "/validate-subscription",
@@ -84,6 +182,7 @@ app.post(
   let userId = null;
   let productId = null;
   let purchaseToken = null;
+  const requestId = request.id;
 
   try {
     const authHeader = request.headers.authorization;
@@ -107,10 +206,23 @@ app.post(
     productId = body.productId.trim();
     purchaseToken = body.purchaseToken.trim();
     if (!allowedProductIds.has(productId)) {
+      // Registra a recusa: sem isso, uma configuracao errada passa despercebida.
+      request.log.warn({ productId, allowed: [...allowedProductIds] }, "[validate_rejected_product]");
+      await logPurchaseValidation(supabase, {
+        user_id: userId,
+        product_id: productId,
+        purchase_token: purchaseToken,
+        event_type: "validate_subscription",
+        request_payload: { productId, purchaseToken: maskToken(purchaseToken), requestId },
+        response_payload: null,
+        status: "rejected",
+        error_message: "invalid_product_id",
+      }).catch(() => {});
       return reply.code(400).send({ error: "Invalid productId" });
     }
 
     const reqLogger = request.log.child({
+      requestId,
       userId,
       productId,
       purchaseToken: maskToken(purchaseToken),
@@ -144,25 +256,35 @@ app.post(
       updated_at: nowIso,
     });
 
-    await logPurchaseValidation(supabase, {
-      user_id: userId,
-      product_id: productId,
-      purchase_token: purchaseToken,
-      event_type: "validate_subscription",
-      request_payload: { productId, purchaseToken: maskToken(purchaseToken) },
-      response_payload: {
-        isPremium: googleValidation.isPremium,
-        subscriptionStatus: googleValidation.subscriptionStatus,
-        expiresAt: googleValidation.expiresAt,
-      },
-      status: "success",
-      error_message: null,
-    });
+    try {
+      await logPurchaseValidation(supabase, {
+        user_id: userId,
+        product_id: productId,
+        purchase_token: purchaseToken,
+        event_type: "validate_subscription",
+        request_payload: { productId, purchaseToken: maskToken(purchaseToken), requestId },
+        response_payload: {
+          isPremium: googleValidation.isPremium,
+          subscriptionStatus: googleValidation.subscriptionStatus,
+          expiresAt: googleValidation.expiresAt,
+        },
+        status: "success",
+        error_message: null,
+      });
+    } catch (logError) {
+      reqLogger.error(
+        { err: logError.message, event: "audit_log_failed", requestId },
+        "Failed to persist success audit log"
+      );
+    }
 
     reqLogger.info(
       {
+        event: "validate_subscription_success",
+        requestId,
         isPremium: googleValidation.isPremium,
         subscriptionStatus: googleValidation.subscriptionStatus,
+        expiresAt: googleValidation.expiresAt,
       },
       "Subscription validated successfully"
     );
@@ -174,10 +296,13 @@ app.post(
       expiresAt: googleValidation.expiresAt,
       productId,
       source: "billing_api",
+      requestId,
     });
   } catch (error) {
     request.log.error(
       {
+        event: "validate_subscription_failed",
+        requestId,
         err: error.message,
         userId,
         productId,
@@ -193,13 +318,16 @@ app.post(
           product_id: productId,
           purchase_token: purchaseToken,
           event_type: "validate_subscription",
-          request_payload: { productId, purchaseToken: maskToken(purchaseToken) },
+          request_payload: { productId, purchaseToken: maskToken(purchaseToken), requestId },
           response_payload: null,
           status: "error",
           error_message: error.message,
         });
       } catch (logError) {
-        request.log.error({ err: logError.message }, "Failed to persist validation error log");
+        request.log.error(
+          { err: logError.message, event: "audit_log_failed", requestId },
+          "Failed to persist validation error log"
+        );
       }
     }
 
@@ -219,6 +347,17 @@ app.post(
   }
 }
 );
+
+// Reconsulta o Google: renovacoes, cancelamentos, reembolsos, carencia.
+const recheckMinutes = Number(process.env.SUBSCRIPTION_RECHECK_MINUTES || 30);
+if (recheckMinutes > 0) {
+  startRecheckSchedule({
+    supabase,
+    env: process.env,
+    logger: app.log.child({ event: "subscription_recheck" }),
+    intervalMinutes: recheckMinutes,
+  });
+}
 
 const port = Number(process.env.PORT || 3000);
 

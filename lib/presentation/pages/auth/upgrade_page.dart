@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
+import 'package:url_launcher/url_launcher.dart';
 
+import '../../../core/constants/billing_constants.dart';
 import '../../../core/routes/app_routes.dart';
 import '../../../core/theme/design_tokens.dart';
 import '../../controllers/auth_controller.dart';
@@ -15,6 +17,9 @@ class UpgradePage extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final ctrl = Get.find<BillingController>();
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      ctrl.revalidateInBackground(triggerRestore: true, reason: 'upgrade_open');
+    });
     return Obx(() {
       final isPremium = Get.find<AuthController>().isPremium.value;
       final status = ctrl.purchaseStatus.value;
@@ -28,11 +33,14 @@ class UpgradePage extends StatelessWidget {
     bool isPremium,
     BillingPurchaseStatus status,
   ) {
-
     return Scaffold(
       backgroundColor: context.palette.appBackground,
       appBar: AppBar(
-        title: const Text('Area Premium'),
+        leading: IconButton(
+          icon: const Icon(Icons.arrow_back_rounded),
+          onPressed: () => _handleBack(ctrl),
+        ),
+        title: const Text('Plano Pro'),
         actions: [
           IconButton(
             icon: const Icon(Icons.logout_rounded),
@@ -56,24 +64,69 @@ class UpgradePage extends StatelessWidget {
               ),
               const SizedBox(height: DesignTokens.spaceLg),
               Text(
-                isPremium ? 'Voce e Premium' : 'Plano Premium',
+                isPremium ? 'Você é Pro' : 'Plano Pro',
                 style: Theme.of(context).textTheme.headlineSmall?.copyWith(
-                      fontWeight: FontWeight.w800,
-                    ),
+                  fontWeight: FontWeight.w800,
+                ),
                 textAlign: TextAlign.center,
               ),
               const SizedBox(height: DesignTokens.spaceSm),
               Text(
                 isPremium
-                    ? 'Sincronizacao na nuvem, backups automaticos e zero anuncios.'
-                    : 'Desbloqueie todo o potencial com sincronizacao na nuvem, backups automaticos e zero anuncios.',
+                    ? 'Sua Família, agenda compartilhada, sincronização e zero anúncios.'
+                    : 'Organize a rotina da família: agenda compartilhada com até 5 pessoas, '
+                          'vários filhos, permissões, sincronização entre aparelhos e zero anúncios. '
+                          'Quem você convidar não precisa assinar.',
                 style: Theme.of(context).textTheme.bodyLarge?.copyWith(
-                      color: Theme.of(context).colorScheme.onSurfaceVariant,
-                    ),
+                  color: Theme.of(context).colorScheme.onSurfaceVariant,
+                ),
                 textAlign: TextAlign.center,
               ),
+              if (isPremium) ...[
+                const SizedBox(height: DesignTokens.spaceLg),
+                OutlinedButton.icon(
+                  onPressed: _openManageSubscription,
+                  icon: const Icon(Icons.open_in_new),
+                  label: const Text('Gerenciar ou cancelar assinatura'),
+                ),
+                const SizedBox(height: DesignTokens.spaceXs),
+                Text(
+                  'O cancelamento é feito no Google Play. O Pro continua até o fim do '
+                  'período já pago. Depois disso a agenda da Família fica disponível '
+                  'para consulta e nada e apagado.',
+                  style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                    color: Theme.of(context).colorScheme.onSurfaceVariant,
+                  ),
+                  textAlign: TextAlign.center,
+                ),
+              ],
               const SizedBox(height: DesignTokens.spaceXl),
-              if (ctrl.errorMessage.value != null && ctrl.errorMessage.value!.isNotEmpty) ...[
+              if (!ctrl.isRuntimeConfigured.value && !isPremium) ...[
+                AppSurfaceCard(
+                  margin: EdgeInsets.zero,
+                  padding: const EdgeInsets.all(DesignTokens.spaceSm),
+                  child: Row(
+                    children: [
+                      Icon(
+                        Icons.info_outline,
+                        color: Theme.of(context).colorScheme.tertiary,
+                        size: 24,
+                      ),
+                      const SizedBox(width: 12),
+                      Expanded(
+                        child: Text(
+                          'Ambiente de cobrança indisponível. '
+                          'Atualize o app ou contate o suporte.',
+                          style: Theme.of(context).textTheme.bodyMedium,
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+                const SizedBox(height: DesignTokens.spaceSm),
+              ],
+              if (ctrl.errorMessage.value != null &&
+                  ctrl.errorMessage.value!.isNotEmpty) ...[
                 AppSurfaceCard(
                   margin: EdgeInsets.zero,
                   padding: const EdgeInsets.all(DesignTokens.spaceSm),
@@ -88,7 +141,8 @@ class UpgradePage extends StatelessWidget {
                       Expanded(
                         child: Text(
                           ctrl.errorMessage.value!,
-                          style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+                          style: Theme.of(context).textTheme.bodyMedium
+                              ?.copyWith(
                                 color: Theme.of(context).colorScheme.error,
                               ),
                         ),
@@ -152,38 +206,41 @@ class UpgradePage extends StatelessWidget {
                       Text(
                         'Assinatura ativada com sucesso!',
                         style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                              fontWeight: FontWeight.w600,
-                            ),
+                          fontWeight: FontWeight.w600,
+                        ),
                       ),
                     ],
                   ),
                 ),
                 const SizedBox(height: DesignTokens.spaceSm),
               ],
-              if (!isPremium && ctrl.isAvailable.value) ...[
+              if (!isPremium &&
+                  ctrl.isAvailable.value &&
+                  BillingConstants.hasBillingApiConfigured) ...[
                 AppSurfaceCard(
                   margin: EdgeInsets.zero,
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
                       Text(
-                        ctrl.productPrice.value ?? 'R\$ 4,99 /mes',
-                        style: Theme.of(context).textTheme.headlineSmall?.copyWith(
-                              fontWeight: FontWeight.w800,
-                            ),
+                        ctrl.productPrice.value ?? 'Carregando preço...',
+                        style: Theme.of(context).textTheme.headlineSmall
+                            ?.copyWith(fontWeight: FontWeight.w800),
                       ),
                       const SizedBox(height: 8),
                       Text(
                         'Assinatura mensal. Cancele quando quiser.',
                         style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                              color: Theme.of(context).colorScheme.onSurfaceVariant,
-                            ),
+                          color: Theme.of(context).colorScheme.onSurfaceVariant,
+                        ),
                       ),
                     ],
                   ),
                 ),
               ],
-              if (!ctrl.isAvailable.value && !isPremium) ...[
+              if ((!ctrl.isAvailable.value ||
+                      !ctrl.isRuntimeConfigured.value) &&
+                  !isPremium) ...[
                 AppSurfaceCard(
                   margin: EdgeInsets.zero,
                   child: Column(
@@ -195,17 +252,21 @@ class UpgradePage extends StatelessWidget {
                       ),
                       const SizedBox(height: DesignTokens.spaceXs),
                       Text(
-                        'A compra in-app esta disponivel apenas no Android. Em breve para outras plataformas.',
+                        ctrl.isRuntimeConfigured.value
+                            ? 'A compra in-app está disponível apenas no Android. Em breve para outras plataformas.'
+                            : 'A cobrança in-app não está configurada neste build.',
                         style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                              color: Theme.of(context).colorScheme.onSurfaceVariant,
-                            ),
+                          color: Theme.of(context).colorScheme.onSurfaceVariant,
+                        ),
                       ),
                     ],
                   ),
                 ),
               ],
               const Spacer(),
-              if (!isPremium && ctrl.isAvailable.value) ...[
+              if (!isPremium &&
+                  ctrl.isAvailable.value &&
+                  ctrl.isRuntimeConfigured.value) ...[
                 SizedBox(
                   width: double.infinity,
                   child: FilledButton(
@@ -223,14 +284,16 @@ class UpgradePage extends StatelessWidget {
                               color: Colors.white,
                             ),
                           )
-                        : const Text('Tornar-se Premium'),
+                        : const Text('Assinar o Pro'),
                   ),
                 ),
                 const SizedBox(height: DesignTokens.spaceSm),
                 SizedBox(
                   width: double.infinity,
                   child: TextButton(
-                    onPressed: _isBusy(status) ? null : () => ctrl.restorePurchases(),
+                    onPressed: _isBusy(status)
+                        ? null
+                        : () => ctrl.restorePurchases(),
                     child: const Text('Restaurar compras'),
                   ),
                 ),
@@ -239,10 +302,7 @@ class UpgradePage extends StatelessWidget {
               SizedBox(
                 width: double.infinity,
                 child: OutlinedButton(
-                  onPressed: () {
-                    ctrl.clearStatus();
-                    Get.back();
-                  },
+                  onPressed: () => _handleBack(ctrl),
                   child: const Text('Voltar'),
                 ),
               ),
@@ -258,5 +318,24 @@ class UpgradePage extends StatelessWidget {
         status == BillingPurchaseStatus.purchasing ||
         status == BillingPurchaseStatus.validating ||
         status == BillingPurchaseStatus.pending;
+  }
+
+  void _handleBack(BillingController ctrl) {
+    ctrl.clearStatus();
+    if (Get.key.currentState?.canPop() ?? false) {
+      Get.back();
+      return;
+    }
+    Get.offAllNamed(AppRoutes.home);
+  }
+
+  /// Tela de assinaturas do Google Play (exigencia da loja: caminho facil para cancelar).
+  Future<void> _openManageSubscription() async {
+    final uri = Uri.parse(
+      'https://play.google.com/store/account/subscriptions'
+      '?sku=${BillingConstants.premiumMonthlyProductId}'
+      '&package=${BillingConstants.packageName}',
+    );
+    await launchUrl(uri, mode: LaunchMode.externalApplication);
   }
 }

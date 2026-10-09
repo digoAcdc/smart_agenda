@@ -5,6 +5,7 @@ import '../../core/theme/design_tokens.dart';
 import '../../domain/entities/agenda_enums.dart';
 import '../../domain/entities/agenda_item.dart';
 import 'group_chip.dart';
+import '../utils/family_item_labels.dart';
 
 enum AgendaCardVariant { regular, timeline }
 
@@ -55,8 +56,9 @@ class _AgendaCardState extends State<AgendaCard> {
   Widget build(BuildContext context) {
     final item = widget.item;
     final isDone = item.status == AgendaStatus.done;
-    final timeLabel =
-        item.allDay ? 'Dia inteiro' : DateFormat('HH:mm').format(item.startAt);
+    final timeLabel = item.allDay
+        ? 'Dia inteiro'
+        : DateFormat('HH:mm').format(item.startAt);
     final metaLabel = DateFormat('dd MMM').format(item.startAt);
     Color statusColor;
     switch (item.status) {
@@ -79,10 +81,13 @@ class _AgendaCardState extends State<AgendaCard> {
     final radius = widget.variant == AgendaCardVariant.timeline
         ? DesignTokens.radiusMd
         : DesignTokens.radiusLg;
-    final railHeight = widget.variant == AgendaCardVariant.timeline ? 48.0 : 56.0;
+    final railHeight = widget.variant == AgendaCardVariant.timeline
+        ? 48.0
+        : 56.0;
     final compactRailHeight = 36.0;
 
-    final isShared = item.ownerEmail != null;
+    final isShared = !FamilyItemLabels.canEdit(item);
+    final familyLine = FamilyItemLabels.summary(item);
 
     return Dismissible(
       key: ValueKey(item.id),
@@ -162,59 +167,65 @@ class _AgendaCardState extends State<AgendaCard> {
                               children: [
                                 Text(
                                   timeLabel,
-                                  style: Theme.of(context)
-                                      .textTheme
-                                      .titleMedium
-                                      ?.copyWith(
-                                        fontWeight: FontWeight.w700,
-                                      ),
+                                  style: Theme.of(context).textTheme.titleMedium
+                                      ?.copyWith(fontWeight: FontWeight.w700),
                                 ),
                                 const SizedBox(width: 10),
                                 if (widget.groupName != null && _expanded)
                                   GroupChip(
-                                      label: widget.groupName!,
-                                      color: widget.groupColor),
+                                    label: widget.groupName!,
+                                    color: widget.groupColor,
+                                  ),
                               ],
                             ),
                             const SizedBox(height: 4),
                             Text(
                               item.title,
-                              style: Theme.of(context)
-                                  .textTheme
-                                  .bodyLarge
+                              style: Theme.of(context).textTheme.bodyLarge
                                   ?.copyWith(
                                     fontWeight: FontWeight.w600,
-                                    decoration:
-                                        isDone ? TextDecoration.lineThrough : null,
+                                    decoration: isDone
+                                        ? TextDecoration.lineThrough
+                                        : null,
                                   ),
                               maxLines: _expanded ? 3 : 1,
                               overflow: TextOverflow.ellipsis,
                             ),
+                            if (familyLine != null) ...[
+                              const SizedBox(height: 2),
+                              Text(
+                                familyLine,
+                                maxLines: 1,
+                                overflow: TextOverflow.ellipsis,
+                                style: Theme.of(context).textTheme.labelSmall
+                                    ?.copyWith(
+                                      color: Theme.of(
+                                        context,
+                                      ).colorScheme.primary,
+                                    ),
+                              ),
+                            ],
                             if (_expanded) ...[
-                              if (isShared) ...[
+                              if (FamilyItemLabels.createdBy(item) != null) ...[
                                 const SizedBox(height: 4),
                                 Text(
-                                  'Compartilhada por ${item.ownerEmail}',
-                                  style: Theme.of(context)
-                                      .textTheme
-                                      .labelSmall
+                                  'Criado por ${FamilyItemLabels.createdBy(item)}',
+                                  style: Theme.of(context).textTheme.labelSmall
                                       ?.copyWith(
-                                        color: Theme.of(context)
-                                            .colorScheme
-                                            .primary,
+                                        color: Theme.of(
+                                          context,
+                                        ).colorScheme.primary,
                                       ),
                                 ),
                               ],
                               const SizedBox(height: DesignTokens.space4),
                               Text(
-                                '$metaLabel • ${item.status.name}',
-                                style: Theme.of(context)
-                                    .textTheme
-                                    .bodySmall
+                                '$metaLabel • ${item.status.label}',
+                                style: Theme.of(context).textTheme.bodySmall
                                     ?.copyWith(
-                                      color: Theme.of(context)
-                                          .colorScheme
-                                          .onSurfaceVariant,
+                                      color: Theme.of(
+                                        context,
+                                      ).colorScheme.onSurfaceVariant,
                                     ),
                               ),
                             ],
@@ -227,9 +238,7 @@ class _AgendaCardState extends State<AgendaCard> {
                           _expanded
                               ? Icons.keyboard_arrow_up
                               : Icons.keyboard_arrow_down,
-                          color: Theme.of(context)
-                              .colorScheme
-                              .onSurfaceVariant,
+                          color: Theme.of(context).colorScheme.onSurfaceVariant,
                         ),
                         style: IconButton.styleFrom(
                           minimumSize: const Size(36, 36),
@@ -280,13 +289,16 @@ class _AgendaCardState extends State<AgendaCard> {
         borderRadius: BorderRadius.circular(radius),
       ),
       child: Row(
-        mainAxisAlignment:
-            alignLeft ? MainAxisAlignment.start : MainAxisAlignment.end,
+        mainAxisAlignment: alignLeft
+            ? MainAxisAlignment.start
+            : MainAxisAlignment.end,
         children: [
           Icon(icon, color: color),
           const SizedBox(width: 8),
-          Text(label,
-              style: TextStyle(color: color, fontWeight: FontWeight.w700)),
+          Text(
+            label,
+            style: TextStyle(color: color, fontWeight: FontWeight.w700),
+          ),
         ],
       ),
     );

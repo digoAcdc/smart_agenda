@@ -11,7 +11,7 @@ class AppRoutes {
   static const classGroupDetail = '/class-group-detail';
   static const more = '/more';
   static const privacyPolicy = '/privacy-policy';
-  static const sharing = '/sharing';
+  static const family = '/family';
   static const notifications = '/notifications';
   static const notes = '/notes';
   static const upsertNote = '/upsert-note';

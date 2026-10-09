@@ -1,7 +1,8 @@
 // File generated manually. Firebase apps created via: firebase apps:create
 // Project: smart-agenda-a550b
 
-import 'package:flutter/foundation.dart' show defaultTargetPlatform, TargetPlatform;
+import 'package:flutter/foundation.dart'
+    show defaultTargetPlatform, TargetPlatform;
 import 'package:firebase_core/firebase_core.dart' show FirebaseOptions;
 
 class DefaultFirebaseOptions {

@@ -31,7 +31,13 @@ BEGIN
       range_start := ref_date::TIMESTAMPTZ;
       range_end := ref_date::TIMESTAMPTZ + INTERVAL '1 day' - INTERVAL '1 second';
     WHEN 'weekly_summary' THEN
-      ref_date := (DATE_TRUNC('week', base_date))::DATE;
+      ref_date := (
+        CASE
+          -- Se o envio ocorrer no domingo, aponta para a segunda da semana seguinte.
+          WHEN EXTRACT(DOW FROM base_date) = 0 THEN (base_date + INTERVAL '1 day')::DATE
+          ELSE (DATE_TRUNC('week', base_date))::DATE
+        END
+      );
       range_start := ref_date::TIMESTAMPTZ;
       range_end := (ref_date + INTERVAL '7 days' - INTERVAL '1 second')::TIMESTAMPTZ;
     ELSE

@@ -23,10 +23,10 @@ class AgendaTransferServiceImpl implements IAgendaTransferService {
     required IAgendaRepository agendaRepository,
     required IGroupsRepository groupsRepository,
     required INotificationService notificationService,
-  })  : _database = database,
-        _agendaRepository = agendaRepository,
-        _groupsRepository = groupsRepository,
-        _notificationService = notificationService;
+  }) : _database = database,
+       _agendaRepository = agendaRepository,
+       _groupsRepository = groupsRepository,
+       _notificationService = notificationService;
 
   final AppDatabase _database;
   final IAgendaRepository _agendaRepository;
@@ -39,7 +39,8 @@ class AgendaTransferServiceImpl implements IAgendaTransferService {
       final groupsResult = await _groupsRepository.getGroups();
       if (!groupsResult.isSuccess || groupsResult.data == null) {
         return Result.failure(
-          groupsResult.errorMessage ?? 'Falha ao carregar grupos para exportar.',
+          groupsResult.errorMessage ??
+              'Falha ao carregar grupos para exportar.',
         );
       }
 
@@ -49,7 +50,8 @@ class AgendaTransferServiceImpl implements IAgendaTransferService {
       );
       if (!allItemsResult.isSuccess || allItemsResult.data == null) {
         return Result.failure(
-          allItemsResult.errorMessage ?? 'Falha ao carregar eventos para exportar.',
+          allItemsResult.errorMessage ??
+              'Falha ao carregar eventos para exportar.',
         );
       }
 
@@ -90,13 +92,13 @@ class AgendaTransferServiceImpl implements IAgendaTransferService {
     try {
       final file = File(filePath);
       if (!file.existsSync()) {
-        return Result.failure('Arquivo selecionado nao existe.');
+        return Result.failure('Arquivo selecionado não existe.');
       }
 
       final raw = await file.readAsString();
       final decoded = jsonDecode(raw);
       if (decoded is! Map<String, dynamic>) {
-        return Result.failure('Arquivo invalido para importacao.');
+        return Result.failure('Arquivo inválido para importação.');
       }
 
       final bundle = AgendaTransferBundle.fromJson(decoded);
@@ -117,7 +119,8 @@ class AgendaTransferServiceImpl implements IAgendaTransferService {
       var skippedClassSlots = 0;
 
       final existingGroupsResult = await _groupsRepository.getGroups();
-      if (!existingGroupsResult.isSuccess || existingGroupsResult.data == null) {
+      if (!existingGroupsResult.isSuccess ||
+          existingGroupsResult.data == null) {
         return Result.failure(
           existingGroupsResult.errorMessage ??
               'Falha ao carregar grupos para importar.',
@@ -159,8 +162,9 @@ class AgendaTransferServiceImpl implements IAgendaTransferService {
         }
       }
 
-      var reminderSeed =
-          DateTime.now().millisecondsSinceEpoch.remainder(1000000);
+      var reminderSeed = DateTime.now().millisecondsSinceEpoch.remainder(
+        1000000,
+      );
       for (final incoming in bundle.items) {
         if (incoming.id.trim().isEmpty || incoming.title.trim().isEmpty) {
           skippedItems++;
@@ -173,7 +177,9 @@ class AgendaTransferServiceImpl implements IAgendaTransferService {
           nextNotificationId: ++reminderSeed,
         );
 
-        final existingResult = await _agendaRepository.getItemById(normalized.id);
+        final existingResult = await _agendaRepository.getItemById(
+          normalized.id,
+        );
         if (!existingResult.isSuccess) {
           skippedItems++;
           continue;
@@ -190,7 +196,8 @@ class AgendaTransferServiceImpl implements IAgendaTransferService {
           final scheduleResult = await _notificationService.scheduleForItem(
             normalized,
           );
-          if (scheduleResult.isSuccess && normalized.reminder?.enabled == true) {
+          if (scheduleResult.isSuccess &&
+              normalized.reminder?.enabled == true) {
             reScheduledReminders++;
           }
           continue;
@@ -207,7 +214,8 @@ class AgendaTransferServiceImpl implements IAgendaTransferService {
           final scheduleResult = await _notificationService.scheduleForItem(
             normalized,
           );
-          if (scheduleResult.isSuccess && normalized.reminder?.enabled == true) {
+          if (scheduleResult.isSuccess &&
+              normalized.reminder?.enabled == true) {
             reScheduledReminders++;
           }
         } else {
@@ -215,10 +223,9 @@ class AgendaTransferServiceImpl implements IAgendaTransferService {
         }
       }
 
-      final existingClassSlots = await (_database
-            .select(_database.classScheduleSlotsTable)
-          ..orderBy([(t) => OrderingTerm(expression: t.updatedAt)]))
-          .get();
+      final existingClassSlots = await (_database.select(
+        _database.classScheduleSlotsTable,
+      )..orderBy([(t) => OrderingTerm(expression: t.updatedAt)])).get();
       final classSlotsById = {
         for (final slot in existingClassSlots) slot.id: slot,
       };
@@ -229,7 +236,9 @@ class AgendaTransferServiceImpl implements IAgendaTransferService {
         }
         final existing = classSlotsById[incoming.id];
         if (existing == null) {
-          await _database.into(_database.classScheduleSlotsTable).insert(
+          await _database
+              .into(_database.classScheduleSlotsTable)
+              .insert(
                 ClassScheduleSlotsTableCompanion.insert(
                   id: incoming.id,
                   dayOfWeek: incoming.dayOfWeek,
@@ -247,9 +256,9 @@ class AgendaTransferServiceImpl implements IAgendaTransferService {
           continue;
         }
         if (incoming.updatedAt.isAfter(existing.updatedAt)) {
-          await (_database.update(_database.classScheduleSlotsTable)
-                ..where((t) => t.id.equals(incoming.id)))
-              .write(
+          await (_database.update(
+            _database.classScheduleSlotsTable,
+          )..where((t) => t.id.equals(incoming.id))).write(
             ClassScheduleSlotsTableCompanion(
               dayOfWeek: Value(incoming.dayOfWeek),
               startMinutes: Value(incoming.startMinutes),
@@ -322,7 +331,10 @@ class AgendaTransferServiceImpl implements IAgendaTransferService {
     );
   }
 
-  ReminderConfig? _normalizeReminder(ReminderConfig? reminder, int notificationId) {
+  ReminderConfig? _normalizeReminder(
+    ReminderConfig? reminder,
+    int notificationId,
+  ) {
     if (reminder == null) return null;
     if (!reminder.enabled) {
       return reminder.copyWith(
@@ -339,12 +351,12 @@ class AgendaTransferServiceImpl implements IAgendaTransferService {
   }
 
   Future<List<ClassScheduleTransferSlot>> _readClassScheduleSlots() async {
-    final slots = await (_database.select(_database.classScheduleSlotsTable)
-          ..orderBy([
-            (t) => OrderingTerm(expression: t.dayOfWeek),
-            (t) => OrderingTerm(expression: t.startMinutes),
-          ]))
-        .get();
+    final slots =
+        await (_database.select(_database.classScheduleSlotsTable)..orderBy([
+              (t) => OrderingTerm(expression: t.dayOfWeek),
+              (t) => OrderingTerm(expression: t.startMinutes),
+            ]))
+            .get();
     return slots
         .map(
           (slot) => ClassScheduleTransferSlot(

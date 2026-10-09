@@ -44,7 +44,9 @@ class ChecklistItemTile extends StatelessWidget {
               )
             else
               Icon(
-                item.completed ? Icons.check_circle : Icons.radio_button_unchecked,
+                item.completed
+                    ? Icons.check_circle
+                    : Icons.radio_button_unchecked,
                 size: 22,
                 color: item.completed
                     ? theme.colorScheme.primary
@@ -55,7 +57,9 @@ class ChecklistItemTile extends StatelessWidget {
               child: Text(
                 item.text,
                 style: theme.textTheme.bodyMedium?.copyWith(
-                  decoration: item.completed ? TextDecoration.lineThrough : null,
+                  decoration: item.completed
+                      ? TextDecoration.lineThrough
+                      : null,
                   color: item.completed
                       ? theme.colorScheme.onSurfaceVariant
                       : theme.colorScheme.onSurface,

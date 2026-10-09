@@ -46,13 +46,18 @@ Future<void> main() async {
       final user = Supabase.instance.client.auth.currentUser;
       if (user != null && Get.isRegistered<FcmTokenSupabaseDataSource>()) {
         try {
-          await Get.find<FcmTokenSupabaseDataSource>().upsertToken(user.id, token);
+          await Get.find<FcmTokenSupabaseDataSource>().upsertToken(
+            user.id,
+            token,
+          );
         } catch (_) {}
       }
     });
   }
   // App aberto ao tocar em notificação (estado terminated)
-  final initialMessage = firebaseOk ? await FirebaseService.getInitialMessage() : null;
+  final initialMessage = firebaseOk
+      ? await FirebaseService.getInitialMessage()
+      : null;
   if (initialMessage != null) {
     WidgetsBinding.instance.addPostFrameCallback((_) {
       _onPushMessageOpened(initialMessage);
@@ -65,7 +70,8 @@ Future<void> main() async {
 }
 
 void _onPushMessage(RemoteMessage message) {
-  final title = message.notification?.title ?? message.data['title'] ?? 'Smart Agenda';
+  final title =
+      message.notification?.title ?? message.data['title'] ?? 'Smart Agenda';
   final body = message.notification?.body ?? message.data['body'] ?? '';
   if (body.isEmpty) return;
   final type = message.data['type']?.toString();
@@ -145,10 +151,7 @@ class SmartAgendaApp extends StatelessWidget {
       initialRoute: AppRoutes.home,
       getPages: AppPages.routes,
       locale: const Locale('pt', 'BR'),
-      supportedLocales: const [
-        Locale('pt', 'BR'),
-        Locale('en', 'US'),
-      ],
+      supportedLocales: const [Locale('pt', 'BR'), Locale('en', 'US')],
       localizationsDelegates: GlobalMaterialLocalizations.delegates,
       theme: AppTheme.light(),
       darkTheme: AppTheme.dark(),
@@ -156,9 +159,9 @@ class SmartAgendaApp extends StatelessWidget {
       builder: (context, child) {
         if (child == null) return const SizedBox.shrink();
         return MediaQuery(
-          data: MediaQuery.of(context).copyWith(
-            textScaler: MediaQuery.of(context).textScaler,
-          ),
+          data: MediaQuery.of(
+            context,
+          ).copyWith(textScaler: MediaQuery.of(context).textScaler),
           child: child,
         );
       },

@@ -9,6 +9,7 @@ abstract class INotificationService {
   Future<Result<void>> scheduleForItem(AgendaItem item);
   Future<Result<void>> cancelForItem(AgendaItem item);
   Future<Result<void>> scheduleDailySummary();
+
   /// Exibe notificação push imediata (ex: FCM em foreground).
   Future<Result<void>> showPush(String title, String body, {String? payload});
 }

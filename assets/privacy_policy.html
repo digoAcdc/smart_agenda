@@ -1,57 +1,112 @@
-<!DOCTYPE html>
+<!doctype html>
 <html lang="pt-BR">
 <head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Política de Privacidade - Smart Agenda</title>
-  <style>
-    * { box-sizing: border-box; }
-    body {
-      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
-      line-height: 1.6;
-      color: #333;
-      max-width: 720px;
-      margin: 0 auto;
-      padding: 20px;
-      font-size: 16px;
-    }
-    h1 {
-      font-size: 1.5rem;
-      margin-bottom: 0.5rem;
-      color: #1a1a1a;
-    }
-    h2 {
-      font-size: 1.15rem;
-      margin-top: 1.5rem;
-      margin-bottom: 0.5rem;
-      color: #333;
-    }
-    p { margin: 0.5rem 0 1rem; }
-    ul { margin: 0.5rem 0 1rem; padding-left: 1.5rem; }
-    li { margin-bottom: 0.25rem; }
-    .updated { color: #666; font-size: 0.9rem; margin-bottom: 1.5rem; }
-  </style>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Política de Privacidade — Smart Agenda</title>
+<style>
+  body { margin: 0; font-family: system-ui, -apple-system, Segoe UI, Roboto, Arial, sans-serif; background: #f4f4f7; color: #1f1f29; }
+  main { max-width: 720px; margin: 0 auto; padding: 32px 20px 48px; }
+  .card { background: #fff; border-radius: 16px; padding: 24px; margin-bottom: 16px; }
+  h1 { color: #6b5cff; font-size: 24px; margin: 0 0 4px; }
+  h2 { font-size: 18px; margin: 0 0 12px; }
+  li { margin-bottom: 6px; line-height: 1.45; }
+  p { line-height: 1.55; }
+  .muted { color: #6d6d7a; font-size: 14px; }
+  a { color: #6b5cff; }
+</style>
 </head>
 <body>
-  <h1>Política de Privacidade</h1>
-  <p class="updated">Smart Agenda — Última atualização: março de 2025</p>
+<main>
+  <div class="card">
+    <h1>Política de Privacidade — Smart Agenda</h1>
+    <p class="muted">Última atualização: outubro de 2026</p>
+    <p>O Smart Agenda é um aplicativo para organizar a rotina pessoal e da família. Esta política explica
+      quais dados o app usa, para quê, com quem são compartilhados e como você exerce seus direitos
+      conforme a Lei Geral de Proteção de Dados (LGPD, Lei 13.709/2018).</p>
+    <p>Contato do responsável pelos dados: <a href="mailto:smartagenda@rbarbosa.tech">smartagenda@rbarbosa.tech</a></p>
+  </div>
 
-  <h2>1. Coleta de dados</h2>
-  <p>O Smart Agenda armazena seus dados localmente no dispositivo. Não coletamos nem enviamos informações pessoais para servidores externos.</p>
+  <div class="card">
+    <h2>1. Dados que usamos</h2>
+    <ul>
+      <li><strong>Conta:</strong> e-mail, senha (guardada de forma criptografada pelo serviço de login) e nome de exibição.</li>
+      <li><strong>Conteúdo que você cria:</strong> eventos, tarefas, lembretes, grades horárias, anotações, turmas e contatos
+        de alunos/professores e fotos anexadas. Sem conta, ou no plano gratuito, a agenda pessoal fica somente no seu aparelho.</li>
+      <li><strong>Família:</strong> nome da Família, pessoas participantes e seus papéis, apelidos, convites (e-mail do convidado)
+        e dados dos filhos cadastrados (nome, data de nascimento opcional e cor).</li>
+      <li><strong>Assinatura:</strong> identificadores da compra no Google Play (produto, token e situação da assinatura) para
+        liberar o plano Pro. Não recebemos dados do seu cartão.</li>
+      <li><strong>Notificações:</strong> identificador do aparelho para envio de notificações (Firebase Cloud Messaging) e suas preferências de aviso.</li>
+      <li><strong>Uso do app:</strong> eventos de uso e informações técnicas do aparelho (Firebase Analytics), para entender e melhorar o app.</li>
+      <li><strong>Anúncios (somente plano gratuito):</strong> o Google AdMob pode usar o identificador de publicidade do aparelho,
+        endereço IP e informações técnicas para exibir e medir anúncios. Onde a lei exige, pedimos seu consentimento antes.</li>
+    </ul>
+  </div>
 
-  <h2>2. Dados armazenados</h2>
-  <p>Os dados da sua agenda (eventos, grupos, lembretes) ficam apenas no seu aparelho. O app utiliza notificações locais para lembretes.</p>
+  <div class="card">
+    <h2>2. Para que usamos (e base legal)</h2>
+    <ul>
+      <li>Prestar o serviço: guardar e sincronizar sua agenda, a agenda da Família e as grades (execução de contrato).</li>
+      <li>Liberar e validar a assinatura Pro, inclusive renovações e cancelamentos (execução de contrato).</li>
+      <li>Enviar lembretes e avisos que você ativou (execução de contrato).</li>
+      <li>Segurança, prevenção de fraudes e funcionamento técnico (legítimo interesse).</li>
+      <li>Medir uso para melhorar o app (legítimo interesse).</li>
+      <li>Exibir anúncios no plano gratuito; anúncios personalizados apenas com seu consentimento quando exigido.</li>
+    </ul>
+  </div>
 
-  <h2>3. Compartilhamento</h2>
-  <p>Quando você compartilha a agenda (exportação em JSON), os dados são enviados apenas para o destino que você escolher (ex.: WhatsApp, e-mail). Não temos acesso a esses dados.</p>
+  <div class="card">
+    <h2>3. Família e dados de crianças</h2>
+    <p>Na Família, os eventos, tarefas e grades compartilhados ficam visíveis a todas as pessoas que você convidou, de acordo com o papel
+      de cada uma (administrador, editor ou visualizador). Você pode marcar um evento como “Só minha” para mantê-lo privado.</p>
+    <p>Os dados de filhos são cadastrados pelos pais ou responsáveis, que declaram ter autorização para isso, e servem apenas para
+      organizar a rotina da família. O app é destinado a adultos; crianças não criam contas.</p>
+  </div>
 
-  <h2>4. Permissões</h2>
-  <ul>
-    <li><strong>Notificações:</strong> para exibir lembretes de eventos.</li>
-    <li><strong>Armazenamento:</strong> para salvar a agenda e anexos.</li>
-  </ul>
+  <div class="card">
+    <h2>4. Com quem compartilhamos</h2>
+    <ul>
+      <li><strong>Servidor do Smart Agenda:</strong> os dados de conta e da nuvem ficam em servidor contratado pelo Smart Agenda (Hostinger),
+        com acesso protegido por regras de permissão por usuário e por Família.</li>
+      <li><strong>Google:</strong> Google Play (pagamentos), Firebase (notificações e estatísticas de uso) e AdMob (anúncios no plano gratuito),
+        conforme as políticas do Google.</li>
+      <li><strong>Pessoas da sua Família:</strong> somente o que você compartilha com ela.</li>
+    </ul>
+    <p>Não vendemos seus dados.</p>
+  </div>
 
-  <h2>5. Contato</h2>
-  <p>Para dúvidas sobre esta política, entre em contato pelo e-mail de suporte do aplicativo.</p>
+  <div class="card">
+    <h2>5. Por quanto tempo guardamos</h2>
+    <p>Enquanto sua conta existir. Ao excluir a conta, apagamos seus dados pessoais; eventos que você criou numa Família permanecem
+      com a Família, sem o seu nome como autor. O histórico de pagamentos é mantido pelo Google Play, conforme as regras dele.
+      Se a assinatura Pro vencer, nada é apagado automaticamente.</p>
+  </div>
+
+  <div class="card">
+    <h2>6. Seus direitos</h2>
+    <p>Você pode, a qualquer momento: confirmar e acessar seus dados, corrigi-los, pedir a exclusão, revogar consentimentos e pedir
+      informações sobre compartilhamento.</p>
+    <ul>
+      <li><strong>Apagar dados:</strong> no app, Config → Apagar todos os meus dados.</li>
+      <li><strong>Excluir a conta:</strong> no app, Config → Excluir minha conta, ou pelo
+        <a href="https://smart-agenda-billing-api.vybg0t.easypanel.host/excluir-conta">passo a passo de exclusão de conta</a>.</li>
+      <li><strong>Anúncios:</strong> Config → Privacidade dos anúncios (quando disponível na sua região) e as configurações de anúncios do seu aparelho.</li>
+      <li>Outros pedidos: <a href="mailto:smartagenda@rbarbosa.tech">smartagenda@rbarbosa.tech</a>.</li>
+    </ul>
+  </div>
+
+  <div class="card">
+    <h2>7. Segurança</h2>
+    <p>Usamos conexão criptografada (HTTPS), senhas protegidas pelo serviço de login e regras de acesso no banco de dados que
+      impedem que uma pessoa veja dados de outra fora da sua Família. Nenhum sistema é totalmente imune a falhas; avisaremos
+      os afetados e a autoridade competente em caso de incidente relevante, conforme a LGPD.</p>
+  </div>
+
+  <div class="card">
+    <h2>8. Mudanças</h2>
+    <p>Podemos atualizar esta política. A data no topo indica a versão atual; mudanças importantes serão avisadas no app.</p>
+  </div>
+</main>
 </body>
 </html>

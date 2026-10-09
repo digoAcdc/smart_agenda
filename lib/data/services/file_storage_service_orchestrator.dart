@@ -6,38 +6,34 @@ import 'package:supabase_flutter/supabase_flutter.dart';
 import 'package:uuid/uuid.dart';
 
 import '../../core/result/result.dart';
+import '../../core/utils/image_compress_utils.dart';
 import '../../domain/repositories/i_file_storage_service.dart';
-import '../../domain/repositories/i_plan_service.dart';
 
-/// Orquestrador: free = copia local; premium = upload para Supabase Storage.
-/// Retorna path local ou URL publica conforme o plano.
+/// Imagens ficam sempre no aparelho primeiro; o envio para a nuvem
+/// acontece na sincronizacao ([uploadToCloud]), na pasta do escopo:
+/// `user/<uid>/` (pessoal) ou `family/<family_id>/` (Familia).
 class FileStorageServiceOrchestrator implements IFileStorageService {
-  FileStorageServiceOrchestrator(
-    this._planService,
-    this._uuid,
-    this._client,
-  );
+  FileStorageServiceOrchestrator(this._uuid, this._client);
 
-  final IPlanService _planService;
   final Uuid _uuid;
   final SupabaseClient? _client;
 
   @override
   Future<Result<String>> copyImageToAppStorage(String sourcePath) async {
+    ImagePrepareResult? prepared;
     try {
-      final source = File(sourcePath);
+      prepared = await ImageCompressUtils.prepareImageForStorage(sourcePath);
+      final source = File(prepared.path);
       if (!source.existsSync()) {
-        return Result.failure('Arquivo de origem nao encontrado');
-      }
-
-      if (await _planService.isPremium() && _client != null) {
-        final uploaded = await _uploadToStorage(source);
-        if (uploaded.isSuccess) return uploaded;
-        return _copyLocal(source);
+        return Result.failure('Arquivo de origem não encontrado');
       }
       return _copyLocal(source);
     } catch (e) {
       return Result.failure('Falha ao salvar imagem: $e');
+    } finally {
+      if (prepared != null) {
+        await ImageCompressUtils.deleteIfTemporary(prepared);
+      }
     }
   }
 
@@ -47,28 +43,41 @@ class FileStorageServiceOrchestrator implements IFileStorageService {
     if (!attachmentsDir.existsSync()) {
       attachmentsDir.createSync(recursive: true);
     }
-    final extension =
-        source.path.contains('.') ? source.path.split('.').last : 'jpg';
+    final extension = source.path.contains('.')
+        ? source.path.split('.').last
+        : 'jpg';
     final destPath = '${attachmentsDir.path}/${_uuid.v4()}.$extension';
     await source.copy(destPath);
     return Result.success(destPath);
   }
 
-  Future<Result<String>> _uploadToStorage(File source) async {
+  @override
+  Future<Result<String>> uploadToCloud(
+    String localPath, {
+    String? familyId,
+  }) async {
+    final source = File(localPath);
+    if (!source.existsSync()) {
+      return Result.failure('Arquivo local não encontrado');
+    }
     try {
       final client = _client;
-      if (client == null) return Result.failure('Supabase nao configurado');
+      if (client == null) return Result.failure('Supabase não configurado');
       final uid = client.auth.currentUser?.id;
       if (uid == null) {
-        return Result.failure('Usuario nao autenticado');
+        return Result.failure('Usuário não autenticado');
       }
 
-      final extension =
-          source.path.contains('.') ? source.path.split('.').last : 'jpg';
+      final extension = source.path.contains('.')
+          ? source.path.split('.').last
+          : 'jpg';
       final attachmentId = _uuid.v4();
-      final storagePath = '$uid/$attachmentId.$extension';
+      final folder = familyId != null ? 'family/$familyId' : 'user/$uid';
+      final storagePath = '$folder/$attachmentId.$extension';
 
-      await client.storage.from('attachments').upload(
+      await client.storage
+          .from('attachments')
+          .upload(
             storagePath,
             source,
             fileOptions: const FileOptions(upsert: true),

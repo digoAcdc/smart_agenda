@@ -4,4 +4,10 @@ import '../../domain/repositories/i_sync_service.dart';
 class SyncServiceStub implements ISyncService {
   @override
   Future<Result<void>> syncNow() async => Result.success(null);
+
+  @override
+  Stream<void> get onDataChanged => const Stream.empty();
+
+  @override
+  Future<void> clearCloudCache() async {}
 }

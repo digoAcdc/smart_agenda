@@ -21,15 +21,23 @@ class PurchasePayload extends Equatable {
   final int? purchaseState;
 
   Map<String, dynamic> toJson() => {
-        'productId': productId,
-        'purchaseToken': purchaseToken,
-        'packageName': packageName,
-        if (orderId != null) 'orderId': orderId,
-        if (purchaseTime != null) 'purchaseTime': purchaseTime,
-        'platform': platform,
-        if (purchaseState != null) 'purchaseState': purchaseState,
-      };
+    'productId': productId,
+    'purchaseToken': purchaseToken,
+    'packageName': packageName,
+    if (orderId != null) 'orderId': orderId,
+    if (purchaseTime != null) 'purchaseTime': purchaseTime,
+    'platform': platform,
+    if (purchaseState != null) 'purchaseState': purchaseState,
+  };
 
   @override
-  List<Object?> get props => [productId, purchaseToken, packageName, orderId, purchaseTime, platform, purchaseState];
+  List<Object?> get props => [
+    productId,
+    purchaseToken,
+    packageName,
+    orderId,
+    purchaseTime,
+    platform,
+    purchaseState,
+  ];
 }

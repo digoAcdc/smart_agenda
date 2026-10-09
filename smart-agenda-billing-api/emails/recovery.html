@@ -1,0 +1,49 @@
+<!doctype html>
+<html lang="pt-BR">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Código para redefinir sua senha</title>
+  </head>
+  <body style="margin:0;padding:0;background:#f4f4f7;font-family:Arial,Helvetica,sans-serif;color:#1f1f29;">
+    <!-- Template do e-mail de recuperação de senha (GoTrue). Só código, sem link:
+         o app pede o código na tela "Esqueci minha senha". -->
+    <table role="presentation" width="100%" cellspacing="0" cellpadding="0" style="background:#f4f4f7;padding:24px 12px;">
+      <tr>
+        <td align="center">
+          <table role="presentation" width="100%" cellspacing="0" cellpadding="0" style="max-width:480px;background:#ffffff;border-radius:16px;padding:32px 28px;">
+            <tr>
+              <td style="font-size:20px;font-weight:bold;color:#6b5cff;padding-bottom:4px;">Smart Agenda</td>
+            </tr>
+            <tr>
+              <td style="font-size:22px;font-weight:bold;padding:12px 0 8px;">Seu código para redefinir a senha</td>
+            </tr>
+            <tr>
+              <td style="font-size:15px;line-height:22px;color:#4a4a57;padding-bottom:20px;">
+                Recebemos um pedido para redefinir a senha da sua conta.
+                <strong>Abra o app Smart Agenda no celular</strong> e digite este código
+                na tela <strong>Esqueci minha senha</strong>:
+              </td>
+            </tr>
+            <tr>
+              <td align="center" style="padding:8px 0 20px;">
+                <div style="display:inline-block;background:#f0eeff;border-radius:12px;padding:16px 28px;font-size:32px;font-weight:bold;letter-spacing:8px;color:#1f1f29;font-family:'Courier New',monospace;">{{ .Token }}</div>
+              </td>
+            </tr>
+            <tr>
+              <td style="font-size:14px;line-height:20px;color:#6d6d7a;padding-bottom:16px;">
+                O código vale por 1 hora e só pode ser usado uma vez.
+                Depois de digitá-lo, o app pede a nova senha.
+              </td>
+            </tr>
+            <tr>
+              <td style="font-size:13px;line-height:19px;color:#8a8a96;border-top:1px solid #ececf2;padding-top:16px;">
+                Não pediu para redefinir a senha? É só ignorar este e-mail; sua senha continua a mesma.
+              </td>
+            </tr>
+          </table>
+        </td>
+      </tr>
+    </table>
+  </body>
+</html>

@@ -2,8 +2,9 @@
 class BillingConstants {
   BillingConstants._();
 
-  /// Product ID da assinatura mensal premium (configurar no Play Console).
-  static const String premiumMonthlyProductId = 'smart_agenda_premium_monthly';
+  /// ID do produto de assinatura no Play Console (Subscriptions > produto).
+  /// O plano basico (ex.: premium-mensal) e interno ao Google Play; aqui vai so o product id.
+  static const String premiumMonthlyProductId = 'smart_agenda_premium';
 
   /// IDs de produtos disponiveis para carregar.
   static const Set<String> productIds = {premiumMonthlyProductId};
@@ -11,12 +12,15 @@ class BillingConstants {
   /// Package name do app Android (deve bater com applicationId).
   static const String packageName = 'com.digo.smartagenda';
 
-  /// Base URL da API de billing Node.
-  /// Exemplo: https://smart-agenda-billing-api.vybg0t.easypanel.host
+  /// Base URL da API Node (assinaturas e e-mail de recuperacao de senha).
+  /// Para sobrescrever: --dart-define=BILLING_API_BASE_URL=...
   static const String billingApiBaseUrl = String.fromEnvironment(
     'BILLING_API_BASE_URL',
-    defaultValue: '',
+    defaultValue: 'https://smart-agenda-billing-api.vybg0t.easypanel.host',
   );
+
+  static bool get hasBillingApiConfigured =>
+      billingApiBaseUrl.trim().isNotEmpty;
 
   /// Plataforma para envio ao backend.
   static const String platform = 'android';

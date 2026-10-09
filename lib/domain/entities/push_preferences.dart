@@ -12,5 +12,9 @@ class PushPreferences extends Equatable {
   final bool pushWeeklySummary;
 
   @override
-  List<Object?> get props => [pushDailySummary, pushTomorrowSummary, pushWeeklySummary];
+  List<Object?> get props => [
+    pushDailySummary,
+    pushTomorrowSummary,
+    pushWeeklySummary,
+  ];
 }

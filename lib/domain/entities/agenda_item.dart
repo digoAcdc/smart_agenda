@@ -20,7 +20,16 @@ class AgendaItem extends Equatable {
     this.reminder,
     this.recurrence,
     this.attachments = const [],
-    this.ownerEmail,
+    this.familyId,
+    this.kind = AgendaItemKind.event,
+    this.subjectType = AgendaSubjectType.none,
+    this.subjectChildId,
+    this.subjectUserId,
+    this.assigneeType = AgendaAssigneeType.none,
+    this.assigneeUserId,
+    this.createdBy,
+    this.updatedBy,
+    this.completedBy,
     this.source = ItemSource.local,
     this.syncState = SyncState.pending,
     required this.createdAt,
@@ -41,13 +50,32 @@ class AgendaItem extends Equatable {
   final ReminderConfig? reminder;
   final RecurrenceRule? recurrence;
   final List<AttachmentRef> attachments;
-  /// Email do dono quando item e compartilhado (somente leitura).
-  final String? ownerEmail;
+
+  /// Familia dona do item. Nulo = agenda pessoal.
+  final String? familyId;
+  final AgendaItemKind kind;
+
+  /// De quem e o item (familia toda, filho ou membro). So vale na familia.
+  final AgendaSubjectType subjectType;
+  final String? subjectChildId;
+  final String? subjectUserId;
+
+  /// Responsavel (ninguem, todos ou um membro). So vale na familia.
+  final AgendaAssigneeType assigneeType;
+  final String? assigneeUserId;
+
+  /// Autoria registrada pelo servidor.
+  final String? createdBy;
+  final String? updatedBy;
+  final String? completedBy;
+
   final ItemSource source;
   final SyncState syncState;
   final DateTime createdAt;
   final DateTime updatedAt;
   final DateTime? deletedAt;
+
+  bool get isFamilyItem => familyId != null;
 
   AgendaItem copyWith({
     String? id,
@@ -63,7 +91,16 @@ class AgendaItem extends Equatable {
     ReminderConfig? reminder,
     RecurrenceRule? recurrence,
     List<AttachmentRef>? attachments,
-    String? ownerEmail,
+    String? familyId,
+    AgendaItemKind? kind,
+    AgendaSubjectType? subjectType,
+    String? subjectChildId,
+    String? subjectUserId,
+    AgendaAssigneeType? assigneeType,
+    String? assigneeUserId,
+    String? createdBy,
+    String? updatedBy,
+    String? completedBy,
     ItemSource? source,
     SyncState? syncState,
     DateTime? createdAt,
@@ -84,7 +121,16 @@ class AgendaItem extends Equatable {
       reminder: reminder ?? this.reminder,
       recurrence: recurrence ?? this.recurrence,
       attachments: attachments ?? this.attachments,
-      ownerEmail: ownerEmail ?? this.ownerEmail,
+      familyId: familyId ?? this.familyId,
+      kind: kind ?? this.kind,
+      subjectType: subjectType ?? this.subjectType,
+      subjectChildId: subjectChildId ?? this.subjectChildId,
+      subjectUserId: subjectUserId ?? this.subjectUserId,
+      assigneeType: assigneeType ?? this.assigneeType,
+      assigneeUserId: assigneeUserId ?? this.assigneeUserId,
+      createdBy: createdBy ?? this.createdBy,
+      updatedBy: updatedBy ?? this.updatedBy,
+      completedBy: completedBy ?? this.completedBy,
       source: source ?? this.source,
       syncState: syncState ?? this.syncState,
       createdAt: createdAt ?? this.createdAt,
@@ -108,7 +154,16 @@ class AgendaItem extends Equatable {
         reminder,
         recurrence,
         attachments,
-        ownerEmail,
+        familyId,
+        kind,
+        subjectType,
+        subjectChildId,
+        subjectUserId,
+        assigneeType,
+        assigneeUserId,
+        createdBy,
+        updatedBy,
+        completedBy,
         source,
         syncState,
         createdAt,

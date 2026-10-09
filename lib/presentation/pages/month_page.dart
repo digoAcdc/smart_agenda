@@ -21,8 +21,10 @@ class _MonthPageState extends State<MonthPage> {
   void initState() {
     super.initState();
     final c = Get.find<AgendaController>();
-    c.loadMonth(DateUtilsEx.startOfMonth(focusedDay),
-        DateUtilsEx.endOfMonth(focusedDay));
+    c.loadMonth(
+      DateUtilsEx.startOfMonth(focusedDay),
+      DateUtilsEx.endOfMonth(focusedDay),
+    );
     c.loadByDay(focusedDay);
   }
 
@@ -48,7 +50,9 @@ class _MonthPageState extends State<MonthPage> {
                 },
                 eventLoader: (day) {
                   final normalized = DateUtilsEx.startOfDay(day);
-                  return controller.monthMarkers.contains(normalized) ? [1] : [];
+                  return controller.monthMarkers.contains(normalized)
+                      ? [1]
+                      : [];
                 },
                 onPageChanged: (focused) {
                   focusedDay = focused;

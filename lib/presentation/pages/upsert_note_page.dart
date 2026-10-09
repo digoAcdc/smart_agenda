@@ -5,10 +5,14 @@ import 'package:get/get.dart';
 import 'package:image_picker/image_picker.dart';
 import 'package:uuid/uuid.dart';
 
+import '../../core/constants/image_upload_constants.dart';
 import '../../core/theme/design_tokens.dart';
+import '../../core/utils/account_prompt_utils.dart';
 import '../../core/utils/form_validators.dart';
 import '../../domain/entities/note.dart';
 import '../../domain/repositories/i_file_storage_service.dart';
+import '../../domain/repositories/i_plan_service.dart';
+import '../controllers/billing_controller.dart';
 import '../controllers/note_controller.dart';
 import '../widgets/checklist_item_tile.dart';
 
@@ -30,6 +34,7 @@ class _UpsertNotePageState extends State<UpsertNotePage> {
   List<ChecklistItem> _checklistItems = [];
   String? _imagePath;
   String? _imageUrl;
+  bool _isPremium = false;
 
   @override
   void initState() {
@@ -43,6 +48,23 @@ class _UpsertNotePageState extends State<UpsertNotePage> {
       _imagePath = arg.imagePath;
       _imageUrl = arg.imageUrl;
     }
+    _loadPlanStatus();
+  }
+
+  Future<void> _loadPlanStatus() async {
+    final plan = Get.find<IPlanService>();
+    await plan.refresh();
+    var isPremium = await plan.isPremium();
+    if (!isPremium && Get.isRegistered<BillingController>()) {
+      await Get.find<BillingController>().revalidateInBackground(
+        triggerRestore: true,
+        reason: 'upsert_note_gate',
+      );
+      await plan.refresh();
+      isPremium = await plan.isPremium();
+    }
+    if (!mounted) return;
+    setState(() => _isPremium = isPremium);
   }
 
   @override
@@ -54,7 +76,21 @@ class _UpsertNotePageState extends State<UpsertNotePage> {
   }
 
   Future<void> _addImage() async {
-    final picked = await _imagePicker.pickImage(source: ImageSource.gallery);
+    if (!_isPremium) {
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text('Anexar imagens é um recurso do plano Pro.'),
+        ),
+      );
+      return;
+    }
+    final picked = await _imagePicker.pickImage(
+      source: ImageSource.gallery,
+      maxWidth: ImageUploadConstants.pickImageMaxWidth,
+      maxHeight: ImageUploadConstants.pickImageMaxHeight,
+      imageQuality: ImageUploadConstants.pickImageQuality,
+    );
     if (picked == null) return;
     final fileStorage = Get.find<IFileStorageService>();
     final result = await fileStorage.copyImageToAppStorage(picked.path);
@@ -113,6 +149,9 @@ class _UpsertNotePageState extends State<UpsertNotePage> {
 
   Future<void> _save() async {
     if (!_formKey.currentState!.validate()) return;
+    final canProceed = await AccountPromptUtils.confirmSaveWithoutAccount();
+    if (!canProceed) return;
+
     final controller = Get.find<NoteController>();
     final now = DateTime.now();
     final noteId = _editingNote?.id ?? const Uuid().v4();
@@ -143,9 +182,9 @@ class _UpsertNotePageState extends State<UpsertNotePage> {
       await controller.createNote(note);
     }
     if (mounted) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Anotacao salva')),
-      );
+      ScaffoldMessenger.of(
+        context,
+      ).showSnackBar(const SnackBar(content: Text('Anotação salva')));
       Get.back();
     }
   }
@@ -154,10 +193,8 @@ class _UpsertNotePageState extends State<UpsertNotePage> {
     if (_editingNote == null) return;
     final ok = await Get.dialog<bool>(
       AlertDialog(
-        title: const Text('Excluir anotacao?'),
-        content: const Text(
-          'Esta acao nao pode ser desfeita.',
-        ),
+        title: const Text('Excluir anotação?'),
+        content: const Text('Esta ação não pode ser desfeita.'),
         actions: [
           TextButton(
             onPressed: () => Get.back(result: false),
@@ -167,6 +204,7 @@ class _UpsertNotePageState extends State<UpsertNotePage> {
             onPressed: () => Get.back(result: true),
             style: FilledButton.styleFrom(
               backgroundColor: Theme.of(context).colorScheme.error,
+              minimumSize: const Size(0, 44),
             ),
             child: const Text('Excluir'),
           ),
@@ -176,9 +214,9 @@ class _UpsertNotePageState extends State<UpsertNotePage> {
     if (ok != true) return;
     await Get.find<NoteController>().deleteNote(_editingNote!.id);
     if (mounted) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Anotacao excluida')),
-      );
+      ScaffoldMessenger.of(
+        context,
+      ).showSnackBar(const SnackBar(content: Text('Anotação excluída')));
     }
     Get.back();
   }
@@ -190,12 +228,9 @@ class _UpsertNotePageState extends State<UpsertNotePage> {
 
     return Scaffold(
       appBar: AppBar(
-        title: Text(isEditing ? 'Editar anotacao' : 'Nova anotacao'),
+        title: Text(isEditing ? 'Editar anotação' : 'Nova anotação'),
         actions: [
-          TextButton(
-            onPressed: _save,
-            child: const Text('Salvar'),
-          ),
+          TextButton(onPressed: _save, child: const Text('Salvar')),
           if (isEditing)
             IconButton(
               icon: const Icon(Icons.delete_outline),
@@ -212,28 +247,25 @@ class _UpsertNotePageState extends State<UpsertNotePage> {
             TextFormField(
               controller: _titleController,
               decoration: const InputDecoration(
-                labelText: 'Titulo *',
+                labelText: 'Título *',
                 hintText: 'Ex: Ideias para o projeto',
               ),
               textCapitalization: TextCapitalization.sentences,
-              validator: (v) => requiredValidator(v, 'Titulo e obrigatorio'),
+              validator: (v) => requiredValidator(v, 'Título é obrigatório'),
             ),
             const SizedBox(height: DesignTokens.spaceMd),
             TextFormField(
               controller: _bodyController,
               decoration: const InputDecoration(
                 labelText: 'Texto (opcional)',
-                hintText: 'Escreva suas anotacoes aqui...',
+                hintText: 'Escreva suas anotações aqui...',
                 alignLabelWithHint: true,
               ),
               maxLines: 4,
               textCapitalization: TextCapitalization.sentences,
             ),
             const SizedBox(height: DesignTokens.spaceLg),
-            Text(
-              'Checklist',
-              style: theme.textTheme.titleSmall,
-            ),
+            Text('Checklist', style: theme.textTheme.titleSmall),
             const SizedBox(height: DesignTokens.spaceSm),
             ...List.generate(_checklistItems.length, (i) {
               final item = _checklistItems[i];
@@ -243,7 +275,10 @@ class _UpsertNotePageState extends State<UpsertNotePage> {
                 onChanged: (completed) {
                   _updateChecklistItem(
                     i,
-                    item.copyWith(completed: completed, updatedAt: DateTime.now()),
+                    item.copyWith(
+                      completed: completed,
+                      updatedAt: DateTime.now(),
+                    ),
                   );
                 },
                 onRemove: () => _removeChecklistItem(i),
@@ -271,17 +306,41 @@ class _UpsertNotePageState extends State<UpsertNotePage> {
               ],
             ),
             const SizedBox(height: DesignTokens.spaceLg),
-            Text(
-              'Imagem (opcional)',
-              style: theme.textTheme.titleSmall,
-            ),
+            Text('Imagem (opcional)', style: theme.textTheme.titleSmall),
+            if (!_isPremium) ...[
+              const SizedBox(height: DesignTokens.spaceXs),
+              Container(
+                padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                decoration: BoxDecoration(
+                  color: theme.colorScheme.outline.withValues(alpha: 0.12),
+                  borderRadius: BorderRadius.circular(999),
+                ),
+                child: Row(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    Icon(
+                      Icons.lock_outline,
+                      size: 14,
+                      color: theme.colorScheme.outline,
+                    ),
+                    const SizedBox(width: 4),
+                    Text(
+                      'Pro',
+                      style: theme.textTheme.labelSmall?.copyWith(
+                        color: theme.colorScheme.outline,
+                        fontWeight: FontWeight.w600,
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+            ],
             const SizedBox(height: DesignTokens.spaceSm),
             if (_imagePath != null || _imageUrl != null) ...[
               Stack(
                 children: [
                   ClipRRect(
-                    borderRadius:
-                        BorderRadius.circular(DesignTokens.radiusMd),
+                    borderRadius: BorderRadius.circular(DesignTokens.radiusMd),
                     child: _imagePath != null
                         ? Image.file(
                             File(_imagePath!),
@@ -315,7 +374,7 @@ class _UpsertNotePageState extends State<UpsertNotePage> {
               const SizedBox(height: DesignTokens.spaceSm),
             ],
             OutlinedButton.icon(
-              onPressed: _addImage,
+              onPressed: _isPremium ? _addImage : null,
               icon: const Icon(Icons.add_photo_alternate_outlined),
               label: const Text('Adicionar imagem'),
             ),

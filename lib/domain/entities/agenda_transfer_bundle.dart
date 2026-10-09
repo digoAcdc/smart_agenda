@@ -27,15 +27,15 @@ class AgendaTransferBundle extends Equatable {
   final List<ClassScheduleTransferSlot> classScheduleSlots;
 
   String? validate() {
-    if (schemaVersion <= 0) return 'Versao do schema invalida.';
+    if (schemaVersion <= 0) return 'Versão do schema inválida.';
     if (schemaVersion > currentSchemaVersion) {
-      return 'Arquivo de agenda usa uma versao mais nova do formato.';
+      return 'Arquivo de agenda usa uma versão mais nova do formato.';
     }
 
     final groupIds = groups.map((e) => e.id).toSet();
     for (final item in items) {
       if (item.title.trim().isEmpty) {
-        return 'Evento com titulo vazio encontrado no arquivo.';
+        return 'Evento com título vazio encontrado no arquivo.';
       }
       if (item.groupId != null && !groupIds.contains(item.groupId)) {
         return 'Evento referencia grupo inexistente.';
@@ -43,10 +43,10 @@ class AgendaTransferBundle extends Equatable {
     }
     for (final slot in classScheduleSlots) {
       if (slot.dayOfWeek < 1 || slot.dayOfWeek > 7) {
-        return 'Slot da grade horaria com dia da semana invalido.';
+        return 'Slot da grade horária com dia da semana inválido.';
       }
       if (slot.endMinutes <= slot.startMinutes) {
-        return 'Slot da grade horaria com horario invalido.';
+        return 'Slot da grade horária com horário inválido.';
       }
     }
     return null;
@@ -59,8 +59,9 @@ class AgendaTransferBundle extends Equatable {
       'appName': appName,
       'groups': groups.map(AgendaTransferCodec.groupToJson).toList(),
       'items': items.map(AgendaTransferCodec.itemToJson).toList(),
-      'classScheduleSlots':
-          classScheduleSlots.map(AgendaTransferCodec.classSlotToJson).toList(),
+      'classScheduleSlots': classScheduleSlots
+          .map(AgendaTransferCodec.classSlotToJson)
+          .toList(),
     };
   }
 
@@ -69,30 +70,33 @@ class AgendaTransferBundle extends Equatable {
         .whereType<Map<String, dynamic>>();
     final rawItems = (json['items'] as List<dynamic>? ?? const [])
         .whereType<Map<String, dynamic>>();
-    final rawClassSlots = (json['classScheduleSlots'] as List<dynamic>? ?? const [])
-        .whereType<Map<String, dynamic>>();
+    final rawClassSlots =
+        (json['classScheduleSlots'] as List<dynamic>? ?? const [])
+            .whereType<Map<String, dynamic>>();
 
     return AgendaTransferBundle(
       schemaVersion: json['schemaVersion'] as int? ?? 1,
-      exportedAt: DateTime.tryParse(json['exportedAt'] as String? ?? '') ??
+      exportedAt:
+          DateTime.tryParse(json['exportedAt'] as String? ?? '') ??
           DateTime.now(),
       appName: json['appName'] as String? ?? 'smart_agenda',
       groups: rawGroups.map(AgendaTransferCodec.groupFromJson).toList(),
       items: rawItems.map(AgendaTransferCodec.itemFromJson).toList(),
-      classScheduleSlots:
-          rawClassSlots.map(AgendaTransferCodec.classSlotFromJson).toList(),
+      classScheduleSlots: rawClassSlots
+          .map(AgendaTransferCodec.classSlotFromJson)
+          .toList(),
     );
   }
 
   @override
   List<Object?> get props => [
-        schemaVersion,
-        exportedAt,
-        appName,
-        groups,
-        items,
-        classScheduleSlots,
-      ];
+    schemaVersion,
+    exportedAt,
+    appName,
+    groups,
+    items,
+    classScheduleSlots,
+  ];
 }
 
 class ClassScheduleTransferSlot extends Equatable {
@@ -122,17 +126,17 @@ class ClassScheduleTransferSlot extends Equatable {
 
   @override
   List<Object?> get props => [
-        id,
-        dayOfWeek,
-        startMinutes,
-        endMinutes,
-        subject,
-        professorName,
-        professorEmail,
-        professorPhone,
-        createdAt,
-        updatedAt,
-      ];
+    id,
+    dayOfWeek,
+    startMinutes,
+    endMinutes,
+    subject,
+    professorName,
+    professorEmail,
+    professorPhone,
+    createdAt,
+    updatedAt,
+  ];
 }
 
 class AgendaTransferImportReport extends Equatable {
@@ -162,17 +166,17 @@ class AgendaTransferImportReport extends Equatable {
 
   @override
   List<Object?> get props => [
-        createdGroups,
-        updatedGroups,
-        skippedGroups,
-        createdItems,
-        updatedItems,
-        skippedItems,
-        reScheduledReminders,
-        createdClassSlots,
-        updatedClassSlots,
-        skippedClassSlots,
-      ];
+    createdGroups,
+    updatedGroups,
+    skippedGroups,
+    createdItems,
+    updatedItems,
+    skippedItems,
+    reScheduledReminders,
+    createdClassSlots,
+    updatedClassSlots,
+    skippedClassSlots,
+  ];
 }
 
 class AgendaTransferExportData extends Equatable {
@@ -212,9 +216,11 @@ class AgendaTransferCodec {
       colorHex: json['colorHex'] as String?,
       iconCode: json['iconCode'] as int?,
       createdAt:
-          DateTime.tryParse(json['createdAt'] as String? ?? '') ?? DateTime.now(),
+          DateTime.tryParse(json['createdAt'] as String? ?? '') ??
+          DateTime.now(),
       updatedAt:
-          DateTime.tryParse(json['updatedAt'] as String? ?? '') ?? DateTime.now(),
+          DateTime.tryParse(json['updatedAt'] as String? ?? '') ??
+          DateTime.now(),
       deletedAt: json['deletedAt'] == null
           ? null
           : DateTime.tryParse(json['deletedAt'] as String),
@@ -274,9 +280,11 @@ class AgendaTransferCodec {
         orElse: () => SyncState.pending,
       ),
       createdAt:
-          DateTime.tryParse(json['createdAt'] as String? ?? '') ?? DateTime.now(),
+          DateTime.tryParse(json['createdAt'] as String? ?? '') ??
+          DateTime.now(),
       updatedAt:
-          DateTime.tryParse(json['updatedAt'] as String? ?? '') ?? DateTime.now(),
+          DateTime.tryParse(json['updatedAt'] as String? ?? '') ??
+          DateTime.now(),
       deletedAt: json['deletedAt'] == null
           ? null
           : DateTime.tryParse(json['deletedAt'] as String),
@@ -319,7 +327,8 @@ class AgendaTransferCodec {
       title: json['title'] as String?,
       mimeType: json['mimeType'] as String?,
       sizeBytes: json['sizeBytes'] as int?,
-      createdAt: DateTime.tryParse(json['createdAt'] as String? ?? '') ??
+      createdAt:
+          DateTime.tryParse(json['createdAt'] as String? ?? '') ??
           DateTime.now(),
     );
   }
@@ -339,7 +348,9 @@ class AgendaTransferCodec {
     };
   }
 
-  static ClassScheduleTransferSlot classSlotFromJson(Map<String, dynamic> json) {
+  static ClassScheduleTransferSlot classSlotFromJson(
+    Map<String, dynamic> json,
+  ) {
     return ClassScheduleTransferSlot(
       id: json['id'] as String? ?? '',
       dayOfWeek: json['dayOfWeek'] as int? ?? 1,
@@ -349,9 +360,11 @@ class AgendaTransferCodec {
       professorName: json['professorName'] as String?,
       professorEmail: json['professorEmail'] as String?,
       professorPhone: json['professorPhone'] as String?,
-      createdAt: DateTime.tryParse(json['createdAt'] as String? ?? '') ??
+      createdAt:
+          DateTime.tryParse(json['createdAt'] as String? ?? '') ??
           DateTime.now(),
-      updatedAt: DateTime.tryParse(json['updatedAt'] as String? ?? '') ??
+      updatedAt:
+          DateTime.tryParse(json['updatedAt'] as String? ?? '') ??
           DateTime.now(),
     );
   }

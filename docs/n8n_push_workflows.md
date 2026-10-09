@@ -13,6 +13,8 @@ O app usa o campo **`data`** do push para saber o que abrir. Envie sempre:
 - **Resumo diário**: `type: "daily_summary"`, `date: "2025-03-10"` (o dia)
 - **Resumo amanhã**: `type: "tomorrow_summary"`, `date: "2025-03-11"` (amanhã)
 - **Resumo semanal**: `type: "weekly_summary"`, `date: "2025-03-10"` (segunda-feira da semana)
+  - Regra operacional: se o envio acontecer no **domingo**, use a **segunda-feira seguinte** como `date`.
+  - Exemplo: envio em `2026-03-22` (domingo) -> `date: "2026-03-23"` (abre semana `23` a `29`).
 
 O app abre a aba Agenda e seleciona essa data.
 
@@ -201,7 +203,8 @@ Para só obter o count: `Prefer: count=exact` + `Range: 0-0`.
 4. **Loop** – para cada item com `event_count > 0`:
    - Título: "Sua semana"
    - `data.type`: `weekly_summary`
-   - `data.date`: `{{reference_date}}` (segunda-feira)
+   - `data.date`: `{{reference_date}}` (segunda-feira da semana a abrir)
+   - No domingo, `reference_date` deve ser a **próxima segunda**.
 
 ---
 

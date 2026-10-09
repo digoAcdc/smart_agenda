@@ -11,9 +11,9 @@ class AgendaTransferController extends GetxController {
     required ExportAgendaToFile exportAgendaToFile,
     required ImportAgendaFromFile importAgendaFromFile,
     required AgendaController agendaController,
-  })  : _exportAgendaToFile = exportAgendaToFile,
-        _importAgendaFromFile = importAgendaFromFile,
-        _agendaController = agendaController;
+  }) : _exportAgendaToFile = exportAgendaToFile,
+       _importAgendaFromFile = importAgendaFromFile,
+       _agendaController = agendaController;
 
   final ExportAgendaToFile _exportAgendaToFile;
   final ImportAgendaFromFile _importAgendaFromFile;
@@ -61,7 +61,7 @@ class AgendaTransferController extends GetxController {
       );
       final path = picked?.files.single.path;
       if (path == null || path.trim().isEmpty) {
-        message.value = 'Importacao cancelada.';
+        message.value = 'Importação cancelada.';
         return null;
       }
 

@@ -4,6 +4,9 @@ import 'package:get/get.dart';
 import '../../core/config/supabase_config.dart';
 import '../../core/routes/app_routes.dart';
 import '../../core/theme/design_tokens.dart';
+import '../widgets/section_header.dart';
+import '../widgets/ui_primitives.dart';
+import '../../domain/repositories/i_family_service.dart';
 
 /// Tela central de modulos - acesso a todas as funcionalidades do app.
 /// Mantem o rodape limpo com as principais, e concentra o resto aqui.
@@ -12,155 +15,191 @@ class MorePage extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final primary = Theme.of(context).colorScheme.primary;
     return Scaffold(
-      appBar: AppBar(
-        title: const Text('Mais'),
-      ),
       body: SafeArea(
-        top: false,
         bottom: false,
-        child: ListView(
-          padding: const EdgeInsets.all(DesignTokens.spaceMd),
+        child: Column(
           children: [
-            Text(
-              'Funcionalidades',
-              style: Theme.of(context).textTheme.titleMedium?.copyWith(
-                    color: Theme.of(context).colorScheme.onSurfaceVariant,
+            // Mesmo cabecalho das outras abas.
+            const SectionHeader(title: 'Mais'),
+            Expanded(
+              child: ListView(
+                padding: const EdgeInsets.fromLTRB(
+                  DesignTokens.spaceMd,
+                  0,
+                  DesignTokens.spaceMd,
+                  DesignTokens.spaceMd,
+                ),
+                children: [
+                  Padding(
+                    padding: const EdgeInsets.fromLTRB(0, 0, 0, 8),
+                    child: Text(
+                      'FUNCIONALIDADES',
+                      style: Theme.of(context).textTheme.labelMedium?.copyWith(
+                        color: Theme.of(context).colorScheme.outline,
+                        fontWeight: FontWeight.w700,
+                        letterSpacing: 0.8,
+                      ),
+                    ),
                   ),
-            ),
-            const SizedBox(height: DesignTokens.spaceSm),
-            _ModuleGrid(
-              children: [
-                _ModuleCard(
-                  icon: Icons.group_rounded,
-                  label: 'Turmas',
-                  subtitle: 'Turmas, salas e contatos',
-                  onTap: () => Get.toNamed(AppRoutes.classGroups),
-                ),
-                _ModuleCard(
-                  icon: Icons.note_rounded,
-                  label: 'Anotacoes',
-                  subtitle: 'Notas rapidas e checklist',
-                  onTap: () => Get.toNamed(AppRoutes.notes),
-                ),
-                _ModuleCard(
-                  icon: Icons.notifications_rounded,
-                  label: 'Notificacoes',
-                  subtitle: 'Preferencias de push',
-                  onTap: () => Get.toNamed(AppRoutes.notifications),
-                ),
-                if (SupabaseConfig.isConfigured)
-                  _ModuleCard(
-                    icon: Icons.share_rounded,
-                    label: 'Compartilhar',
-                    subtitle: 'Compartilhe sua agenda',
-                    onTap: () => Get.toNamed(AppRoutes.sharing),
+                  AppSurfaceCard(
+                    padding: EdgeInsets.zero,
+                    child: Column(
+                      children: [
+                        _buildActionTile(
+                          context: context,
+                          icon: Icons.group_rounded,
+                          iconColor: primary,
+                          title: 'Turmas',
+                          subtitle: 'Turmas, salas e contatos',
+                          onTap: () => Get.toNamed(AppRoutes.classGroups),
+                        ),
+                        const Divider(height: 1),
+                        _buildActionTile(
+                          context: context,
+                          icon: Icons.note_rounded,
+                          iconColor: primary,
+                          title: 'Anotações',
+                          subtitle: 'Notas rápidas e checklist',
+                          onTap: () => Get.toNamed(AppRoutes.notes),
+                        ),
+                        const Divider(height: 1),
+                        _buildActionTile(
+                          context: context,
+                          icon: Icons.notifications_rounded,
+                          iconColor: primary,
+                          title: 'Notificações',
+                          subtitle: 'Preferências de push',
+                          onTap: () => Get.toNamed(AppRoutes.notifications),
+                        ),
+                        if (SupabaseConfig.isConfigured) ...[
+                          const Divider(height: 1),
+                          Obx(() {
+                            final family = Get.find<IFamilyService>();
+                            final ctx = family.context;
+                            final invites = family.myInvites.length;
+                            return _buildActionTile(
+                              context: context,
+                              icon: Icons.family_restroom_rounded,
+                              iconColor: primary,
+                              title: 'Família',
+                              subtitle: ctx.hasFamily
+                                  ? ctx.familyName ?? 'Sua Família'
+                                  : invites > 0
+                                  ? (invites == 1
+                                        ? '1 convite pendente'
+                                        : '$invites convites pendentes')
+                                  : 'Agenda compartilhada da família',
+                              onTap: () => Get.toNamed(AppRoutes.family),
+                            );
+                          }),
+                        ],
+                      ],
+                    ),
                   ),
-              ],
+                ],
+              ),
             ),
           ],
         ),
       ),
     );
   }
-}
 
-class _ModuleGrid extends StatelessWidget {
-  const _ModuleGrid({required this.children});
-
-  final List<Widget> children;
-
-  @override
-  Widget build(BuildContext context) {
-    return LayoutBuilder(
-      builder: (context, constraints) {
-        return Wrap(
-          spacing: DesignTokens.spaceSm,
-          runSpacing: DesignTokens.spaceSm,
-          children: children,
-        );
-      },
-    );
-  }
-}
-
-class _ModuleCard extends StatelessWidget {
-  const _ModuleCard({
-    required this.icon,
-    required this.label,
-    required this.subtitle,
-    required this.onTap,
-  });
-
-  final IconData icon;
-  final String label;
-  final String subtitle;
-  final VoidCallback onTap;
-
-  @override
-  Widget build(BuildContext context) {
-    return LayoutBuilder(
-      builder: (context, constraints) {
-        final width = (MediaQuery.of(context).size.width -
-                DesignTokens.spaceMd * 2 -
-                DesignTokens.spaceSm) /
-            2;
-        return SizedBox(
-          width: width,
-          child: Material(
-            color: Theme.of(context).colorScheme.surfaceContainerLow,
-            borderRadius: BorderRadius.circular(DesignTokens.radiusLg),
-            child: InkWell(
-              onTap: onTap,
-              borderRadius: BorderRadius.circular(DesignTokens.radiusLg),
-              child: Padding(
-                padding: const EdgeInsets.all(DesignTokens.spaceMd),
+  Widget _buildActionTile({
+    required BuildContext context,
+    required IconData icon,
+    required Color iconColor,
+    required String title,
+    required String subtitle,
+    required VoidCallback onTap,
+    bool isPremiumLocked = false,
+    double opacity = 1.0,
+  }) {
+    return Opacity(
+      opacity: opacity,
+      child: InkWell(
+        onTap: onTap,
+        borderRadius: BorderRadius.circular(DesignTokens.radiusMd),
+        child: Padding(
+          padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 12),
+          child: Row(
+            children: [
+              Container(
+                width: 44,
+                height: 44,
+                decoration: BoxDecoration(
+                  color: iconColor.withValues(alpha: 0.12),
+                  shape: BoxShape.circle,
+                ),
+                child: Icon(icon, color: iconColor, size: 22),
+              ),
+              const SizedBox(width: 16),
+              Expanded(
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
-                  mainAxisSize: MainAxisSize.min,
                   children: [
-                    Container(
-                      width: 44,
-                      height: 44,
-                      decoration: BoxDecoration(
-                        color: Theme.of(context)
-                            .colorScheme
-                            .primaryContainer
-                            .withValues(alpha: 0.5),
-                        borderRadius:
-                            BorderRadius.circular(DesignTokens.radiusMd),
+                    if (isPremiumLocked)
+                      Padding(
+                        padding: const EdgeInsets.only(bottom: 4),
+                        child: Container(
+                          padding: const EdgeInsets.symmetric(
+                            horizontal: 8,
+                            vertical: 2,
+                          ),
+                          decoration: BoxDecoration(
+                            color: Theme.of(
+                              context,
+                            ).colorScheme.outline.withValues(alpha: 0.12),
+                            borderRadius: BorderRadius.circular(999),
+                          ),
+                          child: Row(
+                            mainAxisSize: MainAxisSize.min,
+                            children: [
+                              Icon(
+                                Icons.lock_outline,
+                                size: 14,
+                                color: Theme.of(context).colorScheme.outline,
+                              ),
+                              const SizedBox(width: 4),
+                              Text(
+                                'Pro',
+                                style: Theme.of(context).textTheme.labelSmall
+                                    ?.copyWith(
+                                      color: Theme.of(
+                                        context,
+                                      ).colorScheme.outline,
+                                      fontWeight: FontWeight.w600,
+                                    ),
+                              ),
+                            ],
+                          ),
+                        ),
                       ),
-                      child: Icon(
-                        icon,
-                        color: Theme.of(context).colorScheme.primary,
-                        size: 24,
-                      ),
-                    ),
-                    const SizedBox(height: DesignTokens.spaceSm),
                     Text(
-                      label,
-                      style: Theme.of(context).textTheme.titleSmall,
-                      maxLines: 1,
-                      overflow: TextOverflow.ellipsis,
+                      title,
+                      style: Theme.of(context).textTheme.titleSmall?.copyWith(
+                        fontWeight: FontWeight.w600,
+                      ),
                     ),
                     const SizedBox(height: 2),
                     Text(
                       subtitle,
                       style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                            color: Theme.of(context)
-                                .colorScheme
-                                .onSurfaceVariant,
-                          ),
-                      maxLines: 1,
+                        color: Theme.of(context).colorScheme.onSurfaceVariant,
+                      ),
+                      maxLines: 2,
                       overflow: TextOverflow.ellipsis,
                     ),
                   ],
                 ),
               ),
-            ),
+              Icon(Icons.chevron_right, size: 24, color: iconColor),
+            ],
           ),
-        );
-      },
+        ),
+      ),
     );
   }
 }

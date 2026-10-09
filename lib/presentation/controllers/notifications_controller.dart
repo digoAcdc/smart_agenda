@@ -23,8 +23,7 @@ class NotificationsController extends GetxController {
 
   final RxBool savingPrefs = false.obs;
 
-  int get unreadCount =>
-      notifications.where((n) => !n.isRead).length;
+  int get unreadCount => notifications.where((n) => !n.isRead).length;
 
   @override
   void onInit() {

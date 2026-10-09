@@ -38,15 +38,14 @@ class _RegisterPageState extends State<RegisterPage> {
     );
     if (!mounted) return;
     if (ok) {
+      // A conta ja nasce confirmada e logada: nada de mandar para o login.
       ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          content: const Text(
-            'Conta criada! Verifique seu e-mail para confirmar.',
-          ),
-          backgroundColor: Theme.of(context).colorScheme.primaryContainer,
+        const SnackBar(
+          content: Text('Conta criada! Bem-vindo(a) ao Smart Agenda.'),
         ),
       );
-      Get.offAllNamed(AppRoutes.login);
+      final from = Get.arguments is Map ? (Get.arguments as Map)['from'] : null;
+      Get.offAllNamed(from == 'premium' ? AppRoutes.upgrade : AppRoutes.home);
     } else {
       final msg = authController.errorMessage.value ?? 'Erro ao cadastrar.';
       ScaffoldMessenger.of(context).showSnackBar(
@@ -63,9 +62,7 @@ class _RegisterPageState extends State<RegisterPage> {
     final authController = Get.find<AuthController>();
     return Scaffold(
       backgroundColor: context.palette.appBackground,
-      appBar: AppBar(
-        title: const Text('Cadastro'),
-      ),
+      appBar: AppBar(title: const Text('Cadastro')),
       body: SafeArea(
         child: SingleChildScrollView(
           padding: const EdgeInsets.symmetric(horizontal: DesignTokens.spaceMd),
@@ -76,16 +73,16 @@ class _RegisterPageState extends State<RegisterPage> {
                 const SizedBox(height: DesignTokens.spaceLg),
                 Text(
                   'Crie sua conta',
-                  style: Theme.of(context).textTheme.titleLarge?.copyWith(
-                        fontWeight: FontWeight.w700,
-                      ),
+                  style: Theme.of(
+                    context,
+                  ).textTheme.titleLarge?.copyWith(fontWeight: FontWeight.w700),
                 ),
                 const SizedBox(height: DesignTokens.spaceXs),
                 Text(
                   'Preencha os dados abaixo para se cadastrar',
                   style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                        color: Theme.of(context).colorScheme.onSurfaceVariant,
-                      ),
+                    color: Theme.of(context).colorScheme.onSurfaceVariant,
+                  ),
                   textAlign: TextAlign.center,
                 ),
                 const SizedBox(height: DesignTokens.spaceXl),
@@ -107,9 +104,10 @@ class _RegisterPageState extends State<RegisterPage> {
                           if (v == null || v.trim().isEmpty) {
                             return 'Informe seu e-mail';
                           }
-                          if (!RegExp(r'^[\w-\.]+@([\w-]+\.)+[\w-]{2,4}$')
-                              .hasMatch(v.trim())) {
-                            return 'E-mail invalido';
+                          if (!RegExp(
+                            r'^[\w-\.]+@([\w-]+\.)+[\w-]{2,4}$',
+                          ).hasMatch(v.trim())) {
+                            return 'E-mail inválido';
                           }
                           return null;
                         },
@@ -120,7 +118,7 @@ class _RegisterPageState extends State<RegisterPage> {
                         obscureText: true,
                         decoration: const InputDecoration(
                           labelText: 'Senha',
-                          hintText: 'Minimo 6 caracteres',
+                          hintText: 'Mínimo 6 caracteres',
                           prefixIcon: Icon(Icons.lock_outline),
                         ),
                         validator: (v) {
@@ -147,7 +145,7 @@ class _RegisterPageState extends State<RegisterPage> {
                             return 'Confirme sua senha';
                           }
                           if (v != _passwordController.text) {
-                            return 'As senhas nao coincidem';
+                            return 'As senhas não coincidem';
                           }
                           return null;
                         },
@@ -161,15 +159,24 @@ class _RegisterPageState extends State<RegisterPage> {
                           onPressed: _handleRegister,
                         ),
                       ),
-                      if (authController.errorMessage.value != null) ...[
-                        const SizedBox(height: DesignTokens.spaceSm),
-                        Text(
-                          authController.errorMessage.value!,
-                          style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                                color: context.semanticColors.danger,
-                              ),
-                        ),
-                      ],
+                      Obx(() {
+                        final msg = authController.errorMessage.value;
+                        if (msg == null || msg.isEmpty) {
+                          return const SizedBox.shrink();
+                        }
+                        return Padding(
+                          padding: const EdgeInsets.only(
+                            top: DesignTokens.spaceSm,
+                          ),
+                          child: Text(
+                            msg,
+                            style: Theme.of(context).textTheme.bodySmall
+                                ?.copyWith(
+                                  color: context.semanticColors.danger,
+                                ),
+                          ),
+                        );
+                      }),
                     ],
                   ),
                 ),
@@ -178,7 +185,7 @@ class _RegisterPageState extends State<RegisterPage> {
                   mainAxisAlignment: MainAxisAlignment.center,
                   children: [
                     Text(
-                      'Ja tem conta? ',
+                      'Já tem conta? ',
                       style: Theme.of(context).textTheme.bodyMedium,
                     ),
                     TextButton(

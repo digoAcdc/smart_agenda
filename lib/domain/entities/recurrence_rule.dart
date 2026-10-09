@@ -22,7 +22,7 @@ class RecurrenceRule extends Equatable {
   String get label {
     switch (type) {
       case RecurrenceType.none:
-        return 'Nao repete';
+        return 'Não repete';
       case RecurrenceType.daily:
         return interval == 1
             ? 'Repete diariamente'
@@ -36,18 +36,18 @@ class RecurrenceRule extends Equatable {
             ? 'Repete mensalmente'
             : 'Repete a cada $interval meses';
       case RecurrenceType.custom:
-        return 'Recorrencia personalizada';
+        return 'Recorrência personalizada';
     }
   }
 
   Map<String, dynamic> toJson() => {
-        'type': type.name,
-        'interval': interval,
-        'byWeekDays': byWeekDays,
-        'count': count,
-        'until': until?.toIso8601String(),
-        'exceptions': exceptions.map((e) => e.toIso8601String()).toList(),
-      };
+    'type': type.name,
+    'interval': interval,
+    'byWeekDays': byWeekDays,
+    'count': count,
+    'until': until?.toIso8601String(),
+    'exceptions': exceptions.map((e) => e.toIso8601String()).toList(),
+  };
 
   factory RecurrenceRule.fromJson(Map<String, dynamic> json) {
     final days = json['byWeekDays'] as List<dynamic>?;
@@ -70,6 +70,12 @@ class RecurrenceRule extends Equatable {
   }
 
   @override
-  List<Object?> get props =>
-      [type, interval, byWeekDays, count, until, exceptions];
+  List<Object?> get props => [
+    type,
+    interval,
+    byWeekDays,
+    count,
+    until,
+    exceptions,
+  ];
 }

@@ -1,4 +1,7 @@
+import 'dart:async';
+
 import 'package:flutter/foundation.dart';
+import 'package:flutter/widgets.dart';
 import 'package:get/get.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
@@ -7,14 +10,16 @@ import '../../core/config/supabase_config.dart';
 import '../../core/services/firebase_service.dart';
 import '../../data/datasources/fcm_token_supabase_datasource.dart';
 import '../../domain/repositories/i_auth_service.dart';
-import '../../domain/repositories/i_local_to_cloud_migration_service.dart';
+import '../../domain/repositories/i_family_service.dart';
 import '../../domain/repositories/i_sync_service.dart';
 import '../../domain/repositories/i_plan_service.dart';
+import '../../domain/repositories/i_premium_service.dart';
+import 'billing_controller.dart';
 
 const _keyRememberMe = 'auth_remember_me';
 const _keyRememberEmail = 'auth_remember_email';
 
-class AuthController extends GetxController {
+class AuthController extends GetxController with WidgetsBindingObserver {
   AuthController(this._authService, this._planService);
 
   final IAuthService _authService;
@@ -23,16 +28,40 @@ class AuthController extends GetxController {
   final RxBool loading = false.obs;
   final RxnString errorMessage = RxnString();
   final RxBool isLoggedIn = false.obs;
+  final RxBool authChecked = false.obs;
   final RxnString userEmail = RxnString();
   final RxBool isPremium = false.obs;
   final RxBool rememberMe = true.obs;
   final RxnString rememberedEmail = RxnString();
+  DateTime? _lastResumeRevalidation;
 
   @override
   void onInit() {
     super.onInit();
+    WidgetsBinding.instance.addObserver(this);
     _loadRememberMe();
     _checkAuth();
+  }
+
+  @override
+  void onClose() {
+    WidgetsBinding.instance.removeObserver(this);
+    super.onClose();
+  }
+
+  @override
+  void didChangeAppLifecycleState(AppLifecycleState state) {
+    if (state != AppLifecycleState.resumed) return;
+    if (!isLoggedIn.value) return;
+    final now = DateTime.now();
+    final last = _lastResumeRevalidation;
+    if (last != null && now.difference(last) < const Duration(minutes: 3)) {
+      return;
+    }
+    _lastResumeRevalidation = now;
+    unawaited(
+      _revalidateSubscription(reason: 'app_resume', withRestore: false),
+    );
   }
 
   Future<void> _loadRememberMe() async {
@@ -52,18 +81,24 @@ class AuthController extends GetxController {
   }
 
   Future<void> _checkAuth() async {
+    authChecked.value = false;
     final result = await _authService.isLoggedIn();
     if (result.isSuccess) {
       isLoggedIn.value = result.data ?? false;
       if (isLoggedIn.value) {
         await _planService.refresh();
-        await _runMigrationIfNeeded();
+        unawaited(
+          _revalidateSubscription(reason: 'auth_check', withRestore: false),
+        );
+        await _loadFamilyAndSync();
         await _updateUserInfo();
       } else {
         userEmail.value = null;
         isPremium.value = false;
       }
     }
+    _refreshPremiumService();
+    authChecked.value = true;
   }
 
   Future<void> _updateUserInfo() async {
@@ -75,6 +110,48 @@ class AuthController extends GetxController {
       await _saveFcmTokenIfNeeded(userId);
     }
     isPremium.value = await _planService.isPremium();
+    _refreshPremiumService();
+  }
+
+  Future<void> _revalidateSubscription({
+    required String reason,
+    required bool withRestore,
+  }) async {
+    if (!Get.isRegistered<BillingController>()) return;
+    try {
+      debugPrint(
+        '[auth_subscription_revalidation_start] reason=$reason restore=$withRestore',
+      );
+      final billing = Get.find<BillingController>();
+      await billing.revalidateInBackground(
+        triggerRestore: withRestore,
+        reason: reason,
+      );
+      await _planService.refresh();
+      isPremium.value = await _planService.isPremium();
+      _refreshPremiumService();
+      await _loadFamilyAndSync();
+      debugPrint('[auth_subscription_revalidation_done] reason=$reason');
+    } catch (e) {
+      debugPrint(
+        '[auth_subscription_revalidation_error] reason=$reason error=$e',
+      );
+    }
+  }
+
+  /// Plano mudou (compra, restauracao): atualiza a tela do Pro, anuncios e
+  /// a Familia (que fica ativa/somente leitura conforme o Pro do dono).
+  Future<void> refreshPlanStatus() async {
+    await _planService.refresh();
+    isPremium.value = await _planService.isPremium();
+    _refreshPremiumService();
+    await _loadFamilyAndSync();
+  }
+
+  void _refreshPremiumService() {
+    if (Get.isRegistered<IPremiumService>()) {
+      Get.find<IPremiumService>().refresh();
+    }
   }
 
   Future<void> _saveFcmTokenIfNeeded(String userId) async {
@@ -83,12 +160,18 @@ class AuthController extends GetxController {
       return;
     }
     if (!Get.isRegistered<FcmTokenSupabaseDataSource>()) {
-      if (kDebugMode) debugPrint('[FCM] FcmTokenSupabaseDataSource nao registrado');
+      if (kDebugMode) {
+        debugPrint('[FCM] FcmTokenSupabaseDataSource nao registrado');
+      }
       return;
     }
     final token = await FirebaseService.getToken();
     if (token == null) {
-      if (kDebugMode) debugPrint('[FCM] Token FCM null (Firebase nao init ou permissao negada)');
+      if (kDebugMode) {
+        debugPrint(
+          '[FCM] Token FCM null (Firebase nao init ou permissao negada)',
+        );
+      }
       return;
     }
     try {
@@ -99,12 +182,15 @@ class AuthController extends GetxController {
     }
   }
 
-  Future<void> _runMigrationIfNeeded() async {
+  /// Carrega a Familia e sincroniza (pessoal Pro + Familia).
+  /// No Free sem Familia, os dados continuam so no aparelho.
+  Future<void> _loadFamilyAndSync() async {
     if (!SupabaseConfig.isConfigured) return;
-    if (!Get.isRegistered<ILocalToCloudMigrationService>()) return;
     try {
-      await Get.find<ILocalToCloudMigrationService>().migrateIfNeeded();
-      await Get.find<ISyncService>().syncNow();
+      if (Get.isRegistered<IFamilyService>()) {
+        await Get.find<IFamilyService>().refresh();
+      }
+      unawaited(Get.find<ISyncService>().syncNow());
     } catch (_) {}
   }
 
@@ -123,7 +209,9 @@ class AuthController extends GetxController {
         }
         await _planService.refresh();
         isPremium.value = await _planService.isPremium();
-        await _runMigrationIfNeeded();
+        _refreshPremiumService();
+        unawaited(_revalidateSubscription(reason: 'login', withRestore: true));
+        await _loadFamilyAndSync();
         if (rememberMe.value) {
           rememberedEmail.value = email;
           await _saveRememberMe();
@@ -159,6 +247,9 @@ class AuthController extends GetxController {
         }
         await _planService.refresh();
         isPremium.value = await _planService.isPremium();
+        _refreshPremiumService();
+        unawaited(_revalidateSubscription(reason: 'signup', withRestore: true));
+        await _loadFamilyAndSync();
         loading.value = false;
         return true;
       }
@@ -191,6 +282,34 @@ class AuthController extends GetxController {
     }
   }
 
+  Future<bool> verifyRecoveryAndUpdatePassword(
+    String email,
+    String code,
+    String newPassword,
+  ) async {
+    loading.value = true;
+    errorMessage.value = null;
+    try {
+      final result = await _authService.verifyRecoveryAndUpdatePassword(
+        email,
+        code,
+        newPassword,
+      );
+      if (result.isSuccess) {
+        loading.value = false;
+        return true;
+      }
+      errorMessage.value =
+          result.errorMessage ?? 'Erro ao redefinir senha. Tente novamente.';
+      loading.value = false;
+      return false;
+    } catch (e) {
+      errorMessage.value = 'Erro inesperado. Tente novamente.';
+      loading.value = false;
+      return false;
+    }
+  }
+
   Future<void> signOut() async {
     final userId = SupabaseConfig.isConfigured
         ? Supabase.instance.client.auth.currentUser?.id
@@ -203,12 +322,19 @@ class AuthController extends GetxController {
         await Get.find<FcmTokenSupabaseDataSource>().deleteToken(userId, token);
       } catch (_) {}
     }
+    if (Get.isRegistered<ISyncService>()) {
+      await Get.find<ISyncService>().clearCloudCache();
+    }
+    if (Get.isRegistered<IFamilyService>()) {
+      await Get.find<IFamilyService>().clear();
+    }
     await _authService.signOut();
     await FirebaseService.setUserId(null);
     isLoggedIn.value = false;
     userEmail.value = null;
     isPremium.value = false;
     await _planService.refresh();
+    _refreshPremiumService();
   }
 
   Future<void> setRememberMe(bool value) async {

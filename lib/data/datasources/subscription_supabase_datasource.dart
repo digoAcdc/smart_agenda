@@ -19,16 +19,23 @@ class SubscriptionSupabaseDataSource {
   Future<SubscriptionValidationResult> validateSubscription(
     PurchasePayload payload,
   ) async {
+    debugPrint(
+      '[subscription_revalidation_started] source=app_api productId=${payload.productId}',
+    );
     final session = _client.auth.currentSession;
     if (session == null) {
-      throw StateError('Usuario nao autenticado');
+      debugPrint('[subscription_revalidation_failed] reason=no_session');
+      throw StateError('Usuário não autenticado');
     }
 
     final baseUrl = BillingConstants.billingApiBaseUrl.trim();
     if (baseUrl.isEmpty) {
+      debugPrint(
+        '[billing_config_missing] BILLING_API_BASE_URL ausente no app',
+      );
       throw Exception(
-        'BILLING_API_BASE_URL nao configurada. '
-        'Use --dart-define=BILLING_API_BASE_URL=...',
+        'Configuração de cobrança ausente neste app. '
+        'Use --dart-define=BILLING_API_BASE_URL=... em um build configurado.',
       );
     }
     final uri = Uri.parse('$baseUrl/validate-subscription');
@@ -58,20 +65,28 @@ class SubscriptionSupabaseDataSource {
 
       if (response.statusCode != 200) {
         final err = parsed['error']?.toString();
-        throw Exception(err ?? 'Validacao falhou');
+        debugPrint(
+          '[subscription_revalidation_failed] source=app_api statusCode=${response.statusCode} error=${err ?? 'Validacao falhou'}',
+        );
+        throw Exception(validationErrorMessage(response.statusCode, err));
       }
 
       final data = parsed;
 
-      return SubscriptionValidationResult(
+      final result = SubscriptionValidationResult(
         isPremium: data['isPremium'] as bool? ?? false,
-        status: (data['status'] as String?) ??
+        status:
+            (data['status'] as String?) ??
             (data['subscriptionStatus'] as String?) ??
             'unknown',
         expiresAt: data['expiresAt'] as String?,
         productId: data['productId'] as String?,
         source: data['source'] as String? ?? 'subscription',
       );
+      debugPrint(
+        '[subscription_revalidation_completed] source=app_api isPremium=${result.isPremium} status=${result.status} expiresAt=${result.expiresAt ?? 'null'}',
+      );
+      return result;
     } finally {
       client.close();
     }
@@ -112,4 +127,20 @@ class SubscriptionPremiumStatus {
   final String status;
   final String? expiresAt;
   final String? productId;
+}
+
+/// Mensagem para o usuario quando a billing-api recusa a validacao.
+String validationErrorMessage(int statusCode, String? serverError) {
+  if (statusCode == 409) {
+    return 'Esta assinatura do Google Play já está ligada a outra conta do '
+        'Smart Agenda. Entre com a conta usada na compra.';
+  }
+  if (statusCode == 401) {
+    return 'Sua sessão expirou. Entre de novo e toque em Restaurar compras.';
+  }
+  if (statusCode == 400 && serverError == 'Purchase not found in Google Play') {
+    return 'Compra não encontrada no Google Play.';
+  }
+  return 'Não foi possível confirmar a assinatura agora. Tente de novo em '
+      'instantes (Restaurar compras). Sua compra não se perde.';
 }

@@ -42,6 +42,11 @@ abstract class IBillingService {
     PurchasePayload payload,
   );
 
+  /// Confirma (acknowledge) a compra no Google Play. Chamar so depois que o
+  /// backend validou: sem confirmacao em 3 dias o Google reembolsa sozinho,
+  /// o que protege quem pagou e nunca recebeu o Pro.
+  Future<void> finishPurchase(String purchaseToken);
+
   /// Indica se o billing esta disponivel (ex: apenas Android com Google Play).
   Future<bool> get isAvailable;
 
@@ -50,12 +55,7 @@ abstract class IBillingService {
 }
 
 /// Atualizacao de compra do purchaseStream.
-enum PurchaseUpdateStatus {
-  pending,
-  purchased,
-  error,
-  canceled,
-}
+enum PurchaseUpdateStatus { pending, purchased, error, canceled }
 
 class PurchaseUpdate {
   const PurchaseUpdate({

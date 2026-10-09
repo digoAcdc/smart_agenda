@@ -22,5 +22,13 @@ class UserNotification extends Equatable {
   bool get isRead => readAt != null;
 
   @override
-  List<Object?> get props => [id, type, referenceDate, title, body, createdAt, readAt];
+  List<Object?> get props => [
+    id,
+    type,
+    referenceDate,
+    title,
+    body,
+    createdAt,
+    readAt,
+  ];
 }

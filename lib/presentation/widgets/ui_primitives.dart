@@ -32,10 +32,7 @@ class AppSurfaceCard extends StatelessWidget {
 }
 
 class StatusPill extends StatelessWidget {
-  const StatusPill({
-    super.key,
-    required this.status,
-  });
+  const StatusPill({super.key, required this.status});
 
   final AgendaStatus status;
 
@@ -50,7 +47,7 @@ class StatusPill extends StatelessWidget {
         break;
       case AgendaStatus.done:
         color = context.semanticColors.success;
-        label = 'Concluido';
+        label = 'Concluído';
         break;
       case AgendaStatus.canceled:
         color = context.semanticColors.warning;
@@ -66,19 +63,16 @@ class StatusPill extends StatelessWidget {
       child: Text(
         label,
         style: Theme.of(context).textTheme.labelSmall?.copyWith(
-              color: color,
-              fontWeight: FontWeight.w700,
-            ),
+          color: color,
+          fontWeight: FontWeight.w700,
+        ),
       ),
     );
   }
 }
 
 class TimelineLine extends StatelessWidget {
-  const TimelineLine({
-    super.key,
-    this.height = 58,
-  });
+  const TimelineLine({super.key, this.height = 58});
 
   final double height;
 
@@ -97,11 +91,7 @@ class TimelineLine extends StatelessWidget {
               shape: BoxShape.circle,
             ),
           ),
-          Container(
-            width: 1.5,
-            height: height,
-            color: scheme.outlineVariant,
-          ),
+          Container(width: 1.5, height: height, color: scheme.outlineVariant),
         ],
       ),
     );

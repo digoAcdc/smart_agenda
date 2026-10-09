@@ -2,7 +2,10 @@ import 'package:brasil_fields/brasil_fields.dart';
 import 'package:flutter/services.dart';
 
 /// Validador para campo obrigatorio.
-String? requiredValidator(String? value, [String message = 'Campo obrigatorio']) {
+String? requiredValidator(
+  String? value, [
+  String message = 'Campo obrigatório',
+]) {
   if (value == null || value.trim().isEmpty) return message;
   return null;
 }
@@ -15,7 +18,7 @@ String? emailValidator(String? value, {bool required = false}) {
     return required ? 'Informe o e-mail' : null;
   }
   if (!RegExp(r'^[\w-\.]+@([\w-]+\.)+[\w-]{2,4}$').hasMatch(trimmed)) {
-    return 'E-mail invalido';
+    return 'E-mail inválido';
   }
   return null;
 }
@@ -28,7 +31,7 @@ String? phoneValidator(String? value, {bool required = false}) {
     return required ? 'Informe o telefone' : null;
   }
   if (digits.length != 10 && digits.length != 11) {
-    return 'Telefone invalido (10 ou 11 digitos)';
+    return 'Telefone inválido (10 ou 11 dígitos)';
   }
   return null;
 }
@@ -51,6 +54,6 @@ String formatPhoneForDisplay(String? value) {
 
 /// Formatters para campo de telefone (mascara brasileira).
 List<TextInputFormatter> get phoneInputFormatters => [
-      FilteringTextInputFormatter.digitsOnly,
-      TelefoneInputFormatter(),
-    ];
+  FilteringTextInputFormatter.digitsOnly,
+  TelefoneInputFormatter(),
+];

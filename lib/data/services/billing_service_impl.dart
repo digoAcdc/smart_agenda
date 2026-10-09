@@ -3,6 +3,10 @@ import 'dart:io';
 
 import 'package:flutter/foundation.dart';
 import 'package:in_app_purchase/in_app_purchase.dart';
+import 'package:in_app_purchase_android/billing_client_wrappers.dart';
+import 'package:in_app_purchase_android/in_app_purchase_android.dart';
+
+import 'package:get/get.dart';
 
 import '../../core/constants/billing_constants.dart';
 import '../../domain/entities/purchase_payload.dart';
@@ -15,8 +19,8 @@ class BillingServiceImpl implements IBillingService {
   BillingServiceImpl({
     required InAppPurchase iap,
     required SubscriptionSupabaseDataSource subscriptionDataSource,
-  })  : _iap = iap,
-        _subscriptionDataSource = subscriptionDataSource;
+  }) : _iap = iap,
+       _subscriptionDataSource = subscriptionDataSource;
 
   final InAppPurchase _iap;
   final SubscriptionSupabaseDataSource _subscriptionDataSource;
@@ -24,6 +28,9 @@ class BillingServiceImpl implements IBillingService {
   final _purchaseController = StreamController<PurchaseUpdate>.broadcast();
   ProductDetails? _premiumProduct;
   StreamSubscription<List<PurchaseDetails>>? _subscription;
+
+  /// Compras pagas aguardando a validacao no backend para serem confirmadas.
+  final Map<String, PurchaseDetails> _awaitingFinish = {};
 
   @override
   Stream<PurchaseUpdate> get purchaseStream => _purchaseController.stream;
@@ -38,14 +45,18 @@ class BillingServiceImpl implements IBillingService {
   Future<bool> loadProducts() async {
     if (!await isAvailable) return false;
     try {
-      final response = await _iap.queryProductDetails(BillingConstants.productIds);
+      final response = await _iap.queryProductDetails(
+        BillingConstants.productIds,
+      );
       if (response.notFoundIDs.isNotEmpty) {
-        debugPrint('[BillingService] Products not found: ${response.notFoundIDs}');
+        debugPrint(
+          '[BillingService] Products not found: ${response.notFoundIDs}',
+        );
       }
       final list = response.productDetails
           .where((p) => p.id == BillingConstants.premiumMonthlyProductId)
           .toList();
-      _premiumProduct = list.isEmpty ? null : list.first;
+      _premiumProduct = selectBasePlan(list);
       return _premiumProduct != null;
     } catch (e) {
       debugPrint('[BillingService] loadProducts error: $e');
@@ -56,7 +67,10 @@ class BillingServiceImpl implements IBillingService {
   ProductDetails? get premiumProduct => _premiumProduct;
 
   @override
-  String? get premiumProductPrice => _premiumProduct?.price;
+  String? get premiumProductPrice {
+    final product = _premiumProduct;
+    return product == null ? null : recurringPriceLabel(product);
+  }
 
   @override
   Future<bool> purchase() async {
@@ -89,23 +103,23 @@ class BillingServiceImpl implements IBillingService {
   }
 
   @override
-  void startPurchaseStreamListener(
-    void Function(PurchaseUpdate) onUpdate,
-  ) {
+  void startPurchaseStreamListener(void Function(PurchaseUpdate) onUpdate) {
     _subscription?.cancel();
     _subscription = _iap.purchaseStream.listen(
       (purchases) => _handlePurchases(purchases, onUpdate),
       onError: (e) {
         debugPrint('[BillingService] purchaseStream error: $e');
-        onUpdate(PurchaseUpdate(
-          status: PurchaseUpdateStatus.error,
-          payload: const PurchasePayload(
-            productId: '',
-            purchaseToken: '',
-            packageName: '',
+        onUpdate(
+          PurchaseUpdate(
+            status: PurchaseUpdateStatus.error,
+            payload: const PurchasePayload(
+              productId: '',
+              purchaseToken: '',
+              packageName: '',
+            ),
+            errorMessage: e.toString(),
           ),
-          errorMessage: e.toString(),
-        ));
+        );
       },
     );
   }
@@ -120,32 +134,60 @@ class BillingServiceImpl implements IBillingService {
 
       switch (p.status) {
         case PurchaseStatus.pending:
-          onUpdate(PurchaseUpdate(status: PurchaseUpdateStatus.pending, payload: payload));
+          onUpdate(
+            PurchaseUpdate(
+              status: PurchaseUpdateStatus.pending,
+              payload: payload,
+            ),
+          );
           break;
         case PurchaseStatus.purchased:
         case PurchaseStatus.restored:
-          onUpdate(PurchaseUpdate(status: PurchaseUpdateStatus.purchased, payload: payload));
           if (p.pendingCompletePurchase) {
-            _iap.completePurchase(p);
+            _awaitingFinish[payload.purchaseToken] = p;
           }
+          onUpdate(
+            PurchaseUpdate(
+              status: PurchaseUpdateStatus.purchased,
+              payload: payload,
+            ),
+          );
           break;
         case PurchaseStatus.error:
-          onUpdate(PurchaseUpdate(
-            status: PurchaseUpdateStatus.error,
-            payload: payload,
-            errorMessage: p.error?.message,
-          ));
+          onUpdate(
+            PurchaseUpdate(
+              status: PurchaseUpdateStatus.error,
+              payload: payload,
+              errorMessage: p.error?.message,
+            ),
+          );
           if (p.pendingCompletePurchase) {
             _iap.completePurchase(p);
           }
           break;
         case PurchaseStatus.canceled:
-          onUpdate(PurchaseUpdate(status: PurchaseUpdateStatus.canceled, payload: payload));
+          onUpdate(
+            PurchaseUpdate(
+              status: PurchaseUpdateStatus.canceled,
+              payload: payload,
+            ),
+          );
           if (p.pendingCompletePurchase) {
             _iap.completePurchase(p);
           }
           break;
       }
+    }
+  }
+
+  @override
+  Future<void> finishPurchase(String purchaseToken) async {
+    final p = _awaitingFinish.remove(purchaseToken);
+    if (p == null) return;
+    try {
+      await _iap.completePurchase(p);
+    } catch (e) {
+      debugPrint('[BillingService] completePurchase error: $e');
     }
   }
 
@@ -190,4 +232,33 @@ class BillingServiceImpl implements IBillingService {
     _subscription?.cancel();
     _purchaseController.close();
   }
+}
+
+SubscriptionOfferDetailsWrapper? _offerOf(ProductDetails p) {
+  if (p is! GooglePlayProductDetails) return null;
+  final index = p.subscriptionIndex;
+  final offers = p.productDetails.subscriptionOfferDetails;
+  if (index == null || offers == null || index >= offers.length) return null;
+  return offers[index];
+}
+
+/// A assinatura vem com uma entrada por oferta. O plano base e a oferta sem
+/// offerId; promocoes (ex.: preco de entrada) vem com offerId.
+@visibleForTesting
+ProductDetails? selectBasePlan(List<ProductDetails> offers) =>
+    offers.firstWhereOrNull((p) => _offerOf(p)?.offerId == null) ??
+    offers.firstOrNull;
+
+/// Preco recorrente, ex.: "R$ 9,90 por mês" (ultima fase de preco da oferta).
+@visibleForTesting
+String recurringPriceLabel(ProductDetails product) {
+  final phase = _offerOf(product)?.pricingPhases.lastOrNull;
+  if (phase == null) return product.price;
+  final period = switch (phase.billingPeriod) {
+    'P1M' => ' por mês',
+    'P1Y' => ' por ano',
+    'P1W' => ' por semana',
+    _ => '',
+  };
+  return '${phase.formattedPrice}$period';
 }

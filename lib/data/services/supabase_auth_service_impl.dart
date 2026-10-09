@@ -1,6 +1,10 @@
+import 'dart:convert';
+import 'dart:io';
+
 import 'package:flutter/foundation.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 
+import '../../core/constants/billing_constants.dart';
 import '../../core/result/result.dart';
 import '../../domain/entities/auth_user.dart' as domain;
 import '../../domain/repositories/i_auth_service.dart';
@@ -25,7 +29,9 @@ class SupabaseAuthServiceImpl implements IAuthService {
     try {
       final user = _client.auth.currentUser;
       if (user == null) return Result.success(null);
-      return Result.success(domain.AuthUser(id: user.id, email: user.email ?? ''));
+      return Result.success(
+        domain.AuthUser(id: user.id, email: user.email ?? ''),
+      );
     } catch (e) {
       return Result.failure(_mapError(e));
     }
@@ -53,8 +59,55 @@ class SupabaseAuthServiceImpl implements IAuthService {
 
   @override
   Future<Result<void>> resetPasswordForEmail(String email) async {
+    // E-mail em portugues so com o codigo, enviado pela nossa API.
+    // Se ela nao responder, cai no envio padrao do Supabase.
+    if (await _requestRecoveryViaApi(email)) return Result.success(null);
     try {
       await _client.auth.resetPasswordForEmail(email);
+      return Result.success(null);
+    } catch (e) {
+      return Result.failure(_mapError(e));
+    }
+  }
+
+  Future<bool> _requestRecoveryViaApi(String email) async {
+    final baseUrl = BillingConstants.billingApiBaseUrl.trim();
+    if (baseUrl.isEmpty) return false;
+    final client = HttpClient()
+      ..connectionTimeout = const Duration(seconds: 10);
+    try {
+      final request = await client.postUrl(
+        Uri.parse('$baseUrl/auth/password-recovery'),
+      );
+      request.headers.set(HttpHeaders.contentTypeHeader, 'application/json');
+      request.add(utf8.encode(jsonEncode({'email': email.trim()})));
+      final response = await request.close().timeout(
+        const Duration(seconds: 20),
+      );
+      await response.drain<void>();
+      debugPrint('[password_recovery] api status=${response.statusCode}');
+      return response.statusCode == 200;
+    } catch (e) {
+      debugPrint('[password_recovery] api indisponivel: $e');
+      return false;
+    } finally {
+      client.close();
+    }
+  }
+
+  @override
+  Future<Result<void>> verifyRecoveryAndUpdatePassword(
+    String email,
+    String token,
+    String newPassword,
+  ) async {
+    try {
+      await _client.auth.verifyOTP(
+        type: OtpType.recovery,
+        token: token,
+        email: email,
+      );
+      await _client.auth.updateUser(UserAttributes(password: newPassword));
       return Result.success(null);
     } catch (e) {
       return Result.failure(_mapError(e));
@@ -94,32 +147,48 @@ class SupabaseAuthServiceImpl implements IAuthService {
       }
       if (msg.contains('user already registered') ||
           msg.contains('already registered')) {
-        return 'Este e-mail ja esta cadastrado. Faca login ou recupere sua senha.';
+        return 'Este e-mail já está cadastrado. Faça login ou recupere sua senha.';
       }
       if (msg.contains('password')) {
         return 'A senha deve ter pelo menos 6 caracteres.';
       }
       if (msg.contains('error sending confirmation email') ||
           msg.contains('confirmation email') ||
-          (msg.contains('unexpected_failure') &&
-              msg.contains('sending'))) {
-        return 'SMTP nao configurado. Tente fazer login - sua conta pode ter sido criada. No Supabase: Authentication > Providers > desative "Confirm email".';
+          (msg.contains('unexpected_failure') && msg.contains('sending'))) {
+        return 'SMTP não configurado. Tente fazer login - sua conta pode ter sido criada. No Supabase: Authentication > Providers > desative "Confirm email".';
       }
       if (msg.contains('error sending') ||
           msg.contains('recovery') ||
           msg.contains('reset') ||
           msg.contains('password reset')) {
-        return 'SMTP nao configurado. O link de recuperacao nao pode ser enviado. Configure SMTP no Supabase (Project Settings > Auth > SMTP).';
+        return 'SMTP não configurado. O link de recuperação não pode ser enviado. Configure SMTP no Supabase (Project Settings > Auth > SMTP).';
+      }
+      if (msg.contains('route') &&
+          (msg.contains('api/errors') || msg.contains('not-started'))) {
+        return 'Serviço de recuperação não disponível. Verifique a configuração do Supabase (SMTP e Auth).';
+      }
+      if (msg.contains('otp_expired') ||
+          msg.contains('token has expired') ||
+          msg.contains('expired')) {
+        return 'Código expirado. Solicite um novo código.';
+      }
+      if (msg.contains('invalid_otp') ||
+          msg.contains('invalid token') ||
+          msg.contains('otp verification failed')) {
+        return 'Código inválido. Verifique e tente novamente.';
       }
       return e.message;
     }
     final str = e.toString().toLowerCase();
+    if (str.contains('api/errors') || str.contains('not-started')) {
+      return 'Serviço de recuperação não disponível. Verifique a configuração do Supabase (SMTP e Auth).';
+    }
     if (str.contains('connection') ||
         str.contains('socket') ||
         str.contains('network') ||
         str.contains('timeout') ||
         str.contains('failed to connect')) {
-      return 'Sem conexao. Verifique sua internet e tente novamente.';
+      return 'Sem conexão. Verifique sua internet e tente novamente.';
     }
     return 'Ocorreu um erro. Tente novamente.';
   }
