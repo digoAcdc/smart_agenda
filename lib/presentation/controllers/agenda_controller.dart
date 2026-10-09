@@ -78,8 +78,10 @@ class AgendaController extends GetxController {
     super.onClose();
   }
 
-  Future<void> loadToday() async {
-    loading.value = true;
+  /// [silent]: atualiza sem trocar a tela pelo esqueleto de carregamento
+  /// (sincronizacoes e depois de salvar).
+  Future<void> loadToday({bool silent = false}) async {
+    if (!silent) loading.value = true;
     errorMessage.value = null;
     final result = await getAgendaItemsByDay(DateTime.now());
     if (result.isSuccess) {
@@ -111,8 +113,8 @@ class AgendaController extends GetxController {
     upcomingItems.assignAll(items.take(_upcomingLimit));
   }
 
-  Future<void> loadWeek(DateTime start, DateTime end) async {
-    loading.value = true;
+  Future<void> loadWeek(DateTime start, DateTime end, {bool silent = false}) async {
+    if (!silent) loading.value = true;
     final result = await getAgendaItemsByRange(start, end);
     if (result.isSuccess) {
       weekItems.assignAll(result.data ?? []);
@@ -122,8 +124,12 @@ class AgendaController extends GetxController {
     loading.value = false;
   }
 
-  Future<void> loadMonthItems(DateTime start, DateTime end) async {
-    loading.value = true;
+  Future<void> loadMonthItems(
+    DateTime start,
+    DateTime end, {
+    bool silent = false,
+  }) async {
+    if (!silent) loading.value = true;
     final result = await getAgendaItemsByRange(start, end);
     if (result.isSuccess) {
       monthItems.assignAll(result.data ?? []);
@@ -241,15 +247,21 @@ class AgendaController extends GetxController {
     }
   }
 
+  /// Recarrega o que esta na tela sem esqueleto de carregamento.
   Future<void> refreshCurrentData() async {
     final now = DateTime.now();
-    await loadToday();
+    await loadToday(silent: true);
     await loadUpcoming();
     await loadByDay(selectedDate.value);
-    await loadWeek(DateUtilsEx.startOfWeek(now), DateUtilsEx.endOfWeek(now));
+    await loadWeek(
+      DateUtilsEx.startOfWeek(now),
+      DateUtilsEx.endOfWeek(now),
+      silent: true,
+    );
     await loadMonthItems(
       DateUtilsEx.startOfMonth(now),
       DateUtilsEx.endOfMonth(now),
+      silent: true,
     );
     await loadMonth(DateUtilsEx.startOfMonth(now), DateUtilsEx.endOfMonth(now));
   }

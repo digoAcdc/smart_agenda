@@ -73,4 +73,28 @@ void main() {
       ['dia-todo-hoje', 'amanha', 'daqui-3-meses'],
     );
   });
+
+  test('atualizacao em segundo plano nao mostra esqueleto de carregamento', () async {
+    final repo = _RangeRepo([_item('amanha', DateTime.now().add(const Duration(days: 1)))]);
+    final controller = AgendaController(
+      createAgendaItem: CreateAgendaItem(repo),
+      updateAgendaItem: UpdateAgendaItem(repo),
+      deleteAgendaItem: DeleteAgendaItem(repo),
+      duplicateAgendaItem: DuplicateAgendaItem(repo, () => 'x'),
+      setAgendaStatus: SetAgendaStatus(repo),
+      getAgendaItemsByDay: GetAgendaItemsByDay(repo),
+      getAgendaItemsByRange: GetAgendaItemsByRange(repo),
+      getAgendaMarkersByRange: GetAgendaMarkersByRange(repo),
+      searchAgendaItems: SearchAgendaItems(repo),
+      notificationService: _NoopNotifications(),
+    );
+    final loadingStates = <bool>[];
+    controller.loading.listen(loadingStates.add);
+
+    await controller.refreshCurrentData();
+    await Future<void>.delayed(Duration.zero);
+
+    expect(loadingStates, isNot(contains(true)));
+    expect(controller.upcomingItems.map((e) => e.id), ['amanha']);
+  });
 }
