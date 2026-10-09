@@ -864,6 +864,28 @@ class _UpsertAgendaPageState extends State<UpsertAgendaPage> {
                 ),
             ],
           ),
+          if (editingItem == null && ctx.hasFamily && !ctx.canEditAgenda) ...[
+            const SizedBox(height: 12),
+            Row(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Icon(
+                  Icons.info_outline,
+                  size: 18,
+                  color: Theme.of(context).colorScheme.primary,
+                ),
+                const SizedBox(width: 8),
+                Expanded(
+                  child: Text(
+                    ctx.isActive
+                        ? 'Seu acesso à Família é de visualização. Este item ficará só para você.'
+                        : 'A assinatura Pro da Família não está ativa. Este item ficará só para você.',
+                    style: Theme.of(context).textTheme.bodySmall,
+                  ),
+                ),
+              ],
+            ),
+          ],
           if (canChooseScope) ...[
             const SizedBox(height: 12),
             _label(context, 'Agenda'),

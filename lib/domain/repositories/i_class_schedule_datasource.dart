@@ -4,7 +4,7 @@ import '../entities/class_schedule_slot.dart';
 abstract class IClassScheduleDataSource {
   Future<List<ClassSchedule>> getSchedules();
 
-  /// Com [childId] a grade e da Familia; sem, e pessoal.
+  /// Com [familyId] a grade e da Familia (filho opcional); sem, e pessoal.
   Future<ClassSchedule> createSchedule({
     required String name,
     String? familyId,

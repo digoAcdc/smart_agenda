@@ -4,6 +4,7 @@ import 'package:get/get.dart';
 import '../../domain/entities/family.dart';
 import '../../domain/repositories/i_family_service.dart';
 import '../../domain/repositories/i_sync_service.dart';
+import '../utils/move_to_family_prompt.dart';
 
 /// Convites para Familia recebidos pelo usuario, com Aceitar/Recusar.
 /// Fica na Home para o convite nao passar despercebido.
@@ -65,6 +66,7 @@ class _FamilyInviteBannerState extends State<FamilyInviteBanner> {
         ),
       );
       if (Get.isRegistered<ISyncService>()) Get.find<ISyncService>().syncNow();
+      if (mounted) await offerMoveToFamily(context);
     }
   }
 

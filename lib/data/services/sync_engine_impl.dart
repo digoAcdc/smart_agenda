@@ -521,11 +521,23 @@ class SyncEngineImpl implements ISyncService {
 
   /// Grades pessoais (Pro): substituicao completa a partir do aparelho.
   Future<void> _pushClassSchedule(String uid) async {
-    if (!await _localSchedule.hasPersonalPending()) return;
+    final prefs = await SharedPreferences.getInstance();
+    final cleared =
+        prefs.getBool(ClassScheduleLocalDataSource.personalSchedulesClearedKey) ?? false;
+    if (!cleared && !await _localSchedule.hasPersonalPending()) return;
     final schedules = await _localSchedule.getAllPersonalSchedules();
     final slots = await _localSchedule.getAllPersonalSlots();
-    // Nunca apaga a nuvem a partir de um aparelho sem grades.
-    if (schedules.isEmpty) return;
+    if (schedules.isEmpty) {
+      // Aparelho sem grades so apaga a nuvem se o usuario removeu/levou para
+      // a Familia de proposito (nunca num aparelho novo e vazio).
+      if (cleared) {
+        await _client.from('class_schedules').delete().eq('owner_user_id', uid);
+        await _client.from('class_schedule_slots').delete().eq('user_id', uid);
+        await prefs.remove(ClassScheduleLocalDataSource.personalSchedulesClearedKey);
+      }
+      return;
+    }
+    await prefs.remove(ClassScheduleLocalDataSource.personalSchedulesClearedKey);
 
     // Aulas com schedule_id saem em cascata; linhas antigas sem grade tambem.
     await _client.from('class_schedules').delete().eq('owner_user_id', uid);

@@ -230,7 +230,9 @@ class ClassSchedulePage extends GetView<ClassScheduleController> {
   Future<void> _openNewScheduleDialog(BuildContext context) async {
     final family = _family;
     final ctx = family?.context;
-    final kids = (ctx?.canEditAgenda ?? false)
+    // Na Familia (podendo editar), toda grade nova e da Familia; filho opcional.
+    final inFamily = ctx?.canEditAgenda ?? false;
+    final kids = inFamily
         ? (family?.children ?? const <FamilyChild>[])
         : const <FamilyChild>[];
     final nameController = TextEditingController(
@@ -299,11 +301,17 @@ class ClassSchedulePage extends GetView<ClassScheduleController> {
                         ),
                     ],
                   ),
-                  const SizedBox(height: 4),
+                ],
+                if (inFamily) ...[
+                  const SizedBox(height: 6),
                   Text(
-                    childId == null
-                        ? 'Sem filho: so voce ve esta grade.'
-                        : 'Com filho: a Familia ve e edita conforme o papel de cada um.',
+                    'A Familia ve e edita esta grade conforme o papel de cada um.',
+                    style: Theme.of(dialogContext).textTheme.bodySmall,
+                  ),
+                ] else if (ctx?.hasFamily ?? false) ...[
+                  const SizedBox(height: 6),
+                  Text(
+                    'A agenda da Familia esta so para consulta; esta grade ficara so para voce.',
                     style: Theme.of(dialogContext).textTheme.bodySmall,
                   ),
                 ],
@@ -326,7 +334,7 @@ class ClassSchedulePage extends GetView<ClassScheduleController> {
                 Get.back();
                 await controller.createSchedule(
                   name: nameController.text,
-                  familyId: childId == null ? null : ctx?.familyId,
+                  familyId: inFamily ? ctx?.familyId : null,
                   childId: childId,
                   withTemplate: withTemplate,
                 );

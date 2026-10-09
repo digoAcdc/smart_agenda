@@ -1,5 +1,6 @@
 import 'package:drift/native.dart';
 import 'package:flutter_test/flutter_test.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 import 'package:smart_agenda/data/datasources/class_schedule_local_datasource.dart';
 import 'package:smart_agenda/data/local/app_database.dart';
 
@@ -8,6 +9,7 @@ void main() {
   late ClassScheduleLocalDataSource ds;
 
   setUp(() {
+    SharedPreferences.setMockInitialValues({});
     db = AppDatabase(NativeDatabase.memory());
     ds = ClassScheduleLocalDataSource(db);
   });
@@ -36,10 +38,15 @@ void main() {
     expect((await ds.getAllSlots()).length, 20);
   });
 
-  test('grade sem filho e pessoal mesmo informando a Familia', () async {
+  test('na Familia, grade sem filho tambem e da Familia', () async {
     final g = await ds.createSchedule(name: 'Cursinho', familyId: 'fam');
+    expect(g.isFamily, isTrue);
+    expect(g.childId, isNull);
+  });
+
+  test('sem Familia, grade e pessoal', () async {
+    final g = await ds.createSchedule(name: 'Minha grade');
     expect(g.isFamily, isFalse);
-    expect(g.familyId, isNull);
   });
 
   test('remover horario da grade do filho e logico e nao mexe nas outras', () async {

@@ -11,6 +11,7 @@ import '../../domain/repositories/i_family_service.dart';
 import '../../domain/repositories/i_sync_service.dart';
 import '../controllers/auth_controller.dart';
 import '../widgets/ui_primitives.dart';
+import '../utils/move_to_family_prompt.dart';
 
 /// Familia: pessoas (com papeis), filhos, convites e situacao da assinatura.
 class FamilyPage extends StatefulWidget {
@@ -43,13 +44,13 @@ class _FamilyPageState extends State<FamilyPage> {
     if (_auth.isLoggedIn.value) _family.refresh();
   }
 
-  Future<void> _run(
+  Future<bool> _run(
     Future<Result<void>> Function() action, {
     String? success,
   }) async {
     setState(() => _busy = true);
     final result = await action();
-    if (!mounted) return;
+    if (!mounted) return result.isSuccess;
     setState(() => _busy = false);
     final messenger = ScaffoldMessenger.of(context);
     if (result.isSuccess) {
@@ -62,6 +63,7 @@ class _FamilyPageState extends State<FamilyPage> {
         SnackBar(content: Text(result.errorMessage ?? 'Erro.')),
       );
     }
+    return result.isSuccess;
   }
 
   @override
@@ -235,7 +237,7 @@ class _FamilyPageState extends State<FamilyPage> {
                           label: 'Ex.: Vovó, Tia Ana (opcional)',
                         );
                         if (nickname == null) return;
-                        await _run(
+                        final ok = await _run(
                           () => _family.acceptInvite(
                             invite.id,
                             nickname: nickname,
@@ -243,6 +245,9 @@ class _FamilyPageState extends State<FamilyPage> {
                           success:
                               'Bem-vindo(a) à ${invite.familyName ?? 'Família'}!',
                         );
+                        if (ok && context.mounted) {
+                          await offerMoveToFamily(context);
+                        }
                       },
                 child: const Text('Aceitar'),
               ),
@@ -288,11 +293,11 @@ class _FamilyPageState extends State<FamilyPage> {
             FilledButton(
               onPressed: _busy
                   ? null
-                  : () {
+                  : () async {
                       if (_createFormKey.currentState?.validate() != true) {
                         return;
                       }
-                      _run(
+                      final ok = await _run(
                         () => _family.createFamily(
                           _familyNameCtrl.text,
                           nickname: _nicknameCtrl.text,
@@ -300,6 +305,9 @@ class _FamilyPageState extends State<FamilyPage> {
                         success:
                             'Família criada! Agora convide as pessoas e cadastre os filhos.',
                       );
+                      if (ok && context.mounted) {
+                        await offerMoveToFamily(context);
+                      }
                     },
               child: const Text('Criar Família'),
             ),
@@ -462,6 +470,17 @@ class _FamilyPageState extends State<FamilyPage> {
                 ),
               ),
           ],
+        ),
+      if (ctx.canEditAgenda)
+        Padding(
+          padding: const EdgeInsets.fromLTRB(16, 18, 16, 0),
+          child: OutlinedButton.icon(
+            onPressed: _busy
+                ? null
+                : () => offerMoveToFamily(context, askEvenIfEmpty: true),
+            icon: const Icon(Icons.drive_file_move_outline),
+            label: const Text('Levar minha agenda e grades para a Família'),
+          ),
         ),
       const SizedBox(height: DesignTokens.spaceLg),
       Padding(

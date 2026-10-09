@@ -1,4 +1,5 @@
 import 'package:drift/drift.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 import 'package:uuid/uuid.dart';
 
 import '../../domain/entities/class_schedule_slot.dart';
@@ -16,12 +17,14 @@ class ClassScheduleLocalDataSource implements IClassScheduleDataSource {
   static const _weekdays = [1, 2, 3, 4, 5];
 
   List<OrderingTerm Function($ClassScheduleSlotsTableTable)> get _order => [
-        (t) => OrderingTerm(expression: t.startMinutes),
-        (t) => OrderingTerm(expression: t.dayOfWeek),
-      ];
+    (t) => OrderingTerm(expression: t.startMinutes),
+    (t) => OrderingTerm(expression: t.dayOfWeek),
+  ];
 
-  Expression<bool> _ofSchedule($ClassScheduleSlotsTableTable t, ClassSchedule s) =>
-      t.scheduleId.equals(s.id) & t.deletedAt.isNull();
+  Expression<bool> _ofSchedule(
+    $ClassScheduleSlotsTableTable t,
+    ClassSchedule s,
+  ) => t.scheduleId.equals(s.id) & t.deletedAt.isNull();
 
   // ---------------------------------------------------------------------------
   // Grades
@@ -29,10 +32,11 @@ class ClassScheduleLocalDataSource implements IClassScheduleDataSource {
 
   @override
   Future<List<ClassSchedule>> getSchedules() async {
-    final rows = await (_db.select(_db.classSchedulesTable)
-          ..where((t) => t.deletedAt.isNull())
-          ..orderBy([(t) => OrderingTerm(expression: t.createdAt)]))
-        .get();
+    final rows =
+        await (_db.select(_db.classSchedulesTable)
+              ..where((t) => t.deletedAt.isNull())
+              ..orderBy([(t) => OrderingTerm(expression: t.createdAt)]))
+            .get();
     return rows.map(_toSchedule).toList();
   }
 
@@ -46,7 +50,7 @@ class ClassScheduleLocalDataSource implements IClassScheduleDataSource {
     final row = ClassSchedulesTableCompanion.insert(
       id: const Uuid().v4(),
       name: name.trim(),
-      familyId: Value(childId == null ? null : familyId),
+      familyId: Value(familyId),
       childId: Value(childId),
       createdAt: now,
       updatedAt: now,
@@ -64,7 +68,9 @@ class ClassScheduleLocalDataSource implements IClassScheduleDataSource {
 
   @override
   Future<void> renameSchedule(String id, String name) async {
-    await (_db.update(_db.classSchedulesTable)..where((t) => t.id.equals(id))).write(
+    await (_db.update(
+      _db.classSchedulesTable,
+    )..where((t) => t.id.equals(id))).write(
       ClassSchedulesTableCompanion(
         name: Value(name.trim()),
         updatedAt: Value(DateTime.now()),
@@ -78,27 +84,73 @@ class ClassScheduleLocalDataSource implements IClassScheduleDataSource {
     final now = DateTime.now();
     await _db.transaction(() async {
       if (schedule.isFamily) {
-        await (_db.update(_db.classSchedulesTable)
-              ..where((t) => t.id.equals(schedule.id)))
-            .write(ClassSchedulesTableCompanion(
-          deletedAt: Value(now),
-          updatedAt: Value(now),
-          syncState: const Value('pending'),
-        ));
+        await (_db.update(
+          _db.classSchedulesTable,
+        )..where((t) => t.id.equals(schedule.id))).write(
+          ClassSchedulesTableCompanion(
+            deletedAt: Value(now),
+            updatedAt: Value(now),
+            syncState: const Value('pending'),
+          ),
+        );
         // Aulas saem no servidor em cascata; no aparelho, removemos ja.
-        await (_db.delete(_db.classScheduleSlotsTable)
-              ..where((t) => t.scheduleId.equals(schedule.id)))
-            .go();
+        await (_db.delete(
+          _db.classScheduleSlotsTable,
+        )..where((t) => t.scheduleId.equals(schedule.id))).go();
         return;
       }
-      await (_db.delete(_db.classScheduleSlotsTable)
-            ..where((t) => t.scheduleId.equals(schedule.id)))
-          .go();
-      await (_db.delete(_db.classSchedulesTable)
-            ..where((t) => t.id.equals(schedule.id)))
-          .go();
+      await (_db.delete(
+        _db.classScheduleSlotsTable,
+      )..where((t) => t.scheduleId.equals(schedule.id))).go();
+      await (_db.delete(
+        _db.classSchedulesTable,
+      )..where((t) => t.id.equals(schedule.id))).go();
       await _markAllPersonalPending();
     });
+    // Ultima grade pessoal removida de proposito: a nuvem pode ser limpa.
+    if (!schedule.isFamily && (await getAllPersonalSchedules()).isEmpty) {
+      final prefs = await SharedPreferences.getInstance();
+      await prefs.setBool(personalSchedulesClearedKey, true);
+    }
+  }
+
+  /// Marca que o usuario removeu todas as grades pessoais (diferente de um
+  /// aparelho novo sem dados, que nunca pode apagar a nuvem).
+  static const personalSchedulesClearedKey = 'personal_schedules_cleared';
+
+  /// Copia uma grade pessoal (com as aulas) para a Familia e remove a pessoal.
+  Future<ClassSchedule> moveScheduleToFamily(
+    ClassSchedule personal,
+    String familyId,
+  ) async {
+    final family = await createSchedule(
+      name: personal.name,
+      familyId: familyId,
+    );
+    final now = DateTime.now();
+    final slots = await getSlots(personal);
+    await _db.batch((batch) {
+      batch.insertAll(_db.classScheduleSlotsTable, [
+        for (final s in slots)
+          ClassScheduleSlotsTableCompanion.insert(
+            id: const Uuid().v4(),
+            dayOfWeek: s.dayOfWeek,
+            startMinutes: s.startMinutes,
+            endMinutes: s.endMinutes,
+            createdAt: now,
+            updatedAt: now,
+            subject: Value(s.subject),
+            professorName: Value(s.professorName),
+            professorEmail: Value(s.professorEmail),
+            professorPhone: Value(s.professorPhone),
+            scheduleId: Value(family.id),
+            familyId: Value(familyId),
+            syncState: const Value('pending'),
+          ),
+      ]);
+    });
+    await deleteSchedule(personal);
+    return family;
   }
 
   // ---------------------------------------------------------------------------
@@ -107,37 +159,47 @@ class ClassScheduleLocalDataSource implements IClassScheduleDataSource {
 
   @override
   Future<List<ClassScheduleSlot>> getSlots(ClassSchedule schedule) async {
-    final rows = await (_db.select(_db.classScheduleSlotsTable)
-          ..where((t) => _ofSchedule(t, schedule))
-          ..orderBy(_order))
-        .get();
+    final rows =
+        await (_db.select(_db.classScheduleSlotsTable)
+              ..where((t) => _ofSchedule(t, schedule))
+              ..orderBy(_order))
+            .get();
     return rows.map(_toSlot).toList();
   }
 
   @override
   Future<List<ClassScheduleSlot>> getAllSlots() async {
-    final rows = await (_db.select(_db.classScheduleSlotsTable)
-          ..where((t) => t.deletedAt.isNull() & t.scheduleId.isNotNull())
-          ..orderBy(_order))
-        .get();
+    final rows =
+        await (_db.select(_db.classScheduleSlotsTable)
+              ..where((t) => t.deletedAt.isNull() & t.scheduleId.isNotNull())
+              ..orderBy(_order))
+            .get();
     return rows.map(_toSlot).toList();
   }
 
   @override
-  Future<String?> addTimeRange(ClassSchedule schedule, int start, int end) async {
+  Future<String?> addTimeRange(
+    ClassSchedule schedule,
+    int start,
+    int end,
+  ) async {
     if (end <= start) return 'Fim deve ser maior que inicio';
 
     final now = DateTime.now();
     for (final day in _weekdays) {
-      final exists = await (_db.select(_db.classScheduleSlotsTable)
-            ..where((t) =>
-                _ofSchedule(t, schedule) &
-                t.dayOfWeek.equals(day) &
-                t.startMinutes.equals(start) &
-                t.endMinutes.equals(end)))
-          .getSingleOrNull();
+      final exists =
+          await (_db.select(_db.classScheduleSlotsTable)..where(
+                (t) =>
+                    _ofSchedule(t, schedule) &
+                    t.dayOfWeek.equals(day) &
+                    t.startMinutes.equals(start) &
+                    t.endMinutes.equals(end),
+              ))
+              .getSingleOrNull();
       if (exists == null) {
-        await _db.into(_db.classScheduleSlotsTable).insert(
+        await _db
+            .into(_db.classScheduleSlotsTable)
+            .insert(
               ClassScheduleSlotsTableCompanion.insert(
                 id: const Uuid().v4(),
                 dayOfWeek: day,
@@ -168,9 +230,9 @@ class ClassScheduleLocalDataSource implements IClassScheduleDataSource {
     String? trimOrNull(String? v) =>
         v == null || v.trim().isEmpty ? null : v.trim();
 
-    await (_db.update(_db.classScheduleSlotsTable)
-          ..where((t) => t.id.equals(id)))
-        .write(
+    await (_db.update(
+      _db.classScheduleSlotsTable,
+    )..where((t) => t.id.equals(id))).write(
       ClassScheduleSlotsTableCompanion(
         subject: Value(trimOrNull(subject)),
         professorName: Value(trimOrNull(professorName)),
@@ -183,7 +245,11 @@ class ClassScheduleLocalDataSource implements IClassScheduleDataSource {
   }
 
   @override
-  Future<void> removeTimeRange(ClassSchedule schedule, int start, int end) async {
+  Future<void> removeTimeRange(
+    ClassSchedule schedule,
+    int start,
+    int end,
+  ) async {
     Expression<bool> sameRange($ClassScheduleSlotsTableTable t) =>
         _ofSchedule(t, schedule) &
         t.startMinutes.equals(start) &
@@ -213,28 +279,32 @@ class ClassScheduleLocalDataSource implements IClassScheduleDataSource {
   ) async {
     if (newEnd <= newStart) return 'Fim deve ser maior que inicio';
     if (oldStart == newStart && oldEnd == newEnd) return null;
-    final clash = await (_db.select(_db.classScheduleSlotsTable)
-          ..where((t) =>
-              _ofSchedule(t, schedule) &
-              t.startMinutes.equals(newStart) &
-              t.endMinutes.equals(newEnd))
-          ..limit(1))
-        .getSingleOrNull();
+    final clash =
+        await (_db.select(_db.classScheduleSlotsTable)
+              ..where(
+                (t) =>
+                    _ofSchedule(t, schedule) &
+                    t.startMinutes.equals(newStart) &
+                    t.endMinutes.equals(newEnd),
+              )
+              ..limit(1))
+            .getSingleOrNull();
     if (clash != null) return 'Ja existe uma linha com esse horario';
 
-    await (_db.update(_db.classScheduleSlotsTable)
-          ..where((t) =>
+    await (_db.update(_db.classScheduleSlotsTable)..where(
+          (t) =>
               _ofSchedule(t, schedule) &
               t.startMinutes.equals(oldStart) &
-              t.endMinutes.equals(oldEnd)))
+              t.endMinutes.equals(oldEnd),
+        ))
         .write(
-      ClassScheduleSlotsTableCompanion(
-        startMinutes: Value(newStart),
-        endMinutes: Value(newEnd),
-        updatedAt: Value(DateTime.now()),
-        syncState: const Value('pending'),
-      ),
-    );
+          ClassScheduleSlotsTableCompanion(
+            startMinutes: Value(newStart),
+            endMinutes: Value(newEnd),
+            updatedAt: Value(DateTime.now()),
+            syncState: const Value('pending'),
+          ),
+        );
     if (!schedule.isFamily) await _markAllPersonalPending();
     return null;
   }
@@ -244,30 +314,39 @@ class ClassScheduleLocalDataSource implements IClassScheduleDataSource {
   // ---------------------------------------------------------------------------
 
   Future<void> _markAllPersonalPending() async {
-    await (_db.update(_db.classScheduleSlotsTable)
+    await (_db.update(
+      _db.classScheduleSlotsTable,
+    )..where((t) => t.familyId.isNull())).write(
+      const ClassScheduleSlotsTableCompanion(syncState: Value('pending')),
+    );
+    await (_db.update(_db.classSchedulesTable)
           ..where((t) => t.familyId.isNull()))
-        .write(const ClassScheduleSlotsTableCompanion(syncState: Value('pending')));
-    await (_db.update(_db.classSchedulesTable)..where((t) => t.familyId.isNull()))
         .write(const ClassSchedulesTableCompanion(syncState: Value('pending')));
   }
 
   Future<bool> hasPersonalPending() async {
-    final slot = await (_db.select(_db.classScheduleSlotsTable)
-          ..where((t) => t.familyId.isNull() & t.syncState.equals('pending'))
-          ..limit(1))
-        .getSingleOrNull();
+    final slot =
+        await (_db.select(_db.classScheduleSlotsTable)
+              ..where(
+                (t) => t.familyId.isNull() & t.syncState.equals('pending'),
+              )
+              ..limit(1))
+            .getSingleOrNull();
     if (slot != null) return true;
-    final schedule = await (_db.select(_db.classSchedulesTable)
-          ..where((t) => t.familyId.isNull() & t.syncState.equals('pending'))
-          ..limit(1))
-        .getSingleOrNull();
+    final schedule =
+        await (_db.select(_db.classSchedulesTable)
+              ..where(
+                (t) => t.familyId.isNull() & t.syncState.equals('pending'),
+              )
+              ..limit(1))
+            .getSingleOrNull();
     return schedule != null;
   }
 
   Future<List<ClassSchedulesTableData>> getAllPersonalSchedules() {
-    return (_db.select(_db.classSchedulesTable)
-          ..where((t) => t.familyId.isNull() & t.deletedAt.isNull()))
-        .get();
+    return (_db.select(
+      _db.classSchedulesTable,
+    )..where((t) => t.familyId.isNull() & t.deletedAt.isNull())).get();
   }
 
   /// Aulas pessoais que pertencem a uma grade.
@@ -286,9 +365,11 @@ class ClassScheduleLocalDataSource implements IClassScheduleDataSource {
   }
 
   Future<void> markPersonalSynced() async {
-    await (_db.update(_db.classScheduleSlotsTable)
-          ..where((t) => t.familyId.isNull() & t.syncState.equals('pending')))
-        .write(const ClassScheduleSlotsTableCompanion(syncState: Value('synced')));
+    await (_db.update(
+      _db.classScheduleSlotsTable,
+    )..where((t) => t.familyId.isNull() & t.syncState.equals('pending'))).write(
+      const ClassScheduleSlotsTableCompanion(syncState: Value('synced')),
+    );
     await (_db.update(_db.classSchedulesTable)
           ..where((t) => t.familyId.isNull() & t.syncState.equals('pending')))
         .write(const ClassSchedulesTableCompanion(syncState: Value('synced')));
@@ -299,14 +380,16 @@ class ClassScheduleLocalDataSource implements IClassScheduleDataSource {
   // ---------------------------------------------------------------------------
 
   Future<List<ClassSchedulesTableData>> getPendingFamilySchedules() {
-    return (_db.select(_db.classSchedulesTable)
-          ..where((t) => t.familyId.isNotNull() & t.syncState.equals('pending')))
+    return (_db.select(
+          _db.classSchedulesTable,
+        )..where((t) => t.familyId.isNotNull() & t.syncState.equals('pending')))
         .get();
   }
 
   Future<List<ClassScheduleSlotsTableData>> getPendingFamilySlots() async {
-    return (_db.select(_db.classScheduleSlotsTable)
-          ..where((t) => t.familyId.isNotNull() & t.syncState.equals('pending')))
+    return (_db.select(
+          _db.classScheduleSlotsTable,
+        )..where((t) => t.familyId.isNotNull() & t.syncState.equals('pending')))
         .get();
   }
 
@@ -316,19 +399,26 @@ class ClassScheduleLocalDataSource implements IClassScheduleDataSource {
   }
 
   Future<void> markSlotSynced(String id) async {
-    await (_db.update(_db.classScheduleSlotsTable)..where((t) => t.id.equals(id)))
-        .write(const ClassScheduleSlotsTableCompanion(syncState: Value('synced')));
+    await (_db.update(
+      _db.classScheduleSlotsTable,
+    )..where((t) => t.id.equals(id))).write(
+      const ClassScheduleSlotsTableCompanion(syncState: Value('synced')),
+    );
   }
 
   Future<void> deleteLocalSchedule(String id) async {
-    await (_db.delete(_db.classScheduleSlotsTable)
-          ..where((t) => t.scheduleId.equals(id)))
-        .go();
-    await (_db.delete(_db.classSchedulesTable)..where((t) => t.id.equals(id))).go();
+    await (_db.delete(
+      _db.classScheduleSlotsTable,
+    )..where((t) => t.scheduleId.equals(id))).go();
+    await (_db.delete(
+      _db.classSchedulesTable,
+    )..where((t) => t.id.equals(id))).go();
   }
 
   Future<void> deleteLocalSlot(String id) async {
-    await (_db.delete(_db.classScheduleSlotsTable)..where((t) => t.id.equals(id))).go();
+    await (_db.delete(
+      _db.classScheduleSlotsTable,
+    )..where((t) => t.id.equals(id))).go();
   }
 
   Future<void> applyRemoteFamilySchedule(
@@ -336,15 +426,17 @@ class ClassScheduleLocalDataSource implements IClassScheduleDataSource {
     required bool deleted,
   }) async {
     final id = schedule.id.value;
-    final local = await (_db.select(_db.classSchedulesTable)
-          ..where((t) => t.id.equals(id)))
-        .getSingleOrNull();
+    final local = await (_db.select(
+      _db.classSchedulesTable,
+    )..where((t) => t.id.equals(id))).getSingleOrNull();
     if (local != null && local.syncState == 'pending') return;
     if (deleted) {
       await deleteLocalSchedule(id);
       return;
     }
-    await _db.into(_db.classSchedulesTable).insertOnConflictUpdate(
+    await _db
+        .into(_db.classSchedulesTable)
+        .insertOnConflictUpdate(
           schedule.copyWith(syncState: const Value('synced')),
         );
   }
@@ -355,15 +447,17 @@ class ClassScheduleLocalDataSource implements IClassScheduleDataSource {
     required bool deleted,
   }) async {
     final id = slot.id.value;
-    final local = await (_db.select(_db.classScheduleSlotsTable)
-          ..where((t) => t.id.equals(id)))
-        .getSingleOrNull();
+    final local = await (_db.select(
+      _db.classScheduleSlotsTable,
+    )..where((t) => t.id.equals(id))).getSingleOrNull();
     if (local != null && local.syncState == 'pending') return;
     if (deleted) {
       await deleteLocalSlot(id);
       return;
     }
-    await _db.into(_db.classScheduleSlotsTable).insertOnConflictUpdate(
+    await _db
+        .into(_db.classScheduleSlotsTable)
+        .insertOnConflictUpdate(
           slot.copyWith(syncState: const Value('synced')),
         );
   }
@@ -376,19 +470,22 @@ class ClassScheduleLocalDataSource implements IClassScheduleDataSource {
           : isFamily & familyId.equals(keepFamilyId).not();
     }
 
-    await (_db.delete(_db.classScheduleSlotsTable)..where((t) => stale(t.familyId)))
-        .go();
-    await (_db.delete(_db.classSchedulesTable)..where((t) => stale(t.familyId))).go();
+    await (_db.delete(
+      _db.classScheduleSlotsTable,
+    )..where((t) => stale(t.familyId))).go();
+    await (_db.delete(
+      _db.classSchedulesTable,
+    )..where((t) => stale(t.familyId))).go();
   }
 
   ClassSchedule _toSchedule(ClassSchedulesTableData row) => ClassSchedule(
-        id: row.id,
-        name: row.name,
-        familyId: row.familyId,
-        childId: row.childId,
-        createdAt: row.createdAt,
-        updatedAt: row.updatedAt,
-      );
+    id: row.id,
+    name: row.name,
+    familyId: row.familyId,
+    childId: row.childId,
+    createdAt: row.createdAt,
+    updatedAt: row.updatedAt,
+  );
 
   ClassScheduleSlot _toSlot(ClassScheduleSlotsTableData row) {
     return ClassScheduleSlot(

@@ -34,6 +34,7 @@ import '../../data/services/family_service_stub.dart';
 import '../../data/services/file_storage_service_orchestrator.dart';
 import '../../data/services/billing_service_impl.dart';
 import '../../data/services/billing_service_stub.dart';
+import '../../data/services/personal_to_family_service_impl.dart';
 import '../../data/services/premium_service_impl.dart';
 import '../../data/services/plan_service_impl.dart';
 import '../../data/services/supabase_auth_service_impl.dart';
@@ -55,6 +56,7 @@ import '../../domain/repositories/i_class_schedule_datasource.dart';
 import '../../domain/repositories/i_connectivity_service.dart';
 import '../../domain/repositories/i_billing_service.dart';
 import '../../domain/repositories/i_ad_unlock_provider.dart';
+import '../../domain/repositories/i_personal_to_family_service.dart';
 import '../../domain/repositories/i_premium_service.dart';
 import '../../domain/repositories/i_plan_service.dart';
 import '../../domain/repositories/i_sync_service.dart';
@@ -213,6 +215,19 @@ class AppBinding extends Bindings {
       () => ClassScheduleDataSourceOrchestrator(
         Get.find<ClassScheduleLocalDataSource>(),
         Get.find<ISyncService>(),
+      ),
+      fenix: true,
+    );
+
+    Get.lazyPut<IPersonalToFamilyService>(
+      () => PersonalToFamilyServiceImpl(
+        Get.find<AgendaLocalDataSource>(),
+        Get.find<ClassScheduleLocalDataSource>(),
+        Get.find<ISyncService>(),
+        Get.find<INotificationService>(),
+        () => SupabaseConfig.isConfigured
+            ? Supabase.instance.client.auth.currentUser?.id
+            : null,
       ),
       fenix: true,
     );

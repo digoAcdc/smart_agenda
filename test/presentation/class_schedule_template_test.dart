@@ -1,5 +1,6 @@
 import 'package:drift/native.dart';
 import 'package:flutter_test/flutter_test.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 import 'package:smart_agenda/data/datasources/class_schedule_local_datasource.dart';
 import 'package:smart_agenda/data/local/app_database.dart';
 import 'package:smart_agenda/presentation/controllers/class_schedule_controller.dart';
@@ -9,6 +10,7 @@ void main() {
   late ClassScheduleController controller;
 
   setUp(() {
+    SharedPreferences.setMockInitialValues({});
     db = AppDatabase(NativeDatabase.memory());
     controller = ClassScheduleController(ClassScheduleLocalDataSource(db));
   });
