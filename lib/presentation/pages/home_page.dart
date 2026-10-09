@@ -35,11 +35,8 @@ class HomePage extends StatelessWidget {
         });
       }
 
-      final textScale = MediaQuery.of(context).textScaler.scale(1.0);
-      final isCompactNav =
-          MediaQuery.of(context).size.width < 360 || textScale > 1.05;
-      final navHeight = isCompactNav ? 78.0 : 86.0;
-      final barStackHeight = navHeight + 42;
+      const navHeight = 74.0;
+      const barStackHeight = navHeight + 42;
       final initialDate = homeController.initialDateValueForAgenda;
       final initialModeRaw = homeController.initialModeValueForAgenda;
       final initialMode = initialModeRaw == 'week'
@@ -70,6 +67,7 @@ class HomePage extends StatelessWidget {
         Icons.apps_rounded,
         Icons.settings_rounded,
       ];
+      const navLabels = ['Início', 'Agenda', 'Matérias', 'Mais', 'Config'];
 
       return Scaffold(
         body: AnimatedSwitcher(
@@ -128,67 +126,12 @@ class HomePage extends StatelessWidget {
                           children: List.generate(iconList.length, (index) {
                             final isActive =
                                 homeController.currentIndex.value == index;
-                            final labels = [
-                              'Home',
-                              'Agenda',
-                              'Materias',
-                              'Mais',
-                              'Config',
-                            ];
-                            final inactive = Theme.of(
-                              context,
-                            ).colorScheme.onSurfaceVariant;
                             return Expanded(
-                              child: InkWell(
-                                borderRadius: BorderRadius.circular(28),
+                              child: HomeNavItem(
+                                icon: iconList[index],
+                                label: navLabels[index],
+                                isActive: isActive,
                                 onTap: () => homeController.setIndex(index),
-                                child: Padding(
-                                  padding: const EdgeInsets.symmetric(
-                                    vertical: 2,
-                                  ),
-                                  child: Column(
-                                    mainAxisAlignment: MainAxisAlignment.center,
-                                    children: [
-                                      AnimatedContainer(
-                                        duration: DesignTokens.motionStandard,
-                                        width: isActive ? 52 : 38,
-                                        height: isActive ? 52 : 30,
-                                        decoration: BoxDecoration(
-                                          color: isActive
-                                              ? Theme.of(
-                                                  context,
-                                                ).colorScheme.primary
-                                              : Colors.transparent,
-                                          shape: BoxShape.circle,
-                                        ),
-                                        child: Icon(
-                                          iconList[index],
-                                          color: isActive
-                                              ? Theme.of(
-                                                  context,
-                                                ).colorScheme.onPrimary
-                                              : inactive,
-                                          size: isActive ? 28 : 23,
-                                        ),
-                                      ),
-                                      if (!isCompactNav) ...[
-                                        const SizedBox(height: 3),
-                                        Text(
-                                          labels[index],
-                                          maxLines: 1,
-                                          overflow: TextOverflow.ellipsis,
-                                          style: Theme.of(context)
-                                              .textTheme
-                                              .titleMedium
-                                              ?.copyWith(
-                                                color: inactive,
-                                                fontWeight: FontWeight.w600,
-                                              ),
-                                        ),
-                                      ],
-                                    ],
-                                  ),
-                                ),
                               ),
                             );
                           }),
@@ -236,5 +179,75 @@ class HomePage extends StatelessWidget {
         ),
       );
     });
+  }
+}
+
+/// Item da barra inferior: icone com o nome sempre visivel embaixo.
+class HomeNavItem extends StatelessWidget {
+  const HomeNavItem({
+    super.key,
+    required this.icon,
+    required this.label,
+    required this.isActive,
+    required this.onTap,
+  });
+
+  final IconData icon;
+  final String label;
+  final bool isActive;
+  final VoidCallback onTap;
+
+  @override
+  Widget build(BuildContext context) {
+    final scheme = Theme.of(context).colorScheme;
+    final color = isActive ? scheme.primary : scheme.onSurfaceVariant;
+    return Semantics(
+      selected: isActive,
+      button: true,
+      label: label,
+      excludeSemantics: true,
+      child: InkWell(
+        borderRadius: BorderRadius.circular(28),
+        onTap: onTap,
+        child: Column(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            AnimatedContainer(
+              duration: DesignTokens.motionStandard,
+              width: isActive ? 52 : 40,
+              height: 30,
+              decoration: BoxDecoration(
+                color: isActive ? scheme.primary : Colors.transparent,
+                borderRadius: BorderRadius.circular(16),
+              ),
+              child: Icon(
+                icon,
+                color: isActive ? scheme.onPrimary : color,
+                size: 22,
+              ),
+            ),
+            const SizedBox(height: 4),
+            // A escala de fonte e limitada e o texto encolhe se precisar,
+            // para o nome caber mesmo em telas estreitas.
+            MediaQuery.withClampedTextScaling(
+              maxScaleFactor: 1.15,
+              child: FittedBox(
+                fit: BoxFit.scaleDown,
+                child: Text(
+                  label,
+                  maxLines: 1,
+                  style: Theme.of(context).textTheme.labelMedium?.copyWith(
+                        color: color,
+                        fontSize: 11.5,
+                        fontWeight:
+                            isActive ? FontWeight.w700 : FontWeight.w500,
+                      ),
+                ),
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
   }
 }
