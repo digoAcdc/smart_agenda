@@ -17,10 +17,12 @@ class ConnectivityServiceImpl implements IConnectivityService {
 
   bool _hasConnection(List<ConnectivityResult> result) {
     if (result.isEmpty) return false;
-    return result.any((r) =>
-        r == ConnectivityResult.wifi ||
-        r == ConnectivityResult.mobile ||
-        r == ConnectivityResult.ethernet ||
-        r == ConnectivityResult.vpn);
+    return result.any(
+      (r) =>
+          r == ConnectivityResult.wifi ||
+          r == ConnectivityResult.mobile ||
+          r == ConnectivityResult.ethernet ||
+          r == ConnectivityResult.vpn,
+    );
   }
 }

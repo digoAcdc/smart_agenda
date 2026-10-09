@@ -82,17 +82,24 @@ AgendaItem itemFromDb(
     ),
     locationText: row.locationText,
     reminder: reminderMap == null ? null : ReminderConfig.fromJson(reminderMap),
-    recurrence:
-        recurrenceMap == null ? null : RecurrenceRule.fromJson(recurrenceMap),
+    recurrence: recurrenceMap == null
+        ? null
+        : RecurrenceRule.fromJson(recurrenceMap),
     attachments: attachments.map(attachmentFromDb).toList(),
     familyId: row.familyId,
     kind: enumByName(AgendaItemKind.values, row.kind, AgendaItemKind.event),
     subjectType: enumByName(
-        AgendaSubjectType.values, row.subjectType, AgendaSubjectType.none),
+      AgendaSubjectType.values,
+      row.subjectType,
+      AgendaSubjectType.none,
+    ),
     subjectChildId: row.subjectChildId,
     subjectUserId: row.subjectUserId,
     assigneeType: enumByName(
-        AgendaAssigneeType.values, row.assigneeType, AgendaAssigneeType.none),
+      AgendaAssigneeType.values,
+      row.assigneeType,
+      AgendaAssigneeType.none,
+    ),
     assigneeUserId: row.assigneeUserId,
     createdBy: row.createdBy,
     updatedBy: row.updatedBy,

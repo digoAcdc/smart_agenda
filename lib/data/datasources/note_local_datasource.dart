@@ -10,12 +10,12 @@ class NoteLocalDataSource {
   final AppDatabase _db;
 
   Future<List<Note>> getNotes() async {
-    final rows = await (_db.select(_db.notesTable)
-          ..orderBy([
-            (t) => OrderingTerm.desc(t.isPinned),
-            (t) => OrderingTerm.desc(t.updatedAt),
-          ]))
-        .get();
+    final rows =
+        await (_db.select(_db.notesTable)..orderBy([
+              (t) => OrderingTerm.desc(t.isPinned),
+              (t) => OrderingTerm.desc(t.updatedAt),
+            ]))
+            .get();
     final notes = <Note>[];
     for (final row in rows) {
       final items = await getChecklistItems(row.id);
@@ -25,9 +25,9 @@ class NoteLocalDataSource {
   }
 
   Future<Note?> getNoteById(String id) async {
-    final row = await (_db.select(_db.notesTable)
-          ..where((t) => t.id.equals(id)))
-        .getSingleOrNull();
+    final row = await (_db.select(
+      _db.notesTable,
+    )..where((t) => t.id.equals(id))).getSingleOrNull();
     if (row == null) return null;
     final items = await getChecklistItems(row.id);
     return _toNote(row, items);
@@ -36,7 +36,9 @@ class NoteLocalDataSource {
   Future<Note> createNote(Note note) async {
     final now = DateTime.now();
     final id = note.id.isEmpty ? const Uuid().v4() : note.id;
-    await _db.into(_db.notesTable).insert(
+    await _db
+        .into(_db.notesTable)
+        .insert(
           NotesTableCompanion.insert(
             id: id,
             title: note.title.trim(),
@@ -69,8 +71,9 @@ class NoteLocalDataSource {
 
   Future<void> updateNote(Note note) async {
     final now = DateTime.now();
-    await (_db.update(_db.notesTable)..where((t) => t.id.equals(note.id)))
-        .write(
+    await (_db.update(
+      _db.notesTable,
+    )..where((t) => t.id.equals(note.id))).write(
       NotesTableCompanion(
         title: Value(note.title.trim()),
         body: Value(note.body?.trim()),
@@ -82,9 +85,9 @@ class NoteLocalDataSource {
         updatedAt: Value(now),
       ),
     );
-    await (_db.delete(_db.noteChecklistItemsTable)
-          ..where((t) => t.noteId.equals(note.id)))
-        .go();
+    await (_db.delete(
+      _db.noteChecklistItemsTable,
+    )..where((t) => t.noteId.equals(note.id))).go();
     for (var i = 0; i < note.checklistItems.length; i++) {
       final item = note.checklistItems[i];
       await _upsertChecklistItem(
@@ -99,25 +102,26 @@ class NoteLocalDataSource {
   }
 
   Future<void> deleteNote(String id) async {
-    await (_db.delete(_db.noteChecklistItemsTable)
-          ..where((t) => t.noteId.equals(id)))
-        .go();
+    await (_db.delete(
+      _db.noteChecklistItemsTable,
+    )..where((t) => t.noteId.equals(id))).go();
     await (_db.delete(_db.notesTable)..where((t) => t.id.equals(id))).go();
   }
 
   Future<List<ChecklistItem>> getChecklistItems(String noteId) async {
-    final rows = await (_db.select(_db.noteChecklistItemsTable)
-          ..where((t) => t.noteId.equals(noteId))
-          ..orderBy([(t) => OrderingTerm.asc(t.sortOrder)]))
-        .get();
+    final rows =
+        await (_db.select(_db.noteChecklistItemsTable)
+              ..where((t) => t.noteId.equals(noteId))
+              ..orderBy([(t) => OrderingTerm.asc(t.sortOrder)]))
+            .get();
     return rows.map(_toChecklistItem).toList();
   }
 
   Future<void> toggleChecklistItem(String itemId, bool completed) async {
     final now = DateTime.now();
-    await (_db.update(_db.noteChecklistItemsTable)
-          ..where((t) => t.id.equals(itemId)))
-        .write(
+    await (_db.update(
+      _db.noteChecklistItemsTable,
+    )..where((t) => t.id.equals(itemId))).write(
       NoteChecklistItemsTableCompanion(
         completed: Value(completed),
         updatedAt: Value(now),
@@ -132,7 +136,9 @@ class NoteLocalDataSource {
   Future<void> _upsertChecklistItem(ChecklistItem item) async {
     final now = DateTime.now();
     final id = item.id.isEmpty ? const Uuid().v4() : item.id;
-    await _db.into(_db.noteChecklistItemsTable).insert(
+    await _db
+        .into(_db.noteChecklistItemsTable)
+        .insert(
           NoteChecklistItemsTableCompanion.insert(
             id: id,
             noteId: item.noteId,
@@ -146,9 +152,9 @@ class NoteLocalDataSource {
   }
 
   Future<void> deleteChecklistItem(String id) async {
-    await (_db.delete(_db.noteChecklistItemsTable)
-          ..where((t) => t.id.equals(id)))
-        .go();
+    await (_db.delete(
+      _db.noteChecklistItemsTable,
+    )..where((t) => t.id.equals(id))).go();
   }
 
   Note _toNote(NotesTableData row, List<ChecklistItem> items) {

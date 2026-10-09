@@ -31,21 +31,34 @@ AgendaItem agendaItemFromSupabase(
     timezone: row['timezone'] as String?,
     groupId: row['group_id'] as String?,
     status: enumByName(
-        AgendaStatus.values, row['status'] as String?, AgendaStatus.pending),
+      AgendaStatus.values,
+      row['status'] as String?,
+      AgendaStatus.pending,
+    ),
     locationText: row['location_text'] as String?,
     reminder: reminderMap == null ? null : ReminderConfig.fromJson(reminderMap),
-    recurrence:
-        recurrenceMap == null ? null : RecurrenceRule.fromJson(recurrenceMap),
+    recurrence: recurrenceMap == null
+        ? null
+        : RecurrenceRule.fromJson(recurrenceMap),
     attachments: attachmentsRows.map(attachmentFromSupabase).toList(),
     familyId: row['family_id'] as String?,
     kind: enumByName(
-        AgendaItemKind.values, row['kind'] as String?, AgendaItemKind.event),
-    subjectType: enumByName(AgendaSubjectType.values,
-        row['subject_type'] as String?, AgendaSubjectType.none),
+      AgendaItemKind.values,
+      row['kind'] as String?,
+      AgendaItemKind.event,
+    ),
+    subjectType: enumByName(
+      AgendaSubjectType.values,
+      row['subject_type'] as String?,
+      AgendaSubjectType.none,
+    ),
     subjectChildId: row['subject_child_id'] as String?,
     subjectUserId: row['subject_user_id'] as String?,
-    assigneeType: enumByName(AgendaAssigneeType.values,
-        row['assignee_type'] as String?, AgendaAssigneeType.none),
+    assigneeType: enumByName(
+      AgendaAssigneeType.values,
+      row['assignee_type'] as String?,
+      AgendaAssigneeType.none,
+    ),
     assigneeUserId: row['assignee_user_id'] as String?,
     createdBy: row['created_by'] as String?,
     updatedBy: row['updated_by'] as String?,
@@ -63,7 +76,10 @@ AttachmentRef attachmentFromSupabase(Map<String, dynamic> row) {
     id: row['id'] as String,
     itemId: row['item_id'] as String,
     type: enumByName(
-        AttachmentType.values, row['type'] as String?, AttachmentType.file),
+      AttachmentType.values,
+      row['type'] as String?,
+      AttachmentType.file,
+    ),
     remoteUrl: row['remote_url'] as String?,
     thumbPath: row['thumb_path'] as String?,
     title: row['title'] as String?,
@@ -106,10 +122,12 @@ Map<String, dynamic> agendaItemToSupabase(AgendaItem item, String userId) {
     'group_id': isFamily ? null : item.groupId,
     'status': item.status.name,
     'location_text': item.locationText,
-    'reminder_json':
-        item.reminder == null ? null : jsonEncode(item.reminder!.toJson()),
-    'recurrence_json':
-        item.recurrence == null ? null : jsonEncode(item.recurrence!.toJson()),
+    'reminder_json': item.reminder == null
+        ? null
+        : jsonEncode(item.reminder!.toJson()),
+    'recurrence_json': item.recurrence == null
+        ? null
+        : jsonEncode(item.recurrence!.toJson()),
     'subject_type': item.subjectType.name,
     'subject_child_id': item.subjectChildId,
     'subject_user_id': item.subjectUserId,

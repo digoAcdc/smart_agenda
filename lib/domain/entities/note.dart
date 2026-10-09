@@ -41,8 +41,15 @@ class ChecklistItem extends Equatable {
   }
 
   @override
-  List<Object?> get props =>
-      [id, noteId, text, completed, sortOrder, createdAt, updatedAt];
+  List<Object?> get props => [
+    id,
+    noteId,
+    text,
+    completed,
+    sortOrder,
+    createdAt,
+    updatedAt,
+  ];
 }
 
 /// Anotacao com titulo, texto livre, checklist e imagem opcional.
@@ -103,16 +110,16 @@ class Note extends Equatable {
 
   @override
   List<Object?> get props => [
-        id,
-        title,
-        body,
-        checklistItems,
-        imagePath,
-        imageUrl,
-        categoryId,
-        isPinned,
-        reminderAt,
-        createdAt,
-        updatedAt,
-      ];
+    id,
+    title,
+    body,
+    checklistItems,
+    imagePath,
+    imageUrl,
+    categoryId,
+    isPinned,
+    reminderAt,
+    createdAt,
+    updatedAt,
+  ];
 }

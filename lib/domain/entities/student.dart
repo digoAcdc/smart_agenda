@@ -54,15 +54,15 @@ class Student extends Equatable {
 
   @override
   List<Object?> get props => [
-        id,
-        groupId,
-        name,
-        email,
-        phone,
-        guardianName,
-        guardianEmail,
-        guardianPhone,
-        createdAt,
-        updatedAt,
-      ];
+    id,
+    groupId,
+    name,
+    email,
+    phone,
+    guardianName,
+    guardianEmail,
+    guardianPhone,
+    createdAt,
+    updatedAt,
+  ];
 }

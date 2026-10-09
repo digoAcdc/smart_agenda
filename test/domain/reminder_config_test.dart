@@ -14,11 +14,8 @@ void main() {
 
   test('assert dispara se enabled false e minutesBefore preenchido', () {
     expect(
-      () => ReminderConfig(
-        enabled: false,
-        minutesBefore: 10,
-        notificationId: 11,
-      ),
+      () =>
+          ReminderConfig(enabled: false, minutesBefore: 10, notificationId: 11),
       throwsA(isA<AssertionError>()),
     );
   });

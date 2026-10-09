@@ -55,15 +55,15 @@ class AttachmentRef extends Equatable {
 
   @override
   List<Object?> get props => [
-        id,
-        itemId,
-        type,
-        localPath,
-        remoteUrl,
-        thumbPath,
-        title,
-        mimeType,
-        sizeBytes,
-        createdAt,
-      ];
+    id,
+    itemId,
+    type,
+    localPath,
+    remoteUrl,
+    thumbPath,
+    title,
+    mimeType,
+    sizeBytes,
+    createdAt,
+  ];
 }
