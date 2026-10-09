@@ -159,9 +159,18 @@ class _UpsertAgendaPageState extends State<UpsertAgendaPage> {
     });
   }
 
+  bool get _attachmentsFull =>
+      attachments.length >= ImageUploadConstants.maxAttachmentsPerItem;
+
   Future<void> _addImageAttachment() async {
     if (!_canAttachImages) {
       _showSaved('Anexar imagens é um recurso do plano Pro.');
+      return;
+    }
+    if (_attachmentsFull) {
+      _showSaved(
+        'Máximo de ${ImageUploadConstants.maxAttachmentsPerItem} fotos por evento.',
+      );
       return;
     }
     final fileStorage = Get.find<IFileStorageService>();
@@ -174,7 +183,11 @@ class _UpsertAgendaPageState extends State<UpsertAgendaPage> {
     if (picked == null) return;
     final stored = await fileStorage.copyImageToAppStorage(picked.path);
     if (!stored.isSuccess || stored.data == null) {
-      _showSaved('Não foi possível anexar a imagem. Tente de novo.');
+      _showSaved(
+        stored.errorMessage?.startsWith('Imagem muito grande') == true
+            ? stored.errorMessage!
+            : 'Não foi possível anexar a imagem. Tente de novo.',
+      );
       return;
     }
 
@@ -1009,7 +1022,9 @@ class _UpsertAgendaPageState extends State<UpsertAgendaPage> {
         Row(
           children: [
             Text(
-              'ANEXOS',
+              attachments.isEmpty
+                  ? 'ANEXOS'
+                  : 'ANEXOS ${attachments.length}/${ImageUploadConstants.maxAttachmentsPerItem}',
               style: Theme.of(context).textTheme.labelSmall?.copyWith(
                 fontWeight: FontWeight.w700,
                 color: Theme.of(context).colorScheme.onSurfaceVariant,
@@ -1040,7 +1055,9 @@ class _UpsertAgendaPageState extends State<UpsertAgendaPage> {
                 ),
               ),
             FilledButton.tonalIcon(
-              onPressed: _canAttachImages ? _addImageAttachment : null,
+              onPressed: _canAttachImages && !_attachmentsFull
+                  ? _addImageAttachment
+                  : null,
               icon: const Icon(Icons.attach_file_rounded),
               label: const Text('Adicionar'),
               style: FilledButton.styleFrom(
@@ -1087,7 +1104,8 @@ class _UpsertAgendaPageState extends State<UpsertAgendaPage> {
             height: 118,
             child: ListView.separated(
               scrollDirection: Axis.horizontal,
-              itemCount: attachments.length + 1,
+              // Sem o quadro "Adicionar" quando ja chegou no limite.
+              itemCount: attachments.length + (_attachmentsFull ? 0 : 1),
               separatorBuilder: (_, separatorIndex) =>
                   const SizedBox(width: 10),
               itemBuilder: (context, index) {
