@@ -17,6 +17,7 @@ import '../controllers/note_controller.dart';
 import '../controllers/notifications_controller.dart';
 import '../widgets/ad_banner_widget.dart';
 import '../widgets/ui_primitives.dart';
+import '../controllers/billing_controller.dart';
 
 class ConfigPage extends StatefulWidget {
   const ConfigPage({super.key});
@@ -362,13 +363,20 @@ class _ConfigPageState extends State<ConfigPage> {
               ],
             ),
             const SizedBox(height: 12),
-            Text(
-              'R\$ 4,99 /mes',
-              style: Theme.of(context).textTheme.headlineSmall?.copyWith(
-                    fontWeight: FontWeight.w800,
-                    color: scheme.onSurface,
-                  ),
-            ),
+            // Preco real do Google Play (nada fixo no codigo).
+            Obx(() {
+              final price = Get.isRegistered<BillingController>()
+                  ? Get.find<BillingController>().productPrice.value
+                  : null;
+              if (price == null) return const SizedBox.shrink();
+              return Text(
+                price,
+                style: Theme.of(context).textTheme.headlineSmall?.copyWith(
+                      fontWeight: FontWeight.w800,
+                      color: scheme.onSurface,
+                    ),
+              );
+            }),
             const SizedBox(height: 8),
             Text(
               'Desbloqueie todo o potencial',

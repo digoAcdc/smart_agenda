@@ -221,7 +221,7 @@ class UpgradePage extends StatelessWidget {
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
                       Text(
-                        ctrl.productPrice.value ?? 'R\$ 4,99 /mes',
+                        ctrl.productPrice.value ?? 'Carregando preço...',
                         style: Theme.of(context).textTheme.headlineSmall?.copyWith(
                               fontWeight: FontWeight.w800,
                             ),

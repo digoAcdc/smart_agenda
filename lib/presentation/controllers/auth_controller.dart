@@ -128,6 +128,15 @@ class AuthController extends GetxController with WidgetsBindingObserver {
     }
   }
 
+  /// Plano mudou (compra, restauracao): atualiza a tela do Pro, anuncios e
+  /// a Familia (que fica ativa/somente leitura conforme o Pro do dono).
+  Future<void> refreshPlanStatus() async {
+    await _planService.refresh();
+    isPremium.value = await _planService.isPremium();
+    _refreshPremiumService();
+    await _loadFamilyAndSync();
+  }
+
   void _refreshPremiumService() {
     if (Get.isRegistered<IPremiumService>()) {
       Get.find<IPremiumService>().refresh();

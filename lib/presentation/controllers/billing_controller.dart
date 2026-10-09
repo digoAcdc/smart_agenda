@@ -7,6 +7,7 @@ import '../../core/constants/billing_constants.dart';
 import '../../domain/entities/purchase_payload.dart';
 import '../../domain/repositories/i_billing_service.dart';
 import '../../domain/repositories/i_plan_service.dart';
+import 'auth_controller.dart';
 
 /// Estado do fluxo de compra para a UI.
 enum BillingPurchaseStatus {
@@ -95,6 +96,9 @@ class BillingController extends GetxController {
       final result = await _billingService.validatePurchaseWithBackend(payload);
       if (result.isPremium) {
         await _planService.refresh();
+        if (Get.isRegistered<AuthController>()) {
+          await Get.find<AuthController>().refreshPlanStatus();
+        }
         purchaseStatus.value = BillingPurchaseStatus.success;
         debugPrint(
           '[subscription_revalidation_completed] isPremium=true status=${result.status} source=${result.source}',

@@ -3,6 +3,10 @@ import 'dart:io';
 
 import 'package:flutter/foundation.dart';
 import 'package:in_app_purchase/in_app_purchase.dart';
+import 'package:in_app_purchase_android/billing_client_wrappers.dart';
+import 'package:in_app_purchase_android/in_app_purchase_android.dart';
+
+import 'package:get/get.dart';
 
 import '../../core/constants/billing_constants.dart';
 import '../../domain/entities/purchase_payload.dart';
@@ -45,7 +49,7 @@ class BillingServiceImpl implements IBillingService {
       final list = response.productDetails
           .where((p) => p.id == BillingConstants.premiumMonthlyProductId)
           .toList();
-      _premiumProduct = list.isEmpty ? null : list.first;
+      _premiumProduct = selectBasePlan(list);
       return _premiumProduct != null;
     } catch (e) {
       debugPrint('[BillingService] loadProducts error: $e');
@@ -56,7 +60,10 @@ class BillingServiceImpl implements IBillingService {
   ProductDetails? get premiumProduct => _premiumProduct;
 
   @override
-  String? get premiumProductPrice => _premiumProduct?.price;
+  String? get premiumProductPrice {
+    final product = _premiumProduct;
+    return product == null ? null : recurringPriceLabel(product);
+  }
 
   @override
   Future<bool> purchase() async {
@@ -190,4 +197,33 @@ class BillingServiceImpl implements IBillingService {
     _subscription?.cancel();
     _purchaseController.close();
   }
+}
+
+SubscriptionOfferDetailsWrapper? _offerOf(ProductDetails p) {
+  if (p is! GooglePlayProductDetails) return null;
+  final index = p.subscriptionIndex;
+  final offers = p.productDetails.subscriptionOfferDetails;
+  if (index == null || offers == null || index >= offers.length) return null;
+  return offers[index];
+}
+
+/// A assinatura vem com uma entrada por oferta. O plano base e a oferta sem
+/// offerId; promocoes (ex.: preco de entrada) vem com offerId.
+@visibleForTesting
+ProductDetails? selectBasePlan(List<ProductDetails> offers) =>
+    offers.firstWhereOrNull((p) => _offerOf(p)?.offerId == null) ??
+    offers.firstOrNull;
+
+/// Preco recorrente, ex.: "R$ 9,90 por mês" (ultima fase de preco da oferta).
+@visibleForTesting
+String recurringPriceLabel(ProductDetails product) {
+  final phase = _offerOf(product)?.pricingPhases.lastOrNull;
+  if (phase == null) return product.price;
+  final period = switch (phase.billingPeriod) {
+    'P1M' => ' por mês',
+    'P1Y' => ' por ano',
+    'P1W' => ' por semana',
+    _ => '',
+  };
+  return '${phase.formattedPrice}$period';
 }
