@@ -94,7 +94,16 @@ class _UpsertNotePageState extends State<UpsertNotePage> {
     if (picked == null) return;
     final fileStorage = Get.find<IFileStorageService>();
     final result = await fileStorage.copyImageToAppStorage(picked.path);
-    if (!result.isSuccess || result.data == null) return;
+    if (!result.isSuccess || result.data == null) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            content: Text('Não foi possível anexar a imagem. Tente de novo.'),
+          ),
+        );
+      }
+      return;
+    }
     setState(() {
       final pathOrUrl = result.data!;
       final isUrl =

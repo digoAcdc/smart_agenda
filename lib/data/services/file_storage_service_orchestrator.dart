@@ -27,7 +27,9 @@ class FileStorageServiceOrchestrator implements IFileStorageService {
       if (!source.existsSync()) {
         return Result.failure('Arquivo de origem não encontrado');
       }
-      return _copyLocal(source);
+      // await: sem ele o finally apagava o arquivo comprimido antes da
+      // copia terminar e o anexo nunca era salvo.
+      return await _copyLocal(source);
     } catch (e) {
       return Result.failure('Falha ao salvar imagem: $e');
     } finally {
@@ -90,7 +92,7 @@ class FileStorageServiceOrchestrator implements IFileStorageService {
       debugPrint('[FileStorageOrchestrator] uploaded to $storagePath');
       return Result.success(url);
     } catch (e) {
-      return Result.failure('Upload falhou: $e');
+      return Result.failure('Envio da imagem falhou: $e');
     }
   }
 }

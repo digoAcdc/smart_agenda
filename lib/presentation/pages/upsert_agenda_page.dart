@@ -173,7 +173,10 @@ class _UpsertAgendaPageState extends State<UpsertAgendaPage> {
     );
     if (picked == null) return;
     final stored = await fileStorage.copyImageToAppStorage(picked.path);
-    if (!stored.isSuccess || stored.data == null) return;
+    if (!stored.isSuccess || stored.data == null) {
+      _showSaved('Não foi possível anexar a imagem. Tente de novo.');
+      return;
+    }
 
     final itemId = editingItem?.id ?? const Uuid().v4();
     final pathOrUrl = stored.data!;
@@ -1108,7 +1111,7 @@ class _UpsertAgendaPageState extends State<UpsertAgendaPage> {
                           ),
                           const SizedBox(height: 6),
                           Text(
-                            'Upload',
+                            'Adicionar',
                             style: Theme.of(context).textTheme.bodySmall,
                           ),
                         ],
