@@ -220,7 +220,7 @@ class _AgendaCardState extends State<AgendaCard> {
                               ],
                               const SizedBox(height: DesignTokens.space4),
                               Text(
-                                '$metaLabel • ${item.status.name}',
+                                '$metaLabel • ${item.status.label}',
                                 style: Theme.of(context).textTheme.bodySmall
                                     ?.copyWith(
                                       color: Theme.of(

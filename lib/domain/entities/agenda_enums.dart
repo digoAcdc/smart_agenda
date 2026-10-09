@@ -1,5 +1,14 @@
 enum AgendaStatus { pending, done, canceled }
 
+extension AgendaStatusLabel on AgendaStatus {
+  /// Nome para a tela (o .name e o valor salvo, em ingles).
+  String get label => switch (this) {
+    AgendaStatus.pending => 'Pendente',
+    AgendaStatus.done => 'Concluído',
+    AgendaStatus.canceled => 'Cancelado',
+  };
+}
+
 enum AttachmentType { image, file, link, audio }
 
 enum SyncState { pending, synced, conflict }

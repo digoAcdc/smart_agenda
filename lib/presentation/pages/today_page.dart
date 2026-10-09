@@ -319,83 +319,84 @@ class _TodayPageState extends State<TodayPage> {
         bottom: false,
         child: Column(
           children: [
-            Expanded(
-              child: Column(
-                children: [
-                  // Um titulo so; o calendario fica sempre visivel e acompanha
-                  // o modo (Dia/Semana = semana, Mes = mes inteiro).
-                  SectionHeader(
-                    title: 'Agenda',
-                    subtitle: toBeginningOfSentenceCase(
-                      DateFormat('EEEE, d MMMM', 'pt_BR').format(selectedDate),
-                    ),
-                    trailing: isTodaySelected
-                        ? null
-                        : TextButton.icon(
-                            onPressed: () {
-                              setState(() {
-                                selectedDate = today;
-                                focusedDay = today;
-                              });
-                              _reloadByMode(agendaController);
-                            },
-                            icon: const Icon(Icons.today_rounded, size: 18),
-                            label: const Text('Hoje'),
-                          ),
-                  ),
-                  _buildCalendarCard(context, agendaController),
-                  const SizedBox(height: 8),
-                  Padding(
-                    padding: const EdgeInsets.fromLTRB(16, 0, 16, 10),
-                    child: SegmentedButton<AgendaHomeViewMode>(
-                      segments: const [
-                        ButtonSegment(
-                          value: AgendaHomeViewMode.day,
-                          label: Text('Dia'),
-                        ),
-                        ButtonSegment(
-                          value: AgendaHomeViewMode.week,
-                          label: Text('Semana'),
-                        ),
-                        ButtonSegment(
-                          value: AgendaHomeViewMode.month,
-                          label: Text('Mês'),
-                        ),
-                      ],
-                      selected: {mode},
-                      onSelectionChanged: (value) {
+            // Titulo fixo; calendario e modos rolam junto com a lista para
+            // sobrar espaco para os eventos (o mes inteiro ocupava a tela).
+            SectionHeader(
+              title: 'Agenda',
+              subtitle: toBeginningOfSentenceCase(
+                DateFormat('EEEE, d MMMM', 'pt_BR').format(selectedDate),
+              ),
+              trailing: isTodaySelected
+                  ? null
+                  : TextButton.icon(
+                      onPressed: () {
                         setState(() {
-                          mode = value.first;
-                          calendarFormat = mode == AgendaHomeViewMode.month
-                              ? CalendarFormat.month
-                              : CalendarFormat.week;
+                          selectedDate = today;
+                          focusedDay = today;
                         });
                         _reloadByMode(agendaController);
                       },
+                      icon: const Icon(Icons.today_rounded, size: 18),
+                      label: const Text('Hoje'),
+                    ),
+            ),
+            Expanded(
+              child: NestedScrollView(
+                headerSliverBuilder: (context, innerBoxIsScrolled) => [
+                  SliverToBoxAdapter(
+                    child: _buildCalendarCard(context, agendaController),
+                  ),
+                  SliverToBoxAdapter(
+                    child: Padding(
+                      padding: const EdgeInsets.fromLTRB(16, 8, 16, 10),
+                      child: SegmentedButton<AgendaHomeViewMode>(
+                        segments: const [
+                          ButtonSegment(
+                            value: AgendaHomeViewMode.day,
+                            label: Text('Dia'),
+                          ),
+                          ButtonSegment(
+                            value: AgendaHomeViewMode.week,
+                            label: Text('Semana'),
+                          ),
+                          ButtonSegment(
+                            value: AgendaHomeViewMode.month,
+                            label: Text('Mês'),
+                          ),
+                        ],
+                        selected: {mode},
+                        onSelectionChanged: (value) {
+                          setState(() {
+                            mode = value.first;
+                            calendarFormat = mode == AgendaHomeViewMode.month
+                                ? CalendarFormat.month
+                                : CalendarFormat.week;
+                          });
+                          _reloadByMode(agendaController);
+                        },
+                      ),
                     ),
                   ),
-                  Expanded(
-                    child: mode == AgendaHomeViewMode.day
-                        ? _buildSelectedDayTimeline(
-                            agendaController: agendaController,
-                            groupsController: groupsController,
-                          )
-                        : mode == AgendaHomeViewMode.week
-                        ? _buildRangeByDayAndGroup(
-                            agendaController: agendaController,
-                            groupsController: groupsController,
-                            items: agendaController.weekItems,
-                            emptyMessage:
-                                'Semana livre por enquanto. Que tal criar um evento?',
-                          )
-                        : _buildRangeByDayAndGroup(
-                            agendaController: agendaController,
-                            groupsController: groupsController,
-                            items: agendaController.monthItems,
-                            emptyMessage: 'Nenhum evento para este mês.',
-                          ),
-                  ),
                 ],
+                body: mode == AgendaHomeViewMode.day
+                    ? _buildSelectedDayTimeline(
+                        agendaController: agendaController,
+                        groupsController: groupsController,
+                      )
+                    : mode == AgendaHomeViewMode.week
+                    ? _buildRangeByDayAndGroup(
+                        agendaController: agendaController,
+                        groupsController: groupsController,
+                        items: agendaController.weekItems,
+                        emptyMessage:
+                            'Semana livre por enquanto. Que tal criar um evento?',
+                      )
+                    : _buildRangeByDayAndGroup(
+                        agendaController: agendaController,
+                        groupsController: groupsController,
+                        items: agendaController.monthItems,
+                        emptyMessage: 'Nenhum evento para este mês.',
+                      ),
               ),
             ),
           ],
@@ -429,10 +430,11 @@ class _TodayPageState extends State<TodayPage> {
     final isTodaySelected = isSameDay(selectedDate, DateTime.now());
     final agendaDoDia = [...agendaController.selectedDayItems]
       ..sort((a, b) => a.startAt.compareTo(b.startAt));
+    // Todos os eventos do dia ficam na lista; os atrasados (pendentes com
+    // horario ja passado) aparecem em vermelho. Antes saiam da lista e so o
+    // primeiro aparecia, e a tela dizia "Nada marcado para hoje".
     final overdueIds = overdue.map((e) => e.id).toSet();
-    final agendaDoDiaExibida = agendaDoDia
-        .where((e) => !overdueIds.contains(e.id))
-        .toList();
+    final agendaDoDiaExibida = agendaDoDia;
     final groupNameById = {
       for (final g in groupsController.groups) g.id: g.name,
     };
@@ -605,47 +607,13 @@ class _TodayPageState extends State<TodayPage> {
                             item: item,
                             groupName:
                                 groupNameById[item.groupId] ?? 'Sem grupo',
-                            accentColor: Theme.of(context).colorScheme.primary,
+                            accentColor: overdueIds.contains(item.id)
+                                ? context.semanticColors.danger
+                                : Theme.of(context).colorScheme.primary,
                           ),
                         ),
                       ),
                     const SizedBox(height: 8),
-                    if (overdue.isNotEmpty)
-                      Container(
-                        padding: const EdgeInsets.all(12),
-                        decoration: BoxDecoration(
-                          color: Theme.of(context).colorScheme.surface,
-                          borderRadius: BorderRadius.circular(18),
-                          border: Border.all(
-                            color: context.semanticColors.danger.withValues(
-                              alpha: 0.2,
-                            ),
-                          ),
-                        ),
-                        child: Column(
-                          crossAxisAlignment: CrossAxisAlignment.start,
-                          children: [
-                            Text(
-                              'ATENÇÃO NECESSÁRIA',
-                              style: Theme.of(context).textTheme.labelSmall
-                                  ?.copyWith(
-                                    color: context.semanticColors.danger,
-                                    fontWeight: FontWeight.w700,
-                                    letterSpacing: 0.8,
-                                  ),
-                            ),
-                            const SizedBox(height: 8),
-                            _buildDashboardEventTile(
-                              context,
-                              item: overdue.first,
-                              groupName:
-                                  groupNameById[overdue.first.groupId] ??
-                                  'Sem grupo',
-                              accentColor: context.semanticColors.danger,
-                            ),
-                          ],
-                        ),
-                      ),
                     const SizedBox(height: 14),
                     _sectionTitle(
                       context,
@@ -1243,7 +1211,7 @@ class _TodayPageState extends State<TodayPage> {
                       ),
                       if (isExpired)
                         Text(
-                          'Expirado',
+                          'Atrasado',
                           style: Theme.of(context).textTheme.labelSmall
                               ?.copyWith(
                                 color: context.semanticColors.danger,
@@ -1374,11 +1342,7 @@ class _TodayPageState extends State<TodayPage> {
       if (asSection) {
         return Column(
           children: [
-            const SectionHeader(
-              title: 'Timeline',
-              subtitle: 'Eventos do dia selecionado',
-              compact: true,
-            ),
+            const SectionHeader(title: 'Eventos do dia', compact: true),
             Padding(
               padding: const EdgeInsets.symmetric(horizontal: 12),
               child: EmptyStateWidget(
@@ -1410,11 +1374,6 @@ class _TodayPageState extends State<TodayPage> {
     };
 
     final timelineChildren = [
-      const SectionHeader(
-        title: 'Timeline',
-        subtitle: 'Eventos do dia selecionado',
-        compact: true,
-      ),
       ...items.map(
         (item) => Row(
           crossAxisAlignment: CrossAxisAlignment.start,
@@ -1511,7 +1470,7 @@ class _TodayPageState extends State<TodayPage> {
               children: [
                 Container(
                   width: 3,
-                  height: 54,
+                  height: 44,
                   decoration: BoxDecoration(
                     color: railColor,
                     borderRadius: BorderRadius.circular(4),
@@ -1522,61 +1481,60 @@ class _TodayPageState extends State<TodayPage> {
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
-                      Row(
-                        children: [
-                          Text(
-                            DateFormat('HH:mm').format(item.startAt),
-                            style: Theme.of(context).textTheme.titleMedium
-                                ?.copyWith(fontWeight: FontWeight.w700),
-                          ),
-                          const SizedBox(width: 8),
-                          Flexible(
-                            child: Container(
-                              padding: const EdgeInsets.symmetric(
-                                horizontal: 8,
-                                vertical: 4,
-                              ),
-                              decoration: BoxDecoration(
-                                color: railColor.withValues(alpha: 0.12),
-                                borderRadius: BorderRadius.circular(999),
-                              ),
-                              child: Text(
-                                groupName,
-                                style: Theme.of(context).textTheme.labelSmall
-                                    ?.copyWith(
-                                      color: railColor,
-                                      fontWeight: FontWeight.w700,
-                                    ),
-                                maxLines: 1,
-                                overflow: TextOverflow.ellipsis,
-                              ),
-                            ),
-                          ),
-                          if (isExpired) ...[
-                            const SizedBox(width: 8),
-                            Container(
-                              padding: const EdgeInsets.symmetric(
-                                horizontal: 8,
-                                vertical: 4,
-                              ),
-                              decoration: BoxDecoration(
-                                color: context.semanticColors.danger.withValues(
-                                  alpha: 0.12,
+                      // Hora fica na coluna da esquerda; aqui so etiquetas.
+                      if (item.groupId != null || isExpired)
+                        Row(
+                          children: [
+                            if (item.groupId != null)
+                              Flexible(
+                                child: Container(
+                                  padding: const EdgeInsets.symmetric(
+                                    horizontal: 8,
+                                    vertical: 4,
+                                  ),
+                                  decoration: BoxDecoration(
+                                    color: railColor.withValues(alpha: 0.12),
+                                    borderRadius: BorderRadius.circular(999),
+                                  ),
+                                  child: Text(
+                                    groupName,
+                                    style: Theme.of(context)
+                                        .textTheme
+                                        .labelSmall
+                                        ?.copyWith(
+                                          color: railColor,
+                                          fontWeight: FontWeight.w700,
+                                        ),
+                                    maxLines: 1,
+                                    overflow: TextOverflow.ellipsis,
+                                  ),
                                 ),
-                                borderRadius: BorderRadius.circular(999),
                               ),
-                              child: Text(
-                                'Expirado',
-                                style: Theme.of(context).textTheme.labelSmall
-                                    ?.copyWith(
-                                      color: context.semanticColors.danger,
-                                      fontWeight: FontWeight.w700,
-                                    ),
+                            if (isExpired) ...[
+                              if (item.groupId != null)
+                                const SizedBox(width: 8),
+                              Container(
+                                padding: const EdgeInsets.symmetric(
+                                  horizontal: 8,
+                                  vertical: 4,
+                                ),
+                                decoration: BoxDecoration(
+                                  color: context.semanticColors.danger
+                                      .withValues(alpha: 0.12),
+                                  borderRadius: BorderRadius.circular(999),
+                                ),
+                                child: Text(
+                                  'Atrasado',
+                                  style: Theme.of(context).textTheme.labelSmall
+                                      ?.copyWith(
+                                        color: context.semanticColors.danger,
+                                        fontWeight: FontWeight.w700,
+                                      ),
+                                ),
                               ),
-                            ),
+                            ],
                           ],
-                        ],
-                      ),
+                        ),
                       if (FamilyItemLabels.summary(item) != null) ...[
                         const SizedBox(height: 4),
                         Row(
@@ -1603,16 +1561,21 @@ class _TodayPageState extends State<TodayPage> {
                           ],
                         ),
                       ],
-                      const SizedBox(height: 6),
+                      const SizedBox(height: 4),
                       Text(
                         item.title,
-                        style: Theme.of(context).textTheme.titleLarge?.copyWith(
-                          fontWeight: FontWeight.w700,
-                        ),
+                        style: Theme.of(context).textTheme.titleMedium
+                            ?.copyWith(fontWeight: FontWeight.w700),
                       ),
                       const SizedBox(height: 2),
                       Text(
-                        '${DateFormat('dd MMM').format(item.startAt)} · ${item.status.name}',
+                        [
+                          if (item.allDay)
+                            'Dia todo'
+                          else if (item.endAt != null)
+                            'até ${DateFormat('HH:mm').format(item.endAt!)}',
+                          item.status.label,
+                        ].join(' · '),
                         style: Theme.of(context).textTheme.bodySmall?.copyWith(
                           color: Theme.of(context).colorScheme.onSurfaceVariant,
                         ),
@@ -1858,7 +1821,9 @@ class _TodayPageState extends State<TodayPage> {
           firstDay: DateTime.utc(2020, 1, 1),
           lastDay: DateTime.utc(2050, 12, 31),
           focusedDay: focusedDay,
-          rowHeight: isCompact ? 36 : 42,
+          rowHeight: calendarFormat == CalendarFormat.month
+              ? (isCompact ? 34 : 38)
+              : (isCompact ? 36 : 42),
           daysOfWeekHeight: isCompact ? 18 : 22,
           selectedDayPredicate: (day) => isSameDay(day, selectedDate),
           eventLoader: (day) {
@@ -1869,8 +1834,10 @@ class _TodayPageState extends State<TodayPage> {
           },
           onDaySelected: (selected, focused) {
             setState(() {
-              // Melhor UX: ao tocar em um dia no calendario, foca no modo dia.
+              // Ao tocar em um dia: modo Dia; na aba Agenda o calendario
+              // recolhe para a semana para os eventos do dia aparecerem.
               mode = AgendaHomeViewMode.day;
+              if (isAgendaTabMode) calendarFormat = CalendarFormat.week;
               selectedDate = DateUtilsEx.startOfDay(selected);
               focusedDay = DateUtilsEx.startOfDay(focused);
             });
