@@ -98,6 +98,14 @@ const deleteAccountPage = readFileSync(new URL("./pages/excluir-conta.html", imp
 app.get("/excluir-conta", async (request, reply) =>
   reply.type("text/html; charset=utf-8").send(deleteAccountPage)
 );
+// app-ads.txt: o AdMob confere no site do desenvolvedor (ficha da Play Store)
+// que esta conta de anuncios e a dona do app.
+app.get("/app-ads.txt", async (request, reply) =>
+  reply
+    .type("text/plain; charset=utf-8")
+    .send("google.com, pub-1515466936385187, DIRECT, f08c47fec0942fa0\n")
+);
+
 const privacyPage = readFileSync(new URL("./pages/privacidade.html", import.meta.url), "utf8");
 app.get("/privacidade", async (request, reply) =>
   reply.type("text/html; charset=utf-8").send(privacyPage)
