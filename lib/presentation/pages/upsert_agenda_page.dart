@@ -58,7 +58,9 @@ class _UpsertAgendaPageState extends State<UpsertAgendaPage> {
   String? assigneeUserId;
 
   /// Imagens: Pro pessoal, ou item de Familia (a assinatura e do dono).
-  bool get _canAttachImages => _isPremium || familyId != null;
+  /// Fotos liberadas para todos. Sem Pro (e fora da Familia) ficam so no
+  /// aparelho; o servidor so aceita upload com Pro ou na Familia.
+  bool get _photosStayOnDevice => !_isPremium && familyId == null;
 
   @override
   void initState() {
@@ -163,10 +165,6 @@ class _UpsertAgendaPageState extends State<UpsertAgendaPage> {
       attachments.length >= ImageUploadConstants.maxAttachmentsPerItem;
 
   Future<void> _addImageAttachment() async {
-    if (!_canAttachImages) {
-      _showSaved('Anexar imagens é um recurso do plano Pro.');
-      return;
-    }
     if (_attachmentsFull) {
       _showSaved(
         'Máximo de ${ImageUploadConstants.maxAttachmentsPerItem} fotos por evento.',
@@ -1014,6 +1012,26 @@ class _UpsertAgendaPageState extends State<UpsertAgendaPage> {
     });
   }
 
+  Widget _photosOnDeviceNotice(BuildContext context) {
+    final scheme = Theme.of(context).colorScheme;
+    return Row(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Icon(Icons.phone_android_rounded, size: 16, color: scheme.primary),
+        const SizedBox(width: 6),
+        Expanded(
+          child: Text(
+            'No plano Grátis as fotos ficam só neste celular. Com o Pro elas '
+            'vão para a nuvem e aparecem nos seus outros aparelhos.',
+            style: Theme.of(
+              context,
+            ).textTheme.bodySmall?.copyWith(color: scheme.onSurfaceVariant),
+          ),
+        ),
+      ],
+    );
+  }
+
   Widget _buildAttachmentsSection(BuildContext context) {
     final scheme = Theme.of(context).colorScheme;
     return Column(
@@ -1031,33 +1049,8 @@ class _UpsertAgendaPageState extends State<UpsertAgendaPage> {
               ),
             ),
             const Spacer(),
-            if (!_canAttachImages)
-              Container(
-                margin: const EdgeInsets.only(right: 8),
-                padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
-                decoration: BoxDecoration(
-                  color: scheme.outline.withValues(alpha: 0.12),
-                  borderRadius: BorderRadius.circular(999),
-                ),
-                child: Row(
-                  mainAxisSize: MainAxisSize.min,
-                  children: [
-                    Icon(Icons.lock_outline, size: 14, color: scheme.outline),
-                    const SizedBox(width: 4),
-                    Text(
-                      'Pro',
-                      style: Theme.of(context).textTheme.labelSmall?.copyWith(
-                        color: scheme.outline,
-                        fontWeight: FontWeight.w600,
-                      ),
-                    ),
-                  ],
-                ),
-              ),
             FilledButton.tonalIcon(
-              onPressed: _canAttachImages && !_attachmentsFull
-                  ? _addImageAttachment
-                  : null,
+              onPressed: _attachmentsFull ? null : _addImageAttachment,
               icon: const Icon(Icons.attach_file_rounded),
               label: const Text('Adicionar'),
               style: FilledButton.styleFrom(
@@ -1073,6 +1066,10 @@ class _UpsertAgendaPageState extends State<UpsertAgendaPage> {
             ),
           ],
         ),
+        if (_photosStayOnDevice) ...[
+          const SizedBox(height: 6),
+          _photosOnDeviceNotice(context),
+        ],
         const SizedBox(height: 10),
         if (attachments.isEmpty)
           Container(
@@ -1111,7 +1108,7 @@ class _UpsertAgendaPageState extends State<UpsertAgendaPage> {
               itemBuilder: (context, index) {
                 if (index == attachments.length) {
                   return InkWell(
-                    onTap: _canAttachImages ? _addImageAttachment : null,
+                    onTap: _addImageAttachment,
                     borderRadius: BorderRadius.circular(14),
                     child: Container(
                       width: 104,

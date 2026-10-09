@@ -76,15 +76,6 @@ class _UpsertNotePageState extends State<UpsertNotePage> {
   }
 
   Future<void> _addImage() async {
-    if (!_isPremium) {
-      if (!mounted) return;
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(
-          content: Text('Anexar imagens é um recurso do plano Pro.'),
-        ),
-      );
-      return;
-    }
     final picked = await _imagePicker.pickImage(
       source: ImageSource.gallery,
       maxWidth: ImageUploadConstants.pickImageMaxWidth,
@@ -316,31 +307,14 @@ class _UpsertNotePageState extends State<UpsertNotePage> {
             ),
             const SizedBox(height: DesignTokens.spaceLg),
             Text('Imagem (opcional)', style: theme.textTheme.titleSmall),
+            // Sem Pro a imagem fica so neste aparelho (nao vai para a nuvem).
             if (!_isPremium) ...[
               const SizedBox(height: DesignTokens.spaceXs),
-              Container(
-                padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
-                decoration: BoxDecoration(
-                  color: theme.colorScheme.outline.withValues(alpha: 0.12),
-                  borderRadius: BorderRadius.circular(999),
-                ),
-                child: Row(
-                  mainAxisSize: MainAxisSize.min,
-                  children: [
-                    Icon(
-                      Icons.lock_outline,
-                      size: 14,
-                      color: theme.colorScheme.outline,
-                    ),
-                    const SizedBox(width: 4),
-                    Text(
-                      'Pro',
-                      style: theme.textTheme.labelSmall?.copyWith(
-                        color: theme.colorScheme.outline,
-                        fontWeight: FontWeight.w600,
-                      ),
-                    ),
-                  ],
+              Text(
+                'No plano Grátis a imagem fica só neste celular. Com o Pro ela '
+                'vai para a nuvem e aparece nos seus outros aparelhos.',
+                style: theme.textTheme.bodySmall?.copyWith(
+                  color: theme.colorScheme.onSurfaceVariant,
                 ),
               ),
             ],
@@ -383,7 +357,7 @@ class _UpsertNotePageState extends State<UpsertNotePage> {
               const SizedBox(height: DesignTokens.spaceSm),
             ],
             OutlinedButton.icon(
-              onPressed: _isPremium ? _addImage : null,
+              onPressed: _addImage,
               icon: const Icon(Icons.add_photo_alternate_outlined),
               label: const Text('Adicionar imagem'),
             ),
