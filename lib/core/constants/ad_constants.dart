@@ -4,15 +4,19 @@ import 'package:flutter/foundation.dart';
 class AdConstants {
   AdConstants._();
 
-  static const String bannerTestId = 'ca-app-pub-3940256099942544/6300978111';
-  static const String rewardedTestId = 'ca-app-pub-3940256099942544/5224354917';
+  static const String bannerTestId = 'ca-app-pub-3940256099942544/9214589741';
+  static const String nativeTestId = 'ca-app-pub-3940256099942544/2247696110';
 
   static const String bannerProdId = 'ca-app-pub-1515466936385187/6662778824';
-  static const String rewardedProdId = 'ca-app-pub-1515466936385187/9516531664';
+
+  /// Bloco "Nativo avancado" criado no AdMob. Enquanto vazio, o anuncio
+  /// nativo nao aparece em release (so com o ID de teste em debug).
+  static const String nativeProdId = String.fromEnvironment('ADMOB_NATIVE_ID');
 
   /// Usar IDs de teste em debug, IDs de producao em release.
   static bool get useTestIds => kDebugMode;
 
   static String get bannerId => useTestIds ? bannerTestId : bannerProdId;
-  static String get rewardedId => useTestIds ? rewardedTestId : rewardedProdId;
+  static String get nativeId => useTestIds ? nativeTestId : nativeProdId;
+  static bool get hasNativeId => nativeId.isNotEmpty;
 }

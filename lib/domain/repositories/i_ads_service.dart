@@ -1,13 +1,19 @@
 import 'package:google_mobile_ads/google_mobile_ads.dart';
 
-/// Servico de anuncios AdMob - banners e rewarded.
+/// Anuncios (somente plano Free): consentimento, banner fixo e nativo.
 abstract class IAdsService {
-  /// Inicializa o SDK do Mobile Ads.
-  Future<void> initialize();
+  /// Pede o consentimento quando a lei exige (UMP) e inicializa o SDK.
+  /// Retorna se anuncios podem ser pedidos.
+  Future<bool> initialize();
 
-  /// Cria e carrega um novo BannerAd. Cada widget deve usar sua propria instancia.
-  Future<BannerAd?> createAndLoadBanner();
+  /// Banner adaptativo ancorado na largura informada (pixels logicos).
+  Future<BannerAd?> loadAnchoredBanner(int width);
 
-  /// Exibe rewarded ad. Retorna true se usuario assistiu ate o fim.
-  Future<bool> showRewardedAd();
+  /// Anuncio nativo (modelo pequeno) para listas. Null se indisponivel.
+  Future<NativeAd?> loadNative({required bool darkMode});
+
+  /// Se o usuario precisa de um acesso as opcoes de privacidade (UMP).
+  Future<bool> privacyOptionsRequired();
+
+  Future<void> showPrivacyOptions();
 }

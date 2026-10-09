@@ -2,14 +2,20 @@ import 'package:google_mobile_ads/google_mobile_ads.dart';
 
 import '../../domain/repositories/i_ads_service.dart';
 
-/// Stub do AdService para quando AdMob nao esta configurado.
+/// Plataformas sem AdMob (ex.: iOS ainda nao configurado, desktop).
 class AdsServiceStub implements IAdsService {
   @override
-  Future<void> initialize() async {}
+  Future<bool> initialize() async => false;
 
   @override
-  Future<BannerAd?> createAndLoadBanner() async => null;
+  Future<BannerAd?> loadAnchoredBanner(int width) async => null;
 
   @override
-  Future<bool> showRewardedAd() async => false;
+  Future<NativeAd?> loadNative({required bool darkMode}) async => null;
+
+  @override
+  Future<bool> privacyOptionsRequired() async => false;
+
+  @override
+  Future<void> showPrivacyOptions() async {}
 }

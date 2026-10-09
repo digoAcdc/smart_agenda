@@ -15,9 +15,9 @@ import '../controllers/class_schedule_controller.dart';
 import '../controllers/groups_controller.dart';
 import '../controllers/note_controller.dart';
 import '../controllers/notifications_controller.dart';
-import '../widgets/ad_banner_widget.dart';
 import '../widgets/ui_primitives.dart';
 import '../controllers/billing_controller.dart';
+import '../controllers/ads_controller.dart';
 
 class ConfigPage extends StatefulWidget {
   const ConfigPage({super.key});
@@ -233,7 +233,6 @@ class _ConfigPageState extends State<ConfigPage> {
           _buildGeralSection(),
           _buildPrivacySection(),
           _buildFooter(),
-          const AdBannerWidget(),
         ],
       ),
     );
@@ -575,6 +574,26 @@ class _ConfigPageState extends State<ConfigPage> {
         AppSurfaceCard(
           child: Column(
             children: [
+              // Exigido pelo Google onde o consentimento de anuncios e obrigatorio.
+              Obx(() {
+                final ads = Get.isRegistered<AdsController>()
+                    ? Get.find<AdsController>()
+                    : null;
+                if (ads == null || !ads.privacyOptionsRequired.value) {
+                  return const SizedBox.shrink();
+                }
+                return Column(
+                  children: [
+                    ListTile(
+                      leading: const Icon(Icons.privacy_tip_outlined),
+                      title: const Text('Privacidade dos anúncios'),
+                      subtitle: const Text('Rever o consentimento de anúncios'),
+                      onTap: ads.showPrivacyOptions,
+                    ),
+                    const Divider(height: 1),
+                  ],
+                );
+              }),
               Opacity(
                 opacity: _deletingData ? 0.6 : 1,
                 child: InkWell(

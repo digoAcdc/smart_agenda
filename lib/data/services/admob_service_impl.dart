@@ -1,50 +1,62 @@
 import 'dart:async';
 
-import 'package:flutter/foundation.dart';
+import 'package:flutter/material.dart';
 import 'package:google_mobile_ads/google_mobile_ads.dart';
 
 import '../../core/constants/ad_constants.dart';
 import '../../domain/repositories/i_ads_service.dart';
 
-/// Implementacao do AdService usando Google Mobile Ads.
+/// Google Mobile Ads com consentimento (UMP) antes de inicializar o SDK.
 class AdmobServiceImpl implements IAdsService {
-  @override
-  Future<void> initialize() async {
-    await MobileAds.instance.initialize();
-    debugPrint('[AdmobService] SDK inicializado');
-    _loadRewardedAdPreload();
-  }
+  Future<bool>? _init;
 
-  void _loadRewardedAdPreload() {
-    RewardedAd.load(
-      adUnitId: AdConstants.rewardedId,
-      request: const AdRequest(),
-      rewardedAdLoadCallback: RewardedAdLoadCallback(
-        onAdLoaded: (ad) {
-          debugPrint('[AdmobService] Rewarded ad preloaded');
-          ad.dispose();
-        },
-        onAdFailedToLoad: (error) {
-          debugPrint('[AdmobService] Rewarded ad preload failed: $error');
-        },
-      ),
+  @override
+  Future<bool> initialize() => _init ??= _initialize();
+
+  Future<bool> _initialize() async {
+    final consentDone = Completer<void>();
+    ConsentInformation.instance.requestConsentInfoUpdate(
+      ConsentRequestParameters(),
+      () {
+        // Mostra o formulario so onde a lei exige (ex.: Europa).
+        ConsentForm.loadAndShowConsentFormIfRequired((error) {
+          if (error != null) debugPrint('[Ads] consent form: ${error.message}');
+          if (!consentDone.isCompleted) consentDone.complete();
+        });
+      },
+      (error) {
+        debugPrint('[Ads] consent info: ${error.message}');
+        if (!consentDone.isCompleted) consentDone.complete();
+      },
     );
+    await consentDone.future;
+
+    if (!await ConsentInformation.instance.canRequestAds()) {
+      debugPrint('[Ads] sem consentimento para pedir anuncios');
+      return false;
+    }
+    await MobileAds.instance.initialize();
+    debugPrint('[Ads] SDK inicializado');
+    return true;
   }
 
   @override
-  Future<BannerAd?> createAndLoadBanner() async {
+  Future<BannerAd?> loadAnchoredBanner(int width) async {
+    final size = await AdSize.getCurrentOrientationAnchoredAdaptiveBannerAdSize(
+      width,
+    );
+    if (size == null) return null;
     final completer = Completer<BannerAd?>();
     final banner = BannerAd(
       adUnitId: AdConstants.bannerId,
-      size: AdSize.banner,
+      size: size,
       request: const AdRequest(),
       listener: BannerAdListener(
         onAdLoaded: (ad) {
-          debugPrint('[AdmobService] Banner loaded');
           if (!completer.isCompleted) completer.complete(ad as BannerAd);
         },
         onAdFailedToLoad: (ad, error) {
-          debugPrint('[AdmobService] Banner failed: $error');
+          debugPrint('[Ads] banner falhou: ${error.message}');
           ad.dispose();
           if (!completer.isCompleted) completer.complete(null);
         },
@@ -55,45 +67,41 @@ class AdmobServiceImpl implements IAdsService {
   }
 
   @override
-  Future<bool> showRewardedAd() async {
-    final completer = Completer<bool>();
-    var userEarnedReward = false;
-
-    RewardedAd.load(
-      adUnitId: AdConstants.rewardedId,
+  Future<NativeAd?> loadNative({required bool darkMode}) async {
+    if (!AdConstants.hasNativeId) return null;
+    final completer = Completer<NativeAd?>();
+    final ad = NativeAd(
+      adUnitId: AdConstants.nativeId,
       request: const AdRequest(),
-      rewardedAdLoadCallback: RewardedAdLoadCallback(
+      nativeTemplateStyle: NativeTemplateStyle(
+        templateType: TemplateType.small,
+        cornerRadius: 16,
+        mainBackgroundColor: darkMode ? const Color(0xFF1C1B22) : Colors.white,
+      ),
+      listener: NativeAdListener(
         onAdLoaded: (ad) {
-          ad.fullScreenContentCallback = FullScreenContentCallback(
-            onAdDismissedFullScreenContent: (ad) {
-              ad.dispose();
-              if (!completer.isCompleted) {
-                completer.complete(userEarnedReward);
-              }
-            },
-            onAdFailedToShowFullScreenContent: (ad, error) {
-              debugPrint('[AdmobService] Rewarded show failed: $error');
-              ad.dispose();
-              if (!completer.isCompleted) {
-                completer.complete(false);
-              }
-            },
-          );
-          ad.show(
-            onUserEarnedReward: (ad, reward) {
-              userEarnedReward = true;
-            },
-          );
+          if (!completer.isCompleted) completer.complete(ad as NativeAd);
         },
-        onAdFailedToLoad: (error) {
-          debugPrint('[AdmobService] Rewarded load failed: $error');
-          if (!completer.isCompleted) {
-            completer.complete(false);
-          }
+        onAdFailedToLoad: (ad, error) {
+          debugPrint('[Ads] nativo falhou: ${error.message}');
+          ad.dispose();
+          if (!completer.isCompleted) completer.complete(null);
         },
       ),
     );
-
+    unawaited(ad.load());
     return completer.future;
+  }
+
+  @override
+  Future<bool> privacyOptionsRequired() async =>
+      await ConsentInformation.instance.getPrivacyOptionsRequirementStatus() ==
+      PrivacyOptionsRequirementStatus.required;
+
+  @override
+  Future<void> showPrivacyOptions() async {
+    await ConsentForm.showPrivacyOptionsForm((error) {
+      if (error != null) debugPrint('[Ads] privacy options: ${error.message}');
+    });
   }
 }

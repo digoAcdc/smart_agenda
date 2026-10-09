@@ -25,7 +25,6 @@ import '../../data/repositories/agenda_repository_impl.dart';
 import '../../data/repositories/class_group_repository_impl.dart';
 import '../../data/repositories/groups_repository_impl.dart';
 import '../../data/repositories/note_repository_impl.dart';
-import '../../data/services/ad_unlock_provider_impl.dart';
 import '../../data/services/admob_service_impl.dart';
 import '../../data/services/ads_service_stub.dart';
 import '../../data/services/auth_service_stub.dart';
@@ -55,7 +54,6 @@ import '../../domain/repositories/i_note_repository.dart';
 import '../../domain/repositories/i_class_schedule_datasource.dart';
 import '../../domain/repositories/i_connectivity_service.dart';
 import '../../domain/repositories/i_billing_service.dart';
-import '../../domain/repositories/i_ad_unlock_provider.dart';
 import '../../domain/repositories/i_personal_to_family_service.dart';
 import '../../domain/repositories/i_premium_service.dart';
 import '../../domain/repositories/i_plan_service.dart';
@@ -149,7 +147,6 @@ class AppBinding extends Bindings {
           : BillingServiceStub(),
       fenix: true,
     );
-    Get.put<IAdUnlockProvider>(AdUnlockProviderImpl(), permanent: true);
     Get.put<IFamilyService>(
       SupabaseConfig.isConfigured
           ? FamilyServiceImpl(Get.find<FamilySupabaseDataSource>())
@@ -323,7 +320,10 @@ class AppBinding extends Bindings {
         permanent: true,
       );
     }
-    Get.put(AdsController(Get.find<IAdsService>()), permanent: true);
+    Get.put(
+      AdsController(Get.find<IAdsService>(), Get.find<IPremiumService>()),
+      permanent: true,
+    );
     Get.put(
       BillingController(Get.find<IBillingService>(), Get.find<IPlanService>()),
       permanent: true,

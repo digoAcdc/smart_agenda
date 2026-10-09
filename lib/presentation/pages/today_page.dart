@@ -14,13 +14,13 @@ import '../controllers/class_schedule_controller.dart';
 import '../controllers/groups_controller.dart';
 import '../controllers/home_controller.dart';
 import '../widgets/agenda_card.dart';
-import '../widgets/ad_banner_widget.dart';
 import '../widgets/empty_state_widget.dart';
 import '../widgets/loading_placeholder_list.dart';
 import '../widgets/section_header.dart';
 import '../utils/family_item_labels.dart';
 import '../../domain/repositories/i_sync_service.dart';
 import '../widgets/family_invite_banner.dart';
+import '../widgets/native_ad_card.dart';
 
 enum AgendaHomeViewMode { day, week, month }
 
@@ -174,7 +174,6 @@ class _TodayPageState extends State<TodayPage> {
                   ),
                 ),
               const SizedBox(height: 8),
-              if (!isAgendaTabMode) const AdBannerWidget(),
               SectionHeader(
                 title: isAgendaTabMode
                     ? 'Calendario completo'
@@ -326,7 +325,6 @@ class _TodayPageState extends State<TodayPage> {
                   ),
                 ),
                 const SizedBox(height: 8),
-                const AdBannerWidget(),
               ],
             ),
           ),
@@ -614,7 +612,6 @@ class _TodayPageState extends State<TodayPage> {
                   ),
                   const SizedBox(height: 8),
                   const FamilyInviteBanner(),
-                  const AdBannerWidget(),
                   const SizedBox(height: 8),
                   _buildWeekStrip(agendaController, accentGreen),
                   const SizedBox(height: 10),
@@ -735,8 +732,8 @@ class _TodayPageState extends State<TodayPage> {
                   if (timelineItems.isEmpty)
                     _buildDashboardEmpty(context, accentGreen)
                   else
-                    ...timelineItems.map(
-                      (item) => Padding(
+                    for (final (index, item) in timelineItems.indexed) ...[
+                      Padding(
                         padding: const EdgeInsets.only(bottom: 10),
                         child: _buildTimelineTile(
                           context,
@@ -745,7 +742,11 @@ class _TodayPageState extends State<TodayPage> {
                           accentGreen: accentGreen,
                         ),
                       ),
-                    ),
+                      // Plano Free: um anuncio nativo depois do 2o evento
+                      // (ou do ultimo, se houver menos).
+                      if (index == (timelineItems.length < 2 ? timelineItems.length - 1 : 1))
+                        const NativeAdCard(),
+                    ],
                   const SizedBox(height: 8),
                   Container(
                     padding: const EdgeInsets.all(16),
