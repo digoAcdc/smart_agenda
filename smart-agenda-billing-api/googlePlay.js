@@ -167,7 +167,8 @@ export async function validateGoogleSubscription({
         continue;
       }
 
-      if (response.status === 404) {
+      // 410: token de assinatura vencida ha mais de 60 dias.
+      if (response.status === 404 || response.status === 410) {
         throw new GooglePlayError("Purchase not found in Google Play", 400);
       }
 

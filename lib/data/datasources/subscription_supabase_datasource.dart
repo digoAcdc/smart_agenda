@@ -30,7 +30,9 @@ class SubscriptionSupabaseDataSource {
 
     final baseUrl = BillingConstants.billingApiBaseUrl.trim();
     if (baseUrl.isEmpty) {
-      debugPrint('[billing_config_missing] BILLING_API_BASE_URL ausente no app');
+      debugPrint(
+        '[billing_config_missing] BILLING_API_BASE_URL ausente no app',
+      );
       throw Exception(
         'Configuracao de cobranca ausente neste app. '
         'Use --dart-define=BILLING_API_BASE_URL=... em um build configurado.',
@@ -66,14 +68,15 @@ class SubscriptionSupabaseDataSource {
         debugPrint(
           '[subscription_revalidation_failed] source=app_api statusCode=${response.statusCode} error=${err ?? 'Validacao falhou'}',
         );
-        throw Exception(err ?? 'Validacao falhou');
+        throw Exception(validationErrorMessage(response.statusCode, err));
       }
 
       final data = parsed;
 
       final result = SubscriptionValidationResult(
         isPremium: data['isPremium'] as bool? ?? false,
-        status: (data['status'] as String?) ??
+        status:
+            (data['status'] as String?) ??
             (data['subscriptionStatus'] as String?) ??
             'unknown',
         expiresAt: data['expiresAt'] as String?,
@@ -124,4 +127,20 @@ class SubscriptionPremiumStatus {
   final String status;
   final String? expiresAt;
   final String? productId;
+}
+
+/// Mensagem para o usuario quando a billing-api recusa a validacao.
+String validationErrorMessage(int statusCode, String? serverError) {
+  if (statusCode == 409) {
+    return 'Esta assinatura do Google Play já está ligada a outra conta do '
+        'Smart Agenda. Entre com a conta usada na compra.';
+  }
+  if (statusCode == 401) {
+    return 'Sua sessão expirou. Entre de novo e toque em Restaurar compras.';
+  }
+  if (statusCode == 400 && serverError == 'Purchase not found in Google Play') {
+    return 'Compra não encontrada no Google Play.';
+  }
+  return 'Não foi possível confirmar a assinatura agora. Tente de novo em '
+      'instantes (Restaurar compras). Sua compra não se perde.';
 }

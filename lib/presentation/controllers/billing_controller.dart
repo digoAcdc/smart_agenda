@@ -29,7 +29,8 @@ class BillingController extends GetxController {
 
   final RxBool isAvailable = false.obs;
   final RxBool productsLoaded = false.obs;
-  final Rx<BillingPurchaseStatus> purchaseStatus = BillingPurchaseStatus.idle.obs;
+  final Rx<BillingPurchaseStatus> purchaseStatus =
+      BillingPurchaseStatus.idle.obs;
   final RxnString errorMessage = RxnString();
   final RxnString productPrice = RxnString();
   final RxBool isRuntimeConfigured = true.obs;
@@ -94,6 +95,9 @@ class BillingController extends GetxController {
 
     try {
       final result = await _billingService.validatePurchaseWithBackend(payload);
+      // O servidor ja respondeu sobre esta compra: pode confirmar no Google.
+      // Em falha de rede nao confirma; ela volta no proximo restore.
+      await _billingService.finishPurchase(payload.purchaseToken);
       if (result.isPremium) {
         await _planService.refresh();
         if (Get.isRegistered<AuthController>()) {
@@ -106,7 +110,8 @@ class BillingController extends GetxController {
       } else {
         purchaseStatus.value = BillingPurchaseStatus.error;
         errorMessage.value = switch (result.status) {
-          'expired' => 'Esta assinatura já venceu. Assine novamente para voltar ao Pro.',
+          'expired' =>
+            'Esta assinatura já venceu. Assine novamente para voltar ao Pro.',
           'on_hold' || 'in_grace_period' =>
             'Há um problema com o pagamento da assinatura. Confira no Google Play.',
           'pending' => 'O pagamento ainda está pendente no Google Play.',
@@ -118,7 +123,9 @@ class BillingController extends GetxController {
       }
     } catch (e) {
       debugPrint('[BillingController] validate error: $e');
-      debugPrint('[subscription_revalidation_failed] source=purchase_stream error=$e');
+      debugPrint(
+        '[subscription_revalidation_failed] source=purchase_stream error=$e',
+      );
       purchaseStatus.value = BillingPurchaseStatus.error;
       errorMessage.value = e.toString().replaceFirst('Exception: ', '');
     } finally {
@@ -134,6 +141,14 @@ class BillingController extends GetxController {
       return;
     }
     if (!isAvailable.value || !productsLoaded.value) return;
+    // A assinatura fica ligada a conta; sem login a validacao falharia
+    // depois de o Google ja ter cobrado.
+    if (Get.isRegistered<AuthController>() &&
+        !Get.find<AuthController>().isLoggedIn.value) {
+      purchaseStatus.value = BillingPurchaseStatus.error;
+      errorMessage.value = 'Entre na sua conta antes de assinar.';
+      return;
+    }
     purchaseStatus.value = BillingPurchaseStatus.purchasing;
     errorMessage.value = null;
 
@@ -159,14 +174,18 @@ class BillingController extends GetxController {
     try {
       _restoreWaiter = Completer<void>();
       await _billingService.restorePurchases();
-      await _restoreWaiter!.future.timeout(const Duration(seconds: 8), onTimeout: () {
-        debugPrint('[billing_restore_timeout] waited_ms=8000');
-      });
+      await _restoreWaiter!.future.timeout(
+        const Duration(seconds: 8),
+        onTimeout: () {
+          debugPrint('[billing_restore_timeout] waited_ms=8000');
+        },
+      );
       // Sem assinatura ativa o Google nao devolve nada e o status ficaria em
       // loading para sempre.
       if (purchaseStatus.value == BillingPurchaseStatus.loading) {
         purchaseStatus.value = BillingPurchaseStatus.idle;
-        errorMessage.value = 'Nenhuma assinatura ativa encontrada nesta conta do Google Play.';
+        errorMessage.value =
+            'Nenhuma assinatura ativa encontrada nesta conta do Google Play.';
       }
       debugPrint('[billing_restore_completed] source=user_action');
     } catch (e) {
@@ -192,7 +211,10 @@ class BillingController extends GetxController {
       return;
     }
 
-    _autoRevalidationTask = _runAutoRevalidation(triggerRestore: triggerRestore, reason: reason);
+    _autoRevalidationTask = _runAutoRevalidation(
+      triggerRestore: triggerRestore,
+      reason: reason,
+    );
     await _autoRevalidationTask;
     _autoRevalidationTask = null;
     _lastAutoRevalidationAt = now;
@@ -202,7 +224,9 @@ class BillingController extends GetxController {
     required bool triggerRestore,
     required String reason,
   }) async {
-    debugPrint('[subscription_revalidation_started] source=auto reason=$reason');
+    debugPrint(
+      '[subscription_revalidation_started] source=auto reason=$reason',
+    );
     try {
       if (triggerRestore) {
         debugPrint('[billing_restore_started] source=auto reason=$reason');
@@ -211,17 +235,25 @@ class BillingController extends GetxController {
           await _billingService.restorePurchases();
           await _restoreWaiter!.future.timeout(
             const Duration(seconds: 8),
-            onTimeout: () => debugPrint('[billing_restore_timeout] source=auto waited_ms=8000'),
+            onTimeout: () => debugPrint(
+              '[billing_restore_timeout] source=auto waited_ms=8000',
+            ),
           );
           debugPrint('[billing_restore_completed] source=auto reason=$reason');
         } catch (e) {
-          debugPrint('[billing_restore_failed] source=auto reason=$reason error=$e');
+          debugPrint(
+            '[billing_restore_failed] source=auto reason=$reason error=$e',
+          );
         }
       }
       await _planService.refresh();
-      debugPrint('[subscription_revalidation_completed] source=auto reason=$reason');
+      debugPrint(
+        '[subscription_revalidation_completed] source=auto reason=$reason',
+      );
     } catch (e) {
-      debugPrint('[subscription_revalidation_failed] source=auto reason=$reason error=$e');
+      debugPrint(
+        '[subscription_revalidation_failed] source=auto reason=$reason error=$e',
+      );
     }
   }
 

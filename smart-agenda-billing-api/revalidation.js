@@ -6,6 +6,7 @@ import { logPurchaseValidation } from "./supabase.js";
 // cancelamentos, reembolsos, carencia e suspensao.
 
 const DAY_MS = 24 * 60 * 60 * 1000;
+const STALE_MS = 12 * 60 * 60 * 1000;
 
 /** Assinaturas que podem ter mudado no Google. */
 export async function findSubscriptionsToRecheck(supabase, now = new Date()) {
@@ -29,8 +30,18 @@ export async function findSubscriptionsToRecheck(supabase, now = new Date()) {
     .gt("updated_at", monthAgo);
   if (e2) throw new Error(`recheck query failed: ${e2.message}`);
 
+  // Pro sem conferencia ha 12h: reembolso ou revogacao no meio do mes tiram
+  // o acesso na hora no Google; sem isso so perceberiamos no vencimento.
+  const stale = new Date(now.getTime() - STALE_MS).toISOString();
+  const { data: unchecked, error: e3 } = await supabase
+    .from("user_subscriptions")
+    .select(cols)
+    .eq("is_premium", true)
+    .lt("last_validated_at", stale);
+  if (e3) throw new Error(`recheck query failed: ${e3.message}`);
+
   const byToken = new Map();
-  for (const row of [...(expiring ?? []), ...(unsettled ?? [])]) {
+  for (const row of [...(expiring ?? []), ...(unsettled ?? []), ...(unchecked ?? [])]) {
     byToken.set(row.purchase_token, row);
   }
   return [...byToken.values()];
@@ -68,7 +79,7 @@ export async function recheckSubscriptions({ supabase, env, logger }) {
       updated += 1;
     } catch (error) {
       if (error instanceof GooglePlayError && error.statusCode === 400) {
-        // Token nao existe mais no Google (ex.: expirou ha muito tempo).
+        // Token nao existe mais no Google (404/410: expirou ha muito tempo).
         await updateRow(supabase, row, {
           subscription_status: "not_found",
           is_premium: false,

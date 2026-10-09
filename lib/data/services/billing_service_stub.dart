@@ -21,13 +21,14 @@ class BillingServiceStub implements IBillingService {
   void startPurchaseStreamListener(void Function(PurchaseUpdate) onUpdate) {}
 
   @override
+  Future<void> finishPurchase(String purchaseToken) async {}
+
+  @override
   Future<SubscriptionValidationResult> validatePurchaseWithBackend(
     PurchasePayload payload,
-  ) =>
-      Future.value(const SubscriptionValidationResult(
-        isPremium: false,
-        status: 'unavailable',
-      ));
+  ) => Future.value(
+    const SubscriptionValidationResult(isPremium: false, status: 'unavailable'),
+  );
 
   @override
   Future<bool> get isAvailable => Future.value(false);

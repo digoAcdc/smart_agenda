@@ -19,8 +19,8 @@ class BillingServiceImpl implements IBillingService {
   BillingServiceImpl({
     required InAppPurchase iap,
     required SubscriptionSupabaseDataSource subscriptionDataSource,
-  })  : _iap = iap,
-        _subscriptionDataSource = subscriptionDataSource;
+  }) : _iap = iap,
+       _subscriptionDataSource = subscriptionDataSource;
 
   final InAppPurchase _iap;
   final SubscriptionSupabaseDataSource _subscriptionDataSource;
@@ -28,6 +28,9 @@ class BillingServiceImpl implements IBillingService {
   final _purchaseController = StreamController<PurchaseUpdate>.broadcast();
   ProductDetails? _premiumProduct;
   StreamSubscription<List<PurchaseDetails>>? _subscription;
+
+  /// Compras pagas aguardando a validacao no backend para serem confirmadas.
+  final Map<String, PurchaseDetails> _awaitingFinish = {};
 
   @override
   Stream<PurchaseUpdate> get purchaseStream => _purchaseController.stream;
@@ -42,9 +45,13 @@ class BillingServiceImpl implements IBillingService {
   Future<bool> loadProducts() async {
     if (!await isAvailable) return false;
     try {
-      final response = await _iap.queryProductDetails(BillingConstants.productIds);
+      final response = await _iap.queryProductDetails(
+        BillingConstants.productIds,
+      );
       if (response.notFoundIDs.isNotEmpty) {
-        debugPrint('[BillingService] Products not found: ${response.notFoundIDs}');
+        debugPrint(
+          '[BillingService] Products not found: ${response.notFoundIDs}',
+        );
       }
       final list = response.productDetails
           .where((p) => p.id == BillingConstants.premiumMonthlyProductId)
@@ -96,23 +103,23 @@ class BillingServiceImpl implements IBillingService {
   }
 
   @override
-  void startPurchaseStreamListener(
-    void Function(PurchaseUpdate) onUpdate,
-  ) {
+  void startPurchaseStreamListener(void Function(PurchaseUpdate) onUpdate) {
     _subscription?.cancel();
     _subscription = _iap.purchaseStream.listen(
       (purchases) => _handlePurchases(purchases, onUpdate),
       onError: (e) {
         debugPrint('[BillingService] purchaseStream error: $e');
-        onUpdate(PurchaseUpdate(
-          status: PurchaseUpdateStatus.error,
-          payload: const PurchasePayload(
-            productId: '',
-            purchaseToken: '',
-            packageName: '',
+        onUpdate(
+          PurchaseUpdate(
+            status: PurchaseUpdateStatus.error,
+            payload: const PurchasePayload(
+              productId: '',
+              purchaseToken: '',
+              packageName: '',
+            ),
+            errorMessage: e.toString(),
           ),
-          errorMessage: e.toString(),
-        ));
+        );
       },
     );
   }
@@ -127,32 +134,60 @@ class BillingServiceImpl implements IBillingService {
 
       switch (p.status) {
         case PurchaseStatus.pending:
-          onUpdate(PurchaseUpdate(status: PurchaseUpdateStatus.pending, payload: payload));
+          onUpdate(
+            PurchaseUpdate(
+              status: PurchaseUpdateStatus.pending,
+              payload: payload,
+            ),
+          );
           break;
         case PurchaseStatus.purchased:
         case PurchaseStatus.restored:
-          onUpdate(PurchaseUpdate(status: PurchaseUpdateStatus.purchased, payload: payload));
           if (p.pendingCompletePurchase) {
-            _iap.completePurchase(p);
+            _awaitingFinish[payload.purchaseToken] = p;
           }
+          onUpdate(
+            PurchaseUpdate(
+              status: PurchaseUpdateStatus.purchased,
+              payload: payload,
+            ),
+          );
           break;
         case PurchaseStatus.error:
-          onUpdate(PurchaseUpdate(
-            status: PurchaseUpdateStatus.error,
-            payload: payload,
-            errorMessage: p.error?.message,
-          ));
+          onUpdate(
+            PurchaseUpdate(
+              status: PurchaseUpdateStatus.error,
+              payload: payload,
+              errorMessage: p.error?.message,
+            ),
+          );
           if (p.pendingCompletePurchase) {
             _iap.completePurchase(p);
           }
           break;
         case PurchaseStatus.canceled:
-          onUpdate(PurchaseUpdate(status: PurchaseUpdateStatus.canceled, payload: payload));
+          onUpdate(
+            PurchaseUpdate(
+              status: PurchaseUpdateStatus.canceled,
+              payload: payload,
+            ),
+          );
           if (p.pendingCompletePurchase) {
             _iap.completePurchase(p);
           }
           break;
       }
+    }
+  }
+
+  @override
+  Future<void> finishPurchase(String purchaseToken) async {
+    final p = _awaitingFinish.remove(purchaseToken);
+    if (p == null) return;
+    try {
+      await _iap.completePurchase(p);
+    } catch (e) {
+      debugPrint('[BillingService] completePurchase error: $e');
     }
   }
 
