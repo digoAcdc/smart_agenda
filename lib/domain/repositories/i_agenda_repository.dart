@@ -10,9 +10,23 @@ abstract class IAgendaRepository {
   Future<Result<AgendaItem?>> getItemById(String itemId);
   Future<Result<List<AgendaItem>>> getItemsByDay(DateTime date);
   Future<Result<List<AgendaItem>>> getItemsByRange(
-      DateTime start, DateTime end);
+    DateTime start,
+    DateTime end,
+  );
   Future<Result<Set<DateTime>>> getMarkersByRange(DateTime start, DateTime end);
   Future<Result<List<AgendaItem>>> searchItems(
-      String query, SearchFilters filters);
+    String query,
+    SearchFilters filters,
+  );
   Future<Result<void>> setStatus(String itemId, AgendaStatus status);
+
+  /// Evento que se repete: conclui/reabre so a ocorrencia do [day].
+  Future<Result<void>> setOccurrenceDone(
+    String itemId,
+    DateTime day,
+    bool done,
+  );
+
+  /// Evento que se repete: tira so a ocorrencia do [day] ("excluir so este").
+  Future<Result<void>> removeOccurrence(String itemId, DateTime day);
 }

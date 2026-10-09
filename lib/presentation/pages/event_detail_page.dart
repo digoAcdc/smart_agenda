@@ -3,6 +3,7 @@ import 'dart:io';
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import 'package:intl/intl.dart';
+import 'package:share_plus/share_plus.dart';
 
 import '../../core/routes/app_routes.dart';
 import '../../core/theme/design_tokens.dart';
@@ -13,9 +14,47 @@ import '../controllers/groups_controller.dart';
 import '../widgets/group_chip.dart';
 import '../widgets/ui_primitives.dart';
 import '../utils/family_item_labels.dart';
+import '../utils/recurring_scope_prompt.dart';
+import '../../domain/repositories/i_agenda_repository.dart';
 
 class EventDetailPage extends StatelessWidget {
   const EventDetailPage({super.key});
+
+  /// Repeticao: editar so este dia (vira um evento separado) ou a serie.
+  Future<void> _edit(BuildContext context, AgendaItem item) async {
+    // Depois de salvar, fecha o detalhe (ele mostraria os dados antigos).
+    Future<void> openForm(Object args) async {
+      final saved = await Get.toNamed(AppRoutes.upsertAgenda, arguments: args);
+      if (saved == true) Get.back();
+    }
+
+    if (!item.isOccurrence) {
+      await openForm(item);
+      return;
+    }
+    final scope = await askRecurringScope(context, title: 'Editar evento');
+    if (scope == null) return;
+    if (scope == RecurringScope.onlyThis) {
+      await openForm({'detachOccurrence': item});
+      return;
+    }
+    final master = await Get.find<IAgendaRepository>().getItemById(item.id);
+    if (master.data != null) await openForm(master.data!);
+  }
+
+  Future<void> _share(AgendaItem item, String dateLabel) async {
+    final lines = [
+      '📅 ${item.title}',
+      dateLabel[0].toUpperCase() + dateLabel.substring(1),
+      if ((item.locationText ?? '').trim().isNotEmpty)
+        '📍 ${item.locationText!.trim()}',
+      if (item.isRecurring) '🔁 ${item.recurrence!.shortLabel}',
+      if ((item.description ?? '').trim().isNotEmpty) item.description!.trim(),
+      '',
+      'Enviado pelo Smart Agenda',
+    ];
+    await SharePlus.instance.share(ShareParams(text: lines.join('\n')));
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -70,11 +109,15 @@ class EventDetailPage extends StatelessWidget {
       appBar: AppBar(
         title: const Text('Detalhe do evento'),
         actions: [
+          IconButton(
+            tooltip: 'Compartilhar',
+            onPressed: () => _share(arg, dateLabel),
+            icon: const Icon(Icons.share_outlined),
+          ),
           if (!isShared)
             IconButton(
               tooltip: 'Editar',
-              onPressed: () =>
-                  Get.toNamed(AppRoutes.upsertAgenda, arguments: arg),
+              onPressed: () => _edit(context, arg),
               icon: const Icon(Icons.edit_outlined),
             ),
         ],
@@ -144,6 +187,20 @@ class EventDetailPage extends StatelessWidget {
                       color: Theme.of(context).colorScheme.onSurfaceVariant,
                     ),
                   ),
+                  if (arg.isRecurring) ...[
+                    const SizedBox(height: DesignTokens.spaceXs),
+                    Row(
+                      children: [
+                        Icon(
+                          Icons.repeat_rounded,
+                          size: 18,
+                          color: Theme.of(context).colorScheme.primary,
+                        ),
+                        const SizedBox(width: DesignTokens.spaceXs),
+                        Expanded(child: Text(arg.recurrence!.shortLabel)),
+                      ],
+                    ),
+                  ],
                   if ((arg.locationText ?? '').trim().isNotEmpty) ...[
                     const SizedBox(height: DesignTokens.spaceSm),
                     Row(
@@ -164,27 +221,38 @@ class EventDetailPage extends StatelessWidget {
                     Expanded(
                       child: OutlinedButton(
                         onPressed: () async {
-                          await agendaController.toggleStatus(
-                            arg.id,
+                          // Na repeticao: tira so este dia.
+                          await agendaController.toggleItemStatus(
+                            arg,
                             AgendaStatus.canceled,
                           );
                           Get.back();
                         },
-                        child: const Text('Cancelar evento'),
+                        child: Text(
+                          arg.isOccurrence
+                              ? 'Cancelar este dia'
+                              : 'Cancelar evento',
+                        ),
                       ),
                     ),
                     const SizedBox(width: DesignTokens.spaceSm),
                     Expanded(
                       child: FilledButton.icon(
                         onPressed: () async {
-                          await agendaController.toggleStatus(
-                            arg.id,
-                            AgendaStatus.done,
+                          await agendaController.toggleItemStatus(
+                            arg,
+                            arg.status == AgendaStatus.done
+                                ? AgendaStatus.pending
+                                : AgendaStatus.done,
                           );
                           Get.back();
                         },
                         icon: const Icon(Icons.check_rounded),
-                        label: const Text('Marcar concluído'),
+                        label: Text(
+                          arg.status == AgendaStatus.done
+                              ? 'Reabrir'
+                              : 'Marcar concluído',
+                        ),
                       ),
                     ),
                   ],

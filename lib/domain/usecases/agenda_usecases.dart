@@ -62,6 +62,13 @@ class SetAgendaStatus {
 
   Future<Result<void>> call(String itemId, AgendaStatus status) =>
       _repository.setStatus(itemId, status);
+
+  /// Evento que se repete: so a ocorrencia do dia.
+  Future<Result<void>> occurrenceDone(String itemId, DateTime day, bool done) =>
+      _repository.setOccurrenceDone(itemId, day, done);
+
+  Future<Result<void>> removeOccurrence(String itemId, DateTime day) =>
+      _repository.removeOccurrence(itemId, day);
 }
 
 class GetAgendaItemsByDay {

@@ -16,7 +16,7 @@ no emulador antes do commit. Marque `[x]` ao concluir.
 
 ## Fase 1 — Base do dia a dia
 
-- [ ] **Eventos que se repetem**
+- [x] **Eventos que se repetem** — build 38
   - Formulário: não repete / todo dia / toda semana (dias escolhidos) / todo mês;
     término: nunca, até uma data, ou N vezes.
   - Agenda, Início e calendário mostram cada ocorrência no dia certo
@@ -24,7 +24,7 @@ no emulador antes do commit. Marque `[x]` ao concluir.
   - Concluir marca só a ocorrência; editar/excluir perguntam "só este" ou "todos".
   - Lembretes locais agendados para as próximas ocorrências.
   - Servidor: `get_premium_users_for_push_json` conta as ocorrências.
-- [ ] **Compartilhar evento no WhatsApp** (texto pronto no detalhe do evento).
+- [x] **Compartilhar evento no WhatsApp** (texto pronto no detalhe do evento) — build 38
 
 ## Fase 2 — Família viva
 

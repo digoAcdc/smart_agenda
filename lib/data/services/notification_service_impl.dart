@@ -7,6 +7,7 @@ import 'package:timezone/timezone.dart' as tz;
 import '../../core/constants/app_constants.dart';
 import '../../core/result/result.dart';
 import '../../domain/entities/agenda_item.dart';
+import '../../domain/services/recurrence_expander.dart';
 import '../../domain/repositories/i_notification_service.dart';
 
 class NotificationServiceImpl implements INotificationService {
@@ -137,8 +138,31 @@ class NotificationServiceImpl implements INotificationService {
     }
   }
 
+  /// Id do lembrete: um por evento; em serie que se repete, um por dia.
+  int _notificationIdFor(AgendaItem item) {
+    final base = item.reminder?.notificationId ?? 0;
+    final day = item.occurrenceDate;
+    if (day != null) {
+      return '${item.id}|${day.year}-${day.month}-${day.day}'.hashCode &
+          0x7FFFFFFF;
+    }
+    return base != 0 ? base : (item.id.hashCode & 0x7FFFFFFF);
+  }
+
   @override
   Future<Result<void>> scheduleForItem(AgendaItem item) async {
+    // Serie: agenda as proximas ocorrencias (o app reagenda ao abrir).
+    if (item.isRecurring && !item.isOccurrence) {
+      if (!(item.reminder?.enabled ?? false)) return Result.success(null);
+      for (final occ in RecurrenceExpander.nextOccurrences(
+        item,
+        DateTime.now(),
+      )) {
+        final r = await scheduleForItem(occ);
+        if (!r.isSuccess) return r;
+      }
+      return Result.success(null);
+    }
     try {
       final permission = await ensurePermissions();
       if (!permission.isSuccess) {
@@ -163,9 +187,7 @@ class NotificationServiceImpl implements INotificationService {
       }
 
       final scheduleDate = tz.TZDateTime.from(scheduledAt, tz.local);
-      final notificationId = reminder.notificationId != 0
-          ? reminder.notificationId
-          : (item.id.hashCode & 0x7FFFFFFF);
+      final notificationId = _notificationIdFor(item);
       final details = const NotificationDetails(
         android: AndroidNotificationDetails(
           AppConstants.notificationChannelId,
@@ -210,10 +232,22 @@ class NotificationServiceImpl implements INotificationService {
     try {
       final reminder = item.reminder;
       if (reminder == null) return Result.success(null);
-      final notificationId = reminder.notificationId != 0
-          ? reminder.notificationId
-          : (item.id.hashCode & 0x7FFFFFFF);
-      await _notificationsPlugin.cancel(notificationId);
+      await _notificationsPlugin.cancel(_notificationIdFor(item));
+      if (item.isRecurring) {
+        // Serie editada/excluida: cancela tambem as proximas ocorrencias.
+        final from = DateTime.now().subtract(const Duration(days: 1));
+        for (final occ in RecurrenceExpander.nextOccurrences(
+          item.copyWith(),
+          from,
+          limit: 16,
+        )) {
+          await _notificationsPlugin.cancel(_notificationIdFor(occ));
+        }
+        final masterId = reminder.notificationId != 0
+            ? reminder.notificationId
+            : (item.id.hashCode & 0x7FFFFFFF);
+        await _notificationsPlugin.cancel(masterId);
+      }
       return Result.success(null);
     } catch (e) {
       return Result.failure('Erro ao cancelar notificação: $e');

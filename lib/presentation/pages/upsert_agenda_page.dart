@@ -13,6 +13,7 @@ import '../../core/utils/form_validators.dart';
 import '../../domain/entities/agenda_enums.dart';
 import '../../domain/entities/agenda_item.dart';
 import '../../domain/entities/attachment_ref.dart';
+import '../../domain/entities/recurrence_rule.dart';
 import '../../domain/entities/reminder_config.dart';
 import '../../domain/entities/family.dart';
 import '../../domain/repositories/i_family_service.dart';
@@ -44,6 +45,18 @@ class _UpsertAgendaPageState extends State<UpsertAgendaPage> {
   bool reminderEnabled = false;
   int? reminderMinutes = 10;
   List<AttachmentRef> attachments = [];
+
+  // Repeticao (Fase 1 do roadmap).
+  RecurrenceType repeatType = RecurrenceType.none;
+  Set<int> repeatDays = {};
+  _RepeatEnd repeatEnd = _RepeatEnd.never;
+  DateTime? repeatUntil;
+  int repeatCount = 10;
+  RecurrenceRule? _originalRule;
+
+  /// "Editar so este dia" de um evento que se repete: salva como evento
+  /// novo e tira o dia da serie original.
+  AgendaItem? _detachFrom;
   AgendaItem? editingItem;
   bool _isPremium = false;
 
@@ -65,9 +78,16 @@ class _UpsertAgendaPageState extends State<UpsertAgendaPage> {
   @override
   void initState() {
     super.initState();
-    final arg = Get.arguments;
+    final rawArg = Get.arguments;
+    final detach = rawArg is Map ? rawArg['detachOccurrence'] : null;
+    final arg = detach is AgendaItem ? detach : rawArg;
     if (arg is AgendaItem) {
-      editingItem = arg;
+      if (detach is AgendaItem) {
+        _detachFrom = detach;
+      } else {
+        editingItem = arg;
+        _loadRecurrence(arg.recurrence, arg.startAt);
+      }
       titleController.text = arg.title;
       descriptionController.text = arg.description ?? '';
       startAt = arg.startAt;
@@ -77,7 +97,12 @@ class _UpsertAgendaPageState extends State<UpsertAgendaPage> {
       groupId = arg.groupId;
       reminderEnabled = arg.reminder?.enabled ?? false;
       reminderMinutes = arg.reminder?.minutesBefore;
-      attachments = [...arg.attachments];
+      attachments = _detachFrom == null
+          ? [...arg.attachments]
+          // Copia de evento da serie: anexos com ids novos.
+          : arg.attachments
+                .map((a) => a.copyWith(id: const Uuid().v4()))
+                .toList();
       familyId = arg.familyId;
       kind = arg.kind;
       subjectType = arg.subjectType;
@@ -111,6 +136,196 @@ class _UpsertAgendaPageState extends State<UpsertAgendaPage> {
     }
     if (!mounted) return;
     setState(() => _isPremium = isPremium);
+  }
+
+  void _loadRecurrence(RecurrenceRule? rule, DateTime start) {
+    if (rule == null || !rule.repeats) return;
+    _originalRule = rule;
+    repeatType = rule.type;
+    repeatDays = {...?rule.byWeekDays};
+    if (rule.until != null) {
+      repeatEnd = _RepeatEnd.until;
+      repeatUntil = rule.until;
+    } else if (rule.count != null) {
+      repeatEnd = _RepeatEnd.count;
+      repeatCount = rule.count!;
+    }
+  }
+
+  RecurrenceRule? _buildRecurrence() {
+    if (repeatType == RecurrenceType.none) return null;
+    // Mesmo tipo de antes: mantem dias concluidos/excluidos da serie.
+    final keep = _originalRule?.type == repeatType ? _originalRule : null;
+    final days = repeatDays.isEmpty ? {startAt.weekday} : repeatDays;
+    return RecurrenceRule(
+      type: repeatType,
+      byWeekDays: repeatType == RecurrenceType.weekly
+          ? (days.toList()..sort())
+          : null,
+      until: repeatEnd == _RepeatEnd.until ? repeatUntil : null,
+      count: repeatEnd == _RepeatEnd.count ? repeatCount : null,
+      exceptions: keep?.exceptions ?? const [],
+      completedDates: keep?.completedDates ?? const [],
+    );
+  }
+
+  static const _weekdayShort = {
+    1: 'Seg',
+    2: 'Ter',
+    3: 'Qua',
+    4: 'Qui',
+    5: 'Sex',
+    6: 'Sáb',
+    7: 'Dom',
+  };
+
+  Widget _buildRepeatSection(BuildContext context, Color accent) {
+    final theme = Theme.of(context);
+    final muted = theme.textTheme.bodySmall?.copyWith(
+      color: theme.colorScheme.onSurfaceVariant,
+    );
+    String typeLabel(RecurrenceType t) => switch (t) {
+      RecurrenceType.none => 'Não repete',
+      RecurrenceType.daily => 'Todo dia',
+      RecurrenceType.weekly => 'Toda semana',
+      RecurrenceType.monthly => 'Todo mês',
+      RecurrenceType.custom => 'Personalizado',
+    };
+    final untilLabel = repeatUntil == null
+        ? 'Até uma data'
+        : 'Até ${DateFormat('dd/MM/yyyy').format(repeatUntil!)}';
+    return _sectionCard(
+      context,
+      children: [
+        Row(
+          children: [
+            Icon(Icons.repeat_rounded, size: 16, color: accent),
+            const SizedBox(width: 6),
+            Text(
+              'Repetir',
+              style: theme.textTheme.titleSmall?.copyWith(
+                fontWeight: FontWeight.w700,
+              ),
+            ),
+          ],
+        ),
+        const SizedBox(height: 10),
+        Wrap(
+          spacing: 8,
+          runSpacing: 8,
+          children: [
+            for (final t in const [
+              RecurrenceType.none,
+              RecurrenceType.daily,
+              RecurrenceType.weekly,
+              RecurrenceType.monthly,
+            ])
+              ChoiceChip(
+                label: Text(typeLabel(t)),
+                selected: repeatType == t,
+                onSelected: (_) => setState(() {
+                  repeatType = t;
+                  if (t == RecurrenceType.weekly && repeatDays.isEmpty) {
+                    repeatDays = {startAt.weekday};
+                  }
+                }),
+              ),
+          ],
+        ),
+        if (repeatType == RecurrenceType.weekly) ...[
+          const SizedBox(height: 12),
+          Text('Nos dias', style: muted),
+          const SizedBox(height: 6),
+          Wrap(
+            spacing: 6,
+            runSpacing: 6,
+            children: [
+              for (var d = 1; d <= 7; d++)
+                FilterChip(
+                  label: Text(_weekdayShort[d]!),
+                  selected: repeatDays.contains(d),
+                  showCheckmark: false,
+                  onSelected: (on) => setState(() {
+                    if (on) {
+                      repeatDays = {...repeatDays, d};
+                    } else if (repeatDays.length > 1) {
+                      repeatDays = {...repeatDays}..remove(d);
+                    }
+                  }),
+                ),
+            ],
+          ),
+        ],
+        if (repeatType == RecurrenceType.monthly) ...[
+          const SizedBox(height: 8),
+          Text('Todo dia ${startAt.day} do mês', style: muted),
+        ],
+        if (repeatType != RecurrenceType.none) ...[
+          const SizedBox(height: 12),
+          Text('Termina', style: muted),
+          const SizedBox(height: 6),
+          Wrap(
+            spacing: 8,
+            runSpacing: 8,
+            children: [
+              ChoiceChip(
+                label: const Text('Nunca'),
+                selected: repeatEnd == _RepeatEnd.never,
+                onSelected: (_) => setState(() => repeatEnd = _RepeatEnd.never),
+              ),
+              ChoiceChip(
+                label: Text(untilLabel),
+                selected: repeatEnd == _RepeatEnd.until,
+                onSelected: (_) => _pickRepeatUntil(),
+              ),
+              ChoiceChip(
+                label: const Text('Depois de N vezes'),
+                selected: repeatEnd == _RepeatEnd.count,
+                onSelected: (_) => setState(() => repeatEnd = _RepeatEnd.count),
+              ),
+            ],
+          ),
+          if (repeatEnd == _RepeatEnd.count)
+            Row(
+              children: [
+                IconButton(
+                  tooltip: 'Menos',
+                  onPressed: repeatCount > 2
+                      ? () => setState(() => repeatCount--)
+                      : null,
+                  icon: const Icon(Icons.remove_circle_outline),
+                ),
+                Text('$repeatCount vezes', style: theme.textTheme.titleSmall),
+                IconButton(
+                  tooltip: 'Mais',
+                  onPressed: repeatCount < 365
+                      ? () => setState(() => repeatCount++)
+                      : null,
+                  icon: const Icon(Icons.add_circle_outline),
+                ),
+              ],
+            ),
+        ],
+      ],
+    );
+  }
+
+  Future<void> _pickRepeatUntil() async {
+    final first = DateTime(startAt.year, startAt.month, startAt.day);
+    final picked = await showDatePicker(
+      context: context,
+      firstDate: first,
+      lastDate: DateTime(2050),
+      initialDate: repeatUntil != null && !repeatUntil!.isBefore(first)
+          ? repeatUntil!
+          : first.add(const Duration(days: 30)),
+      helpText: 'Repetir até',
+    );
+    if (picked == null || !mounted) return;
+    setState(() {
+      repeatUntil = picked;
+      repeatEnd = _RepeatEnd.until;
+    });
   }
 
   Future<void> _pickStartDateTime() async {
@@ -269,7 +484,7 @@ class _UpsertAgendaPageState extends State<UpsertAgendaPage> {
         groupId: familyId == null ? groupId : null,
         status: status,
         reminder: reminder,
-        recurrence: null,
+        recurrence: _buildRecurrence(),
         attachments: const [],
       );
       final item = _withFamilyFields(
@@ -280,6 +495,9 @@ class _UpsertAgendaPageState extends State<UpsertAgendaPage> {
         ),
       );
       final ok = await controller.createItem(item);
+      if (ok && _detachFrom != null) {
+        await controller.deleteOccurrence(_detachFrom!);
+      }
       if (ok) {
         if (controller.errorMessage.value != null &&
             controller.errorMessage.value!.isNotEmpty) {
@@ -289,7 +507,7 @@ class _UpsertAgendaPageState extends State<UpsertAgendaPage> {
         } else {
           _showSaved('Evento criado com sucesso');
         }
-        Get.back();
+        Get.back(result: true);
       }
       return;
     }
@@ -303,7 +521,8 @@ class _UpsertAgendaPageState extends State<UpsertAgendaPage> {
       groupId: familyId == null ? groupId : null,
       status: status,
       reminder: reminder,
-      recurrence: null,
+      recurrence: _buildRecurrence(),
+      clearRecurrence: repeatType == RecurrenceType.none,
       attachments: attachments
           .map((a) => a.copyWith(itemId: editingItem!.id))
           .toList(),
@@ -319,7 +538,7 @@ class _UpsertAgendaPageState extends State<UpsertAgendaPage> {
       } else {
         _showSaved('Evento atualizado');
       }
-      Get.back();
+      Get.back(result: true);
     }
   }
 
@@ -413,7 +632,11 @@ class _UpsertAgendaPageState extends State<UpsertAgendaPage> {
                     Expanded(
                       child: Center(
                         child: Text(
-                          editingItem == null ? 'Novo evento' : 'Editar evento',
+                          _detachFrom != null
+                              ? 'Editar este dia'
+                              : editingItem == null
+                              ? 'Novo evento'
+                              : 'Editar evento',
                           style: Theme.of(context).textTheme.titleMedium
                               ?.copyWith(fontWeight: FontWeight.w700),
                         ),
@@ -557,6 +780,8 @@ class _UpsertAgendaPageState extends State<UpsertAgendaPage> {
                           ),
                         ],
                       ),
+                      if (_detachFrom == null)
+                        _buildRepeatSection(context, accentGreen),
                       // V1: categorias sao da agenda pessoal.
                       if (familyId == null)
                         _sectionCard(
@@ -1380,3 +1605,5 @@ class _UpsertAgendaPageState extends State<UpsertAgendaPage> {
     );
   }
 }
+
+enum _RepeatEnd { never, until, count }

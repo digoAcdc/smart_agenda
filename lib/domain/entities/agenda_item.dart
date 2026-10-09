@@ -35,6 +35,7 @@ class AgendaItem extends Equatable {
     required this.createdAt,
     required this.updatedAt,
     this.deletedAt,
+    this.occurrenceDate,
   }) : assert(title != '');
 
   final String id;
@@ -50,6 +51,13 @@ class AgendaItem extends Equatable {
   final ReminderConfig? reminder;
   final RecurrenceRule? recurrence;
   final List<AttachmentRef> attachments;
+
+  /// Dia desta ocorrencia quando o item vem de um evento que se repete
+  /// (gerado na leitura, nao e salvo). Nulo = o proprio evento salvo.
+  final DateTime? occurrenceDate;
+
+  bool get isRecurring => recurrence?.repeats ?? false;
+  bool get isOccurrence => occurrenceDate != null;
 
   /// Familia dona do item. Nulo = agenda pessoal.
   final String? familyId;
@@ -106,6 +114,8 @@ class AgendaItem extends Equatable {
     DateTime? createdAt,
     DateTime? updatedAt,
     DateTime? deletedAt,
+    DateTime? occurrenceDate,
+    bool clearRecurrence = false,
   }) {
     return AgendaItem(
       id: id ?? this.id,
@@ -119,7 +129,7 @@ class AgendaItem extends Equatable {
       status: status ?? this.status,
       locationText: locationText ?? this.locationText,
       reminder: reminder ?? this.reminder,
-      recurrence: recurrence ?? this.recurrence,
+      recurrence: clearRecurrence ? null : (recurrence ?? this.recurrence),
       attachments: attachments ?? this.attachments,
       familyId: familyId ?? this.familyId,
       kind: kind ?? this.kind,
@@ -136,38 +146,40 @@ class AgendaItem extends Equatable {
       createdAt: createdAt ?? this.createdAt,
       updatedAt: updatedAt ?? this.updatedAt,
       deletedAt: deletedAt ?? this.deletedAt,
+      occurrenceDate: occurrenceDate ?? this.occurrenceDate,
     );
   }
 
   @override
   List<Object?> get props => [
-        id,
-        title,
-        description,
-        startAt,
-        endAt,
-        allDay,
-        timezone,
-        groupId,
-        status,
-        locationText,
-        reminder,
-        recurrence,
-        attachments,
-        familyId,
-        kind,
-        subjectType,
-        subjectChildId,
-        subjectUserId,
-        assigneeType,
-        assigneeUserId,
-        createdBy,
-        updatedBy,
-        completedBy,
-        source,
-        syncState,
-        createdAt,
-        updatedAt,
-        deletedAt,
-      ];
+    id,
+    title,
+    description,
+    startAt,
+    endAt,
+    allDay,
+    timezone,
+    groupId,
+    status,
+    locationText,
+    reminder,
+    recurrence,
+    attachments,
+    familyId,
+    kind,
+    subjectType,
+    subjectChildId,
+    subjectUserId,
+    assigneeType,
+    assigneeUserId,
+    createdBy,
+    updatedBy,
+    completedBy,
+    source,
+    syncState,
+    createdAt,
+    updatedAt,
+    occurrenceDate,
+    deletedAt,
+  ];
 }

@@ -19,6 +19,7 @@ import '../widgets/empty_state_widget.dart';
 import '../widgets/loading_placeholder_list.dart';
 import '../widgets/section_header.dart';
 import '../utils/family_item_labels.dart';
+import '../utils/recurring_scope_prompt.dart';
 import '../../domain/repositories/i_sync_service.dart';
 import '../widgets/family_invite_banner.dart';
 import '../widgets/native_ad_card.dart';
@@ -804,6 +805,21 @@ class _TodayPageState extends State<TodayPage> {
     );
   }
 
+  /// Titulo com o icone de repeticao quando o evento se repete.
+  InlineSpan _titleSpan(AgendaItem item) => TextSpan(
+    children: [
+      TextSpan(text: item.title),
+      if (item.isRecurring)
+        const WidgetSpan(
+          alignment: PlaceholderAlignment.middle,
+          child: Padding(
+            padding: EdgeInsets.only(left: 4),
+            child: Icon(Icons.repeat_rounded, size: 14),
+          ),
+        ),
+    ],
+  );
+
   Widget _buildWeekStrip(AgendaController controller, Color accentGreen) {
     final start = DateUtilsEx.startOfWeek(DateTime.now());
     final days = List.generate(7, (index) => start.add(Duration(days: index)));
@@ -994,8 +1010,8 @@ class _TodayPageState extends State<TodayPage> {
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  Text(
-                    item.title,
+                  Text.rich(
+                    _titleSpan(item),
                     maxLines: 1,
                     overflow: TextOverflow.ellipsis,
                     style: Theme.of(context).textTheme.titleSmall?.copyWith(
@@ -1269,8 +1285,8 @@ class _TodayPageState extends State<TodayPage> {
                     ),
                   ],
                   const SizedBox(height: 4),
-                  Text(
-                    item.title,
+                  Text.rich(
+                    _titleSpan(item),
                     maxLines: 2,
                     overflow: TextOverflow.ellipsis,
                     style: Theme.of(context).textTheme.titleSmall?.copyWith(
@@ -1439,7 +1455,7 @@ class _TodayPageState extends State<TodayPage> {
                 onTap: () =>
                     Get.toNamed(AppRoutes.eventDetail, arguments: item),
                 onToggleStatus: (status) {
-                  agendaController.toggleStatus(item.id, status);
+                  agendaController.toggleItemStatus(item, status);
                   _showSavedFeedback(context, 'Status atualizado');
                 },
               ),
@@ -1599,8 +1615,8 @@ class _TodayPageState extends State<TodayPage> {
                         ),
                       ],
                       const SizedBox(height: 4),
-                      Text(
-                        item.title,
+                      Text.rich(
+                        _titleSpan(item),
                         style: Theme.of(context).textTheme.titleMedium
                             ?.copyWith(fontWeight: FontWeight.w700),
                       ),
@@ -1678,10 +1694,10 @@ class _TodayPageState extends State<TodayPage> {
           groupColor: groupColorById[item.groupId],
           onTap: () => Get.toNamed(AppRoutes.eventDetail, arguments: item),
           onToggleStatus: (status) {
-            controller.toggleStatus(item.id, status);
+            controller.toggleItemStatus(item, status);
             _showSavedFeedback(context, 'Status atualizado');
           },
-          onDelete: () => _confirmDeleteAndExecute(controller, item.id),
+          onDelete: () => _confirmDeleteAndExecute(controller, item),
         );
       },
     );
@@ -1795,13 +1811,11 @@ class _TodayPageState extends State<TodayPage> {
                             arguments: item,
                           ),
                           onToggleStatus: (status) {
-                            agendaController.toggleStatus(item.id, status);
+                            agendaController.toggleItemStatus(item, status);
                             _showSavedFeedback(context, 'Status atualizado');
                           },
-                          onDelete: () => _confirmDeleteAndExecute(
-                            agendaController,
-                            item.id,
-                          ),
+                          onDelete: () =>
+                              _confirmDeleteAndExecute(agendaController, item),
                         ),
                       ),
                       const SizedBox(height: 6),
@@ -1883,7 +1897,10 @@ class _TodayPageState extends State<TodayPage> {
           onPageChanged: (focused) {
             setState(() {
               focusedDay = DateUtilsEx.startOfDay(focused);
-              if (selectedDate.month != focusedDay.month ||
+              if (mode == AgendaHomeViewMode.week) {
+                // Semana: a lista acompanha a semana mostrada no calendario.
+                selectedDate = focusedDay;
+              } else if (selectedDate.month != focusedDay.month ||
                   selectedDate.year != focusedDay.year) {
                 selectedDate = DateTime(focusedDay.year, focusedDay.month, 1);
               }
@@ -1944,8 +1961,19 @@ class _TodayPageState extends State<TodayPage> {
 
   Future<bool?> _confirmDeleteAndExecute(
     AgendaController controller,
-    String itemId,
+    AgendaItem item,
   ) async {
+    final itemId = item.id;
+    // Repeticao: excluir so este dia ou a serie inteira.
+    if (item.isOccurrence) {
+      final scope = await askRecurringScope(context, title: 'Excluir evento');
+      if (scope == null) return false;
+      final ok = scope == RecurringScope.onlyThis
+          ? await controller.deleteOccurrence(item)
+          : await controller.deleteItem(itemId);
+      if (ok && mounted) _showSavedFeedback(context, 'Evento removido');
+      return ok;
+    }
     final confirm = await showDialog<bool>(
       context: context,
       builder: (context) => AlertDialog(

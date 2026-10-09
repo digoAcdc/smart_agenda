@@ -87,6 +87,23 @@ class AgendaLocalDataSource {
     return _joinAttachments(rows);
   }
 
+  /// Eventos que se repetem (a serie inteira; as datas sao geradas depois).
+  Future<List<AgendaItemRecord>> getRecurring({
+    DateTime? startingBefore,
+  }) async {
+    final rows =
+        await (_db.select(_db.agendaItemsTable)..where((t) {
+              Expression<bool> p =
+                  t.recurrenceJson.isNotNull() & t.deletedAt.isNull();
+              if (startingBefore != null) {
+                p = p & t.startAt.isSmallerOrEqualValue(startingBefore);
+              }
+              return p;
+            }))
+            .get();
+    return _joinAttachments(rows);
+  }
+
   Future<List<AgendaItemRecord>> search(
     String query, {
     DateTime? start,
