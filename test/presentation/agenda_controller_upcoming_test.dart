@@ -18,6 +18,16 @@ class _RangeRepo implements IAgendaRepository {
           .toList());
 
   @override
+  Future<Result<List<AgendaItem>>> getItemsByDay(DateTime date) {
+    final start = DateTime(date.year, date.month, date.day);
+    return getItemsByRange(start, start.add(const Duration(days: 1)));
+  }
+
+  @override
+  Future<Result<Set<DateTime>>> getMarkersByRange(DateTime start, DateTime end) async =>
+      Result.success({});
+
+  @override
   dynamic noSuchMethod(Invocation invocation) => super.noSuchMethod(invocation);
 }
 
