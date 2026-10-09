@@ -34,12 +34,12 @@ class AgendaLocalDataSource {
   ) async {
     final withSync = item.copyWith(syncState: const Value('pending'));
     await _db.transaction(() async {
-      await (_db.update(_db.agendaItemsTable)
-            ..where((tbl) => tbl.id.equals(item.id.value)))
-          .write(withSync);
-      await (_db.delete(_db.attachmentsTable)
-            ..where((tbl) => tbl.itemId.equals(item.id.value)))
-          .go();
+      await (_db.update(
+        _db.agendaItemsTable,
+      )..where((tbl) => tbl.id.equals(item.id.value))).write(withSync);
+      await (_db.delete(
+        _db.attachmentsTable,
+      )..where((tbl) => tbl.itemId.equals(item.id.value))).go();
       if (attachments.isNotEmpty) {
         await _db.batch((batch) {
           batch.insertAll(_db.attachmentsTable, attachments);
@@ -49,8 +49,9 @@ class AgendaLocalDataSource {
   }
 
   Future<void> deleteItemSoft(String id, DateTime deletedAt) async {
-    await (_db.update(_db.agendaItemsTable)..where((tbl) => tbl.id.equals(id)))
-        .write(
+    await (_db.update(
+      _db.agendaItemsTable,
+    )..where((tbl) => tbl.id.equals(id))).write(
       AgendaItemsTableCompanion(
         deletedAt: Value(deletedAt),
         updatedAt: Value(deletedAt),
@@ -60,23 +61,29 @@ class AgendaLocalDataSource {
   }
 
   Future<AgendaItemRecord?> getById(String id) async {
-    final item = await (_db.select(_db.agendaItemsTable)
-          ..where((t) => t.id.equals(id)))
-        .getSingleOrNull();
+    final item = await (_db.select(
+      _db.agendaItemsTable,
+    )..where((t) => t.id.equals(id))).getSingleOrNull();
     if (item == null || item.deletedAt != null) return null;
-    final atts = await (_db.select(_db.attachmentsTable)
-          ..where((tbl) => tbl.itemId.equals(item.id)))
-        .get();
+    final atts = await (_db.select(
+      _db.attachmentsTable,
+    )..where((tbl) => tbl.itemId.equals(item.id))).get();
     return AgendaItemRecord(item: item, attachments: atts);
   }
 
   Future<List<AgendaItemRecord>> getByRange(
-      DateTime start, DateTime end) async {
-    final rows = await (_db.select(_db.agendaItemsTable)
-          ..where((t) =>
-              t.startAt.isBetweenValues(start, end) & t.deletedAt.isNull())
-          ..orderBy([(t) => OrderingTerm(expression: t.startAt)]))
-        .get();
+    DateTime start,
+    DateTime end,
+  ) async {
+    final rows =
+        await (_db.select(_db.agendaItemsTable)
+              ..where(
+                (t) =>
+                    t.startAt.isBetweenValues(start, end) &
+                    t.deletedAt.isNull(),
+              )
+              ..orderBy([(t) => OrderingTerm(expression: t.startAt)]))
+            .get();
     return _joinAttachments(rows);
   }
 
@@ -91,7 +98,8 @@ class AgendaLocalDataSource {
       ..where((tbl) {
         Expression<bool> predicate = tbl.deletedAt.isNull();
         if (query.isNotEmpty) {
-          predicate = predicate &
+          predicate =
+              predicate &
               (tbl.title.like('%$query%') | tbl.description.like('%$query%'));
         }
         if (start != null && end != null) {
@@ -111,10 +119,11 @@ class AgendaLocalDataSource {
   }
 
   Future<List<AgendaItemRecord>> getPending() async {
-    final rows = await (_db.select(_db.agendaItemsTable)
-          ..where((t) => t.syncState.equals('pending'))
-          ..orderBy([(t) => OrderingTerm(expression: t.startAt)]))
-        .get();
+    final rows =
+        await (_db.select(_db.agendaItemsTable)
+              ..where((t) => t.syncState.equals('pending'))
+              ..orderBy([(t) => OrderingTerm(expression: t.startAt)]))
+            .get();
     return _joinAttachments(rows);
   }
 
@@ -124,8 +133,9 @@ class AgendaLocalDataSource {
   }
 
   Future<void> setStatus(String id, String status, DateTime updatedAt) async {
-    await (_db.update(_db.agendaItemsTable)..where((tbl) => tbl.id.equals(id)))
-        .write(
+    await (_db.update(
+      _db.agendaItemsTable,
+    )..where((tbl) => tbl.id.equals(id))).write(
       AgendaItemsTableCompanion(
         status: Value(status),
         updatedAt: Value(updatedAt),
@@ -143,20 +153,23 @@ class AgendaLocalDataSource {
   }) async {
     final id = item.id.value;
     await _db.transaction(() async {
-      final local = await (_db.select(_db.agendaItemsTable)
-            ..where((t) => t.id.equals(id)))
-          .getSingleOrNull();
+      final local = await (_db.select(
+        _db.agendaItemsTable,
+      )..where((t) => t.id.equals(id))).getSingleOrNull();
       if (local != null && local.syncState == 'pending') return;
 
-      await (_db.delete(_db.attachmentsTable)
-            ..where((t) => t.itemId.equals(id)))
-          .go();
+      await (_db.delete(
+        _db.attachmentsTable,
+      )..where((t) => t.itemId.equals(id))).go();
       if (deleted) {
-        await (_db.delete(_db.agendaItemsTable)..where((t) => t.id.equals(id)))
-            .go();
+        await (_db.delete(
+          _db.agendaItemsTable,
+        )..where((t) => t.id.equals(id))).go();
         return;
       }
-      await _db.into(_db.agendaItemsTable).insertOnConflictUpdate(
+      await _db
+          .into(_db.agendaItemsTable)
+          .insertOnConflictUpdate(
             item.copyWith(syncState: const Value('synced')),
           );
       if (attachments.isNotEmpty) {
@@ -170,10 +183,12 @@ class AgendaLocalDataSource {
   /// Descarta a alteracao local pendente (ex.: sem permissao no servidor).
   Future<void> discardLocal(String id) async {
     await _db.transaction(() async {
-      await (_db.delete(_db.attachmentsTable)..where((t) => t.itemId.equals(id)))
-          .go();
-      await (_db.delete(_db.agendaItemsTable)..where((t) => t.id.equals(id)))
-          .go();
+      await (_db.delete(
+        _db.attachmentsTable,
+      )..where((t) => t.itemId.equals(id))).go();
+      await (_db.delete(
+        _db.agendaItemsTable,
+      )..where((t) => t.id.equals(id))).go();
     });
   }
 
@@ -181,20 +196,22 @@ class AgendaLocalDataSource {
   /// [keepFamilyId] nulo remove o cache de todas as Familias.
   Future<void> clearFamilyCache({String? keepFamilyId}) async {
     await _db.transaction(() async {
-      final rows = await (_db.select(_db.agendaItemsTable)
-            ..where((t) {
-              final isFamily = t.familyId.isNotNull();
-              return keepFamilyId == null
-                  ? isFamily
-                  : isFamily & t.familyId.equals(keepFamilyId).not();
-            }))
-          .get();
+      final rows =
+          await (_db.select(_db.agendaItemsTable)..where((t) {
+                final isFamily = t.familyId.isNotNull();
+                return keepFamilyId == null
+                    ? isFamily
+                    : isFamily & t.familyId.equals(keepFamilyId).not();
+              }))
+              .get();
       final ids = rows.map((r) => r.id).toList();
       if (ids.isEmpty) return;
-      await (_db.delete(_db.attachmentsTable)..where((t) => t.itemId.isIn(ids)))
-          .go();
-      await (_db.delete(_db.agendaItemsTable)..where((t) => t.id.isIn(ids)))
-          .go();
+      await (_db.delete(
+        _db.attachmentsTable,
+      )..where((t) => t.itemId.isIn(ids))).go();
+      await (_db.delete(
+        _db.agendaItemsTable,
+      )..where((t) => t.id.isIn(ids))).go();
     });
   }
 
@@ -203,9 +220,9 @@ class AgendaLocalDataSource {
   ) async {
     if (items.isEmpty) return [];
     final itemIds = items.map((e) => e.id).toList();
-    final atts = await (_db.select(_db.attachmentsTable)
-          ..where((tbl) => tbl.itemId.isIn(itemIds)))
-        .get();
+    final atts = await (_db.select(
+      _db.attachmentsTable,
+    )..where((tbl) => tbl.itemId.isIn(itemIds))).get();
 
     return items
         .map(

@@ -89,15 +89,15 @@ class AppPaletteColors extends ThemeExtension<AppPaletteColors> {
       surfaceSoft: Color.lerp(surfaceSoft, other.surfaceSoft, t) ?? surfaceSoft,
       scheduleHeader:
           Color.lerp(scheduleHeader, other.scheduleHeader, t) ?? scheduleHeader,
-      scheduleTimeColumn: Color.lerp(
-              scheduleTimeColumn, other.scheduleTimeColumn, t) ??
+      scheduleTimeColumn:
+          Color.lerp(scheduleTimeColumn, other.scheduleTimeColumn, t) ??
           scheduleTimeColumn,
       scheduleCellEmpty:
           Color.lerp(scheduleCellEmpty, other.scheduleCellEmpty, t) ??
-              scheduleCellEmpty,
+          scheduleCellEmpty,
       scheduleCellFilled:
           Color.lerp(scheduleCellFilled, other.scheduleCellFilled, t) ??
-              scheduleCellFilled,
+          scheduleCellFilled,
     );
   }
 }

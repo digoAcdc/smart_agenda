@@ -10,17 +10,18 @@ class FcmTokenSupabaseDataSource {
 
   /// Insere ou atualiza o token para o usuario.
   /// Usa upsert por (user_id, token) para suportar token refresh.
-  Future<void> upsertToken(String userId, String token, {String? platform}) async {
+  Future<void> upsertToken(
+    String userId,
+    String token, {
+    String? platform,
+  }) async {
     final p = platform ?? _platform;
-    await _client.from('user_fcm_tokens').upsert(
-      {
-        'user_id': userId,
-        'token': token,
-        'platform': p,
-        'updated_at': DateTime.now().toIso8601String(),
-      },
-      onConflict: 'user_id,token',
-    );
+    await _client.from('user_fcm_tokens').upsert({
+      'user_id': userId,
+      'token': token,
+      'platform': p,
+      'updated_at': DateTime.now().toIso8601String(),
+    }, onConflict: 'user_id,token');
   }
 
   /// Remove o token no logout.

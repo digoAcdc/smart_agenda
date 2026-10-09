@@ -72,8 +72,9 @@ class _ClassGroupDetailPageState extends State<ClassGroupDetailPage> {
                     ),
                     actions: [
                       TextButton(
-                          onPressed: () => Get.back(result: false),
-                          child: const Text('Cancelar')),
+                        onPressed: () => Get.back(result: false),
+                        child: const Text('Cancelar'),
+                      ),
                       FilledButton(
                         onPressed: () => Get.back(result: true),
                         style: FilledButton.styleFrom(
@@ -112,14 +113,14 @@ class _ClassGroupDetailPageState extends State<ClassGroupDetailPage> {
                   child: Text(
                     group.description!,
                     style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                          color: Theme.of(context)
-                              .colorScheme
-                              .onSurfaceVariant,
-                        ),
+                      color: Theme.of(context).colorScheme.onSurfaceVariant,
+                    ),
                   ),
                 ),
               Padding(
-                padding: const EdgeInsets.symmetric(horizontal: DesignTokens.spaceMd),
+                padding: const EdgeInsets.symmetric(
+                  horizontal: DesignTokens.spaceMd,
+                ),
                 child: Row(
                   mainAxisAlignment: MainAxisAlignment.spaceBetween,
                   children: [
@@ -152,10 +153,16 @@ class _ClassGroupDetailPageState extends State<ClassGroupDetailPage> {
                           final student = controller.students[index];
                           return _StudentCard(
                             student: student,
-                            onTap: () => _openStudentForm(context, controller,
-                                student: student),
+                            onTap: () => _openStudentForm(
+                              context,
+                              controller,
+                              student: student,
+                            ),
                             onDelete: () => _confirmDeleteStudent(
-                                context, controller, student),
+                              context,
+                              controller,
+                              student,
+                            ),
                           );
                         },
                       ),
@@ -173,11 +180,12 @@ class _ClassGroupDetailPageState extends State<ClassGroupDetailPage> {
   }
 
   Future<void> _openGroupForm(
-      BuildContext context, ClassGroupController controller) async {
+    BuildContext context,
+    ClassGroupController controller,
+  ) async {
     final formKey = GlobalKey<FormState>();
     final nameController = TextEditingController(text: group.name);
-    final descController =
-        TextEditingController(text: group.description ?? '');
+    final descController = TextEditingController(text: group.description ?? '');
 
     await Get.dialog(
       AlertDialog(
@@ -216,13 +224,15 @@ class _ClassGroupDetailPageState extends State<ClassGroupDetailPage> {
             onPressed: () async {
               if (formKey.currentState?.validate() != true) return;
               final name = nameController.text.trim();
-              await controller.updateGroup(group.copyWith(
-                name: name,
-                description: descController.text.trim().isEmpty
-                    ? null
-                    : descController.text.trim(),
-                updatedAt: DateTime.now(),
-              ));
+              await controller.updateGroup(
+                group.copyWith(
+                  name: name,
+                  description: descController.text.trim().isEmpty
+                      ? null
+                      : descController.text.trim(),
+                  updatedAt: DateTime.now(),
+                ),
+              );
               Get.back();
             },
             child: const Text('Salvar'),
@@ -232,18 +242,23 @@ class _ClassGroupDetailPageState extends State<ClassGroupDetailPage> {
     );
   }
 
-  Future<void> _openStudentForm(BuildContext context,
-      ClassGroupController controller, {Student? student}) async {
+  Future<void> _openStudentForm(
+    BuildContext context,
+    ClassGroupController controller, {
+    Student? student,
+  }) async {
     final formKey = GlobalKey<FormState>();
     final nameController = TextEditingController(text: student?.name ?? '');
     final emailController = TextEditingController(text: student?.email ?? '');
     final phoneController = TextEditingController(
       text: formatPhoneForDisplay(student?.phone),
     );
-    final guardianNameController =
-        TextEditingController(text: student?.guardianName ?? '');
-    final guardianEmailController =
-        TextEditingController(text: student?.guardianEmail ?? '');
+    final guardianNameController = TextEditingController(
+      text: student?.guardianName ?? '',
+    );
+    final guardianEmailController = TextEditingController(
+      text: student?.guardianEmail ?? '',
+    );
     final guardianPhoneController = TextEditingController(
       text: formatPhoneForDisplay(student?.guardianPhone),
     );
@@ -336,32 +351,35 @@ class _ClassGroupDetailPageState extends State<ClassGroupDetailPage> {
               final phone = unmaskPhone(phoneController.text);
               final guardianName = guardianNameController.text.trim();
               final guardianEmail = guardianEmailController.text.trim();
-              final guardianPhone =
-                  unmaskPhone(guardianPhoneController.text);
+              final guardianPhone = unmaskPhone(guardianPhoneController.text);
               final now = DateTime.now();
               if (student == null) {
-                await controller.createStudent(Student(
-                  id: '',
-                  groupId: group.id,
-                  name: name,
-                  email: email.isEmpty ? null : email,
-                  phone: phone.isEmpty ? null : phone,
-                  guardianName: guardianName.isEmpty ? null : guardianName,
-                  guardianEmail: guardianEmail.isEmpty ? null : guardianEmail,
-                  guardianPhone: guardianPhone.isEmpty ? null : guardianPhone,
-                  createdAt: now,
-                  updatedAt: now,
-                ));
+                await controller.createStudent(
+                  Student(
+                    id: '',
+                    groupId: group.id,
+                    name: name,
+                    email: email.isEmpty ? null : email,
+                    phone: phone.isEmpty ? null : phone,
+                    guardianName: guardianName.isEmpty ? null : guardianName,
+                    guardianEmail: guardianEmail.isEmpty ? null : guardianEmail,
+                    guardianPhone: guardianPhone.isEmpty ? null : guardianPhone,
+                    createdAt: now,
+                    updatedAt: now,
+                  ),
+                );
               } else {
-                await controller.updateStudent(student.copyWith(
-                  name: name,
-                  email: email.isEmpty ? null : email,
-                  phone: phone.isEmpty ? null : phone,
-                  guardianName: guardianName.isEmpty ? null : guardianName,
-                  guardianEmail: guardianEmail.isEmpty ? null : guardianEmail,
-                  guardianPhone: guardianPhone.isEmpty ? null : guardianPhone,
-                  updatedAt: now,
-                ));
+                await controller.updateStudent(
+                  student.copyWith(
+                    name: name,
+                    email: email.isEmpty ? null : email,
+                    phone: phone.isEmpty ? null : phone,
+                    guardianName: guardianName.isEmpty ? null : guardianName,
+                    guardianEmail: guardianEmail.isEmpty ? null : guardianEmail,
+                    guardianPhone: guardianPhone.isEmpty ? null : guardianPhone,
+                    updatedAt: now,
+                  ),
+                );
               }
               Get.back();
             },
@@ -372,16 +390,20 @@ class _ClassGroupDetailPageState extends State<ClassGroupDetailPage> {
     );
   }
 
-  Future<void> _confirmDeleteStudent(BuildContext context,
-      ClassGroupController controller, Student student) async {
+  Future<void> _confirmDeleteStudent(
+    BuildContext context,
+    ClassGroupController controller,
+    Student student,
+  ) async {
     final ok = await Get.dialog<bool>(
       AlertDialog(
         title: const Text('Excluir contato'),
         content: Text('Excluir "${student.name}"?'),
         actions: [
           TextButton(
-              onPressed: () => Get.back(result: false),
-              child: const Text('Cancelar')),
+            onPressed: () => Get.back(result: false),
+            child: const Text('Cancelar'),
+          ),
           FilledButton(
             onPressed: () => Get.back(result: true),
             style: FilledButton.styleFrom(
@@ -395,9 +417,9 @@ class _ClassGroupDetailPageState extends State<ClassGroupDetailPage> {
     if (ok == true) {
       await controller.deleteStudent(student);
       if (context.mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text('Contato excluido')),
-        );
+        ScaffoldMessenger.of(
+          context,
+        ).showSnackBar(const SnackBar(content: Text('Contato excluido')));
       }
     }
   }
@@ -429,10 +451,9 @@ class _StudentCard extends StatelessWidget {
               Row(
                 children: [
                   CircleAvatar(
-                    backgroundColor: Theme.of(context)
-                        .colorScheme
-                        .primaryContainer
-                        .withValues(alpha: 0.5),
+                    backgroundColor: Theme.of(
+                      context,
+                    ).colorScheme.primaryContainer.withValues(alpha: 0.5),
                     child: Text(
                       student.name.characters.first.toUpperCase(),
                       style: TextStyle(
@@ -472,25 +493,45 @@ class _StudentCard extends StatelessWidget {
                     itemBuilder: (_) {
                       final items = <PopupMenuItem<String>>[
                         const PopupMenuItem(
-                            value: 'delete', child: Text('Excluir')),
+                          value: 'delete',
+                          child: Text('Excluir'),
+                        ),
                       ];
                       if (student.phone != null) {
-                        items.add(const PopupMenuItem(
-                            value: 'call', child: Text('Ligar')));
-                        items.add(const PopupMenuItem(
-                            value: 'whatsapp', child: Text('WhatsApp')));
+                        items.add(
+                          const PopupMenuItem(
+                            value: 'call',
+                            child: Text('Ligar'),
+                          ),
+                        );
+                        items.add(
+                          const PopupMenuItem(
+                            value: 'whatsapp',
+                            child: Text('WhatsApp'),
+                          ),
+                        );
                       }
                       if (student.email != null) {
-                        items.add(const PopupMenuItem(
-                            value: 'email', child: Text('Email')));
+                        items.add(
+                          const PopupMenuItem(
+                            value: 'email',
+                            child: Text('Email'),
+                          ),
+                        );
                       }
                       if (student.guardianPhone != null) {
-                        items.add(const PopupMenuItem(
+                        items.add(
+                          const PopupMenuItem(
                             value: 'guardian_call',
-                            child: Text('Ligar responsavel')));
-                        items.add(const PopupMenuItem(
+                            child: Text('Ligar responsavel'),
+                          ),
+                        );
+                        items.add(
+                          const PopupMenuItem(
                             value: 'guardian_whatsapp',
-                            child: Text('WhatsApp responsavel')));
+                            child: Text('WhatsApp responsavel'),
+                          ),
+                        );
                       }
                       return items;
                     },
@@ -521,10 +562,8 @@ class _StudentCard extends StatelessWidget {
                       Text(
                         'Resp: ${student.guardianName}',
                         style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                              color: Theme.of(context)
-                                  .colorScheme
-                                  .onSurfaceVariant,
-                            ),
+                          color: Theme.of(context).colorScheme.onSurfaceVariant,
+                        ),
                       ),
                   ],
                 ),
@@ -583,9 +622,9 @@ class _ContactChip extends StatelessWidget {
             Text(
               label,
               style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                    color: Theme.of(context).colorScheme.primary,
-                    decoration: TextDecoration.underline,
-                  ),
+                color: Theme.of(context).colorScheme.primary,
+                decoration: TextDecoration.underline,
+              ),
             ),
           ],
         ),

@@ -39,7 +39,9 @@ class FirebaseService {
       );
       instance._analytics = FirebaseAnalytics.instance;
       instance._messaging = FirebaseMessaging.instance;
-      FirebaseMessaging.onBackgroundMessage(_firebaseMessagingBackgroundHandler);
+      FirebaseMessaging.onBackgroundMessage(
+        _firebaseMessagingBackgroundHandler,
+      );
       instance._initialized = true;
       return true;
     } catch (_) {

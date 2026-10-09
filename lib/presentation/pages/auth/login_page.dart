@@ -77,16 +77,16 @@ class _LoginPageState extends State<LoginPage> {
                 Text(
                   'Bem-vindo de volta!',
                   style: Theme.of(context).textTheme.headlineSmall?.copyWith(
-                        fontWeight: FontWeight.w800,
-                      ),
+                    fontWeight: FontWeight.w800,
+                  ),
                   textAlign: TextAlign.center,
                 ),
                 const SizedBox(height: DesignTokens.spaceXs),
                 Text(
                   'Entre na sua conta do Smart Agenda',
                   style: Theme.of(context).textTheme.bodyLarge?.copyWith(
-                        color: Theme.of(context).colorScheme.onSurfaceVariant,
-                      ),
+                    color: Theme.of(context).colorScheme.onSurfaceVariant,
+                  ),
                   textAlign: TextAlign.center,
                 ),
                 const SizedBox(height: DesignTokens.spaceXl),
@@ -108,8 +108,9 @@ class _LoginPageState extends State<LoginPage> {
                           if (v == null || v.trim().isEmpty) {
                             return 'Informe seu e-mail';
                           }
-                          if (!RegExp(r'^[\w-\.]+@([\w-]+\.)+[\w-]{2,4}$')
-                              .hasMatch(v.trim())) {
+                          if (!RegExp(
+                            r'^[\w-\.]+@([\w-]+\.)+[\w-]{2,4}$',
+                          ).hasMatch(v.trim())) {
                             return 'E-mail invalido';
                           }
                           return null;
@@ -144,8 +145,9 @@ class _LoginPageState extends State<LoginPage> {
                                   authController.setRememberMe(v ?? true);
                                 },
                                 shape: RoundedRectangleBorder(
-                                  borderRadius:
-                                      BorderRadius.circular(DesignTokens.radiusSm),
+                                  borderRadius: BorderRadius.circular(
+                                    DesignTokens.radiusSm,
+                                  ),
                                 ),
                               ),
                             ),
@@ -161,8 +163,7 @@ class _LoginPageState extends State<LoginPage> {
                       Align(
                         alignment: Alignment.centerRight,
                         child: TextButton(
-                          onPressed: () =>
-                              Get.toNamed(AppRoutes.resetPassword),
+                          onPressed: () => Get.toNamed(AppRoutes.resetPassword),
                           child: const Text('Esqueci minha senha?'),
                         ),
                       ),
@@ -175,27 +176,24 @@ class _LoginPageState extends State<LoginPage> {
                           onPressed: _handleLogin,
                         ),
                       ),
-                      Obx(
-                        () {
-                          final msg = authController.errorMessage.value;
-                          if (msg == null || msg.isEmpty) {
-                            return const SizedBox.shrink();
-                          }
-                          return Padding(
-                            padding:
-                                const EdgeInsets.only(top: DesignTokens.spaceSm),
-                            child: Text(
-                              msg,
-                              style: Theme.of(context)
-                                  .textTheme
-                                  .bodySmall
-                                  ?.copyWith(
-                                    color: context.semanticColors.danger,
-                                  ),
-                            ),
-                          );
-                        },
-                      ),
+                      Obx(() {
+                        final msg = authController.errorMessage.value;
+                        if (msg == null || msg.isEmpty) {
+                          return const SizedBox.shrink();
+                        }
+                        return Padding(
+                          padding: const EdgeInsets.only(
+                            top: DesignTokens.spaceSm,
+                          ),
+                          child: Text(
+                            msg,
+                            style: Theme.of(context).textTheme.bodySmall
+                                ?.copyWith(
+                                  color: context.semanticColors.danger,
+                                ),
+                          ),
+                        );
+                      }),
                     ],
                   ),
                 ),

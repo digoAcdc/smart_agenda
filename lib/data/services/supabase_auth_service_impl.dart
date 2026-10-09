@@ -29,7 +29,9 @@ class SupabaseAuthServiceImpl implements IAuthService {
     try {
       final user = _client.auth.currentUser;
       if (user == null) return Result.success(null);
-      return Result.success(domain.AuthUser(id: user.id, email: user.email ?? ''));
+      return Result.success(
+        domain.AuthUser(id: user.id, email: user.email ?? ''),
+      );
     } catch (e) {
       return Result.failure(_mapError(e));
     }
@@ -71,14 +73,17 @@ class SupabaseAuthServiceImpl implements IAuthService {
   Future<bool> _requestRecoveryViaApi(String email) async {
     final baseUrl = BillingConstants.billingApiBaseUrl.trim();
     if (baseUrl.isEmpty) return false;
-    final client = HttpClient()..connectionTimeout = const Duration(seconds: 10);
+    final client = HttpClient()
+      ..connectionTimeout = const Duration(seconds: 10);
     try {
       final request = await client.postUrl(
         Uri.parse('$baseUrl/auth/password-recovery'),
       );
       request.headers.set(HttpHeaders.contentTypeHeader, 'application/json');
       request.add(utf8.encode(jsonEncode({'email': email.trim()})));
-      final response = await request.close().timeout(const Duration(seconds: 20));
+      final response = await request.close().timeout(
+        const Duration(seconds: 20),
+      );
       await response.drain<void>();
       debugPrint('[password_recovery] api status=${response.statusCode}');
       return response.statusCode == 200;
@@ -149,8 +154,7 @@ class SupabaseAuthServiceImpl implements IAuthService {
       }
       if (msg.contains('error sending confirmation email') ||
           msg.contains('confirmation email') ||
-          (msg.contains('unexpected_failure') &&
-              msg.contains('sending'))) {
+          (msg.contains('unexpected_failure') && msg.contains('sending'))) {
         return 'SMTP nao configurado. Tente fazer login - sua conta pode ter sido criada. No Supabase: Authentication > Providers > desative "Confirm email".';
       }
       if (msg.contains('error sending') ||

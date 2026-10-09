@@ -83,7 +83,9 @@ class PlanServiceImpl extends GetxController implements IPlanService {
       } else {
         await _clearPremiumGrace(user.id);
       }
-      debugPrint('[PlanService] email=${user.email} -> ${isPremium ? "premium (allowlist)" : "free"}');
+      debugPrint(
+        '[PlanService] email=${user.email} -> ${isPremium ? "premium (allowlist)" : "free"}',
+      );
       return isPremium;
     } catch (e) {
       debugPrint('[PlanService] Erro ao verificar allow list: $e');

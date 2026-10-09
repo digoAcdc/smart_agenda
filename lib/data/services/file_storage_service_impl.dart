@@ -28,8 +28,9 @@ class FileStorageServiceImpl implements IFileStorageService {
         attachmentsDir.createSync(recursive: true);
       }
 
-      final extension =
-          source.path.contains('.') ? source.path.split('.').last : 'jpg';
+      final extension = source.path.contains('.')
+          ? source.path.split('.').last
+          : 'jpg';
       final destPath = '${attachmentsDir.path}/${_uuid.v4()}.$extension';
       await source.copy(destPath);
       return Result.success(destPath);
@@ -43,6 +44,8 @@ class FileStorageServiceImpl implements IFileStorageService {
   }
 
   @override
-  Future<Result<String>> uploadToCloud(String localPath, {String? familyId}) async =>
-      Result.failure('Nuvem nao configurada');
+  Future<Result<String>> uploadToCloud(
+    String localPath, {
+    String? familyId,
+  }) async => Result.failure('Nuvem nao configurada');
 }

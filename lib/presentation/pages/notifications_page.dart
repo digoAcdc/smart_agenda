@@ -66,7 +66,8 @@ class _NotificationsPageState extends State<NotificationsPage> {
 
   @override
   Widget build(BuildContext context) {
-    if (!SupabaseConfig.isConfigured || !Get.isRegistered<NotificationsController>()) {
+    if (!SupabaseConfig.isConfigured ||
+        !Get.isRegistered<NotificationsController>()) {
       return Scaffold(
         appBar: AppBar(
           title: const Text('Notificações'),
@@ -122,8 +123,8 @@ class _NotificationsPageState extends State<NotificationsPage> {
           _loadingPermission
               ? 'Verificando...'
               : _notificationsEnabled
-                  ? 'Ativada'
-                  : 'Desativada',
+              ? 'Ativada'
+              : 'Desativada',
         ),
         trailing: _loadingPermission
             ? const SizedBox(
@@ -173,10 +174,10 @@ Widget _buildPushPreferencesSection(
                 onTap: () => _showPremiumNotificationModal(context, 'dia'),
                 onChanged: isPremium && !saving
                     ? (v) => controller.updatePushPreferences(
-                          daily: v,
-                          tomorrow: controller.pushTomorrow.value,
-                          weekly: controller.pushWeekly.value,
-                        )
+                        daily: v,
+                        tomorrow: controller.pushTomorrow.value,
+                        weekly: controller.pushWeekly.value,
+                      )
                     : null,
               ),
               const Divider(height: 1),
@@ -190,10 +191,10 @@ Widget _buildPushPreferencesSection(
                 onTap: () => _showPremiumNotificationModal(context, 'amanhã'),
                 onChanged: isPremium && !saving
                     ? (v) => controller.updatePushPreferences(
-                          daily: controller.pushDaily.value,
-                          tomorrow: v,
-                          weekly: controller.pushWeekly.value,
-                        )
+                        daily: controller.pushDaily.value,
+                        tomorrow: v,
+                        weekly: controller.pushWeekly.value,
+                      )
                     : null,
               ),
               const Divider(height: 1),
@@ -207,10 +208,10 @@ Widget _buildPushPreferencesSection(
                 onTap: () => _showPremiumNotificationModal(context, 'semana'),
                 onChanged: isPremium && !saving
                     ? (v) => controller.updatePushPreferences(
-                          daily: controller.pushDaily.value,
-                          tomorrow: controller.pushTomorrow.value,
-                          weekly: v,
-                        )
+                        daily: controller.pushDaily.value,
+                        tomorrow: controller.pushTomorrow.value,
+                        weekly: v,
+                      )
                     : null,
               ),
             ],
@@ -243,9 +244,14 @@ Widget _buildPremiumSwitchTile({
               Padding(
                 padding: const EdgeInsets.only(right: 8),
                 child: Container(
-                  padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 8,
+                    vertical: 2,
+                  ),
                   decoration: BoxDecoration(
-                    color: Theme.of(context).colorScheme.outline.withValues(alpha: 0.12),
+                    color: Theme.of(
+                      context,
+                    ).colorScheme.outline.withValues(alpha: 0.12),
                     borderRadius: BorderRadius.circular(999),
                   ),
                   child: Row(
@@ -260,9 +266,9 @@ Widget _buildPremiumSwitchTile({
                       Text(
                         'Premium',
                         style: Theme.of(context).textTheme.labelSmall?.copyWith(
-                              color: Theme.of(context).colorScheme.outline,
-                              fontWeight: FontWeight.w600,
-                            ),
+                          color: Theme.of(context).colorScheme.outline,
+                          fontWeight: FontWeight.w600,
+                        ),
                       ),
                     ],
                   ),
@@ -272,10 +278,7 @@ Widget _buildPremiumSwitchTile({
           ],
         ),
         subtitle: Text(subtitle),
-        trailing: Switch(
-          value: value,
-          onChanged: isPremium ? null : onChanged,
-        ),
+        trailing: Switch(value: value, onChanged: isPremium ? null : onChanged),
       ),
     ),
   );
@@ -287,19 +290,22 @@ void _showPremiumNotificationModal(BuildContext context, String tipo) {
   switch (tipo) {
     case 'dia':
       title = 'Resumo do dia';
-      content = 'Receba um resumo da sua agenda pela manhã, '
+      content =
+          'Receba um resumo da sua agenda pela manhã, '
           'para começar o dia organizado.\n\n'
           'É um recurso exclusivo Premium. Torne-se Premium e desbloqueie essa e outras funcionalidades.';
       break;
     case 'amanhã':
       title = 'Resumo de amanhã';
-      content = 'Receba um resumo da sua agenda de amanhã no fim do dia, '
+      content =
+          'Receba um resumo da sua agenda de amanhã no fim do dia, '
           'para você se preparar com antecedência.\n\n'
           'É um recurso exclusivo Premium. Torne-se Premium e desbloqueie essa e outras funcionalidades.';
       break;
     default:
       title = 'Resumo da semana';
-      content = 'Receba um resumo semanal da sua agenda no domingo, '
+      content =
+          'Receba um resumo semanal da sua agenda no domingo, '
           'para planejar a semana que vem.\n\n'
           'É um recurso exclusivo Premium. Torne-se Premium e desbloqueie essa e outras funcionalidades.';
   }

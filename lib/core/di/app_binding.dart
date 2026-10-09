@@ -142,7 +142,8 @@ class AppBinding extends Bindings {
       () => SupabaseConfig.isConfigured && Platform.isAndroid
           ? BillingServiceImpl(
               iap: InAppPurchase.instance,
-              subscriptionDataSource: Get.find<SubscriptionSupabaseDataSource>(),
+              subscriptionDataSource:
+                  Get.find<SubscriptionSupabaseDataSource>(),
             )
           : BillingServiceStub(),
       fenix: true,
@@ -182,7 +183,10 @@ class AppBinding extends Bindings {
       () => Platform.isAndroid ? AdmobServiceImpl() : AdsServiceStub(),
       fenix: true,
     );
-    Get.lazyPut<IConnectivityService>(() => ConnectivityServiceImpl(), fenix: true);
+    Get.lazyPut<IConnectivityService>(
+      () => ConnectivityServiceImpl(),
+      fenix: true,
+    );
     Get.lazyPut<ISyncService>(
       () => SupabaseConfig.isConfigured
           ? SyncEngineImpl(
@@ -238,10 +242,7 @@ class AppBinding extends Bindings {
       ),
       fenix: true,
     );
-    Get.lazyPut(
-      () => NoteController(Get.find<INoteRepository>()),
-      fenix: true,
-    );
+    Get.lazyPut(() => NoteController(Get.find<INoteRepository>()), fenix: true);
     Get.lazyPut<IClassGroupRepository>(
       () => ClassGroupRepositoryImpl(
         Get.find<ClassGroupLocalDataSource>(),
@@ -273,8 +274,10 @@ class AppBinding extends Bindings {
     Get.lazyPut(() => GetGroups(Get.find()), fenix: true);
 
     Get.put(HomeController(), permanent: true);
-    Get.put(AuthController(Get.find<IAuthService>(), Get.find<IPlanService>()),
-        permanent: true);
+    Get.put(
+      AuthController(Get.find<IAuthService>(), Get.find<IPlanService>()),
+      permanent: true,
+    );
     Get.put<IPremiumService>(
       PremiumServiceImpl(Get.find<IPlanService>()),
       permanent: true,

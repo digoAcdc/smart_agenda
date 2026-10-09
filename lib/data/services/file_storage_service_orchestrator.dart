@@ -13,10 +13,7 @@ import '../../domain/repositories/i_file_storage_service.dart';
 /// acontece na sincronizacao ([uploadToCloud]), na pasta do escopo:
 /// `user/<uid>/` (pessoal) ou `family/<family_id>/` (Familia).
 class FileStorageServiceOrchestrator implements IFileStorageService {
-  FileStorageServiceOrchestrator(
-    this._uuid,
-    this._client,
-  );
+  FileStorageServiceOrchestrator(this._uuid, this._client);
 
   final Uuid _uuid;
   final SupabaseClient? _client;
@@ -46,15 +43,19 @@ class FileStorageServiceOrchestrator implements IFileStorageService {
     if (!attachmentsDir.existsSync()) {
       attachmentsDir.createSync(recursive: true);
     }
-    final extension =
-        source.path.contains('.') ? source.path.split('.').last : 'jpg';
+    final extension = source.path.contains('.')
+        ? source.path.split('.').last
+        : 'jpg';
     final destPath = '${attachmentsDir.path}/${_uuid.v4()}.$extension';
     await source.copy(destPath);
     return Result.success(destPath);
   }
 
   @override
-  Future<Result<String>> uploadToCloud(String localPath, {String? familyId}) async {
+  Future<Result<String>> uploadToCloud(
+    String localPath, {
+    String? familyId,
+  }) async {
     final source = File(localPath);
     if (!source.existsSync()) {
       return Result.failure('Arquivo local nao encontrado');
@@ -67,13 +68,16 @@ class FileStorageServiceOrchestrator implements IFileStorageService {
         return Result.failure('Usuario nao autenticado');
       }
 
-      final extension =
-          source.path.contains('.') ? source.path.split('.').last : 'jpg';
+      final extension = source.path.contains('.')
+          ? source.path.split('.').last
+          : 'jpg';
       final attachmentId = _uuid.v4();
       final folder = familyId != null ? 'family/$familyId' : 'user/$uid';
       final storagePath = '$folder/$attachmentId.$extension';
 
-      await client.storage.from('attachments').upload(
+      await client.storage
+          .from('attachments')
+          .upload(
             storagePath,
             source,
             fileOptions: const FileOptions(upsert: true),

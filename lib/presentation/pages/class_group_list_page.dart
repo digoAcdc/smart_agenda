@@ -83,7 +83,9 @@ class ClassGroupListPage extends GetView<ClassGroupController> {
   Future<void> _openGroupForm(BuildContext context, {ClassGroup? group}) async {
     final formKey = GlobalKey<FormState>();
     final nameController = TextEditingController(text: group?.name ?? '');
-    final descController = TextEditingController(text: group?.description ?? '');
+    final descController = TextEditingController(
+      text: group?.description ?? '',
+    );
 
     await Get.dialog(
       AlertDialog(
@@ -126,23 +128,27 @@ class ClassGroupListPage extends GetView<ClassGroupController> {
               if (formKey.currentState?.validate() != true) return;
               final name = nameController.text.trim();
               if (group == null) {
-                final created = await controller.createGroup(name,
-                    description: descController.text.trim().isEmpty
-                        ? null
-                        : descController.text.trim());
+                final created = await controller.createGroup(
+                  name,
+                  description: descController.text.trim().isEmpty
+                      ? null
+                      : descController.text.trim(),
+                );
                 Get.back();
                 Get.toNamed(
                   AppRoutes.classGroupDetail,
                   arguments: {'group': created, 'isNew': true},
                 );
               } else {
-                await controller.updateGroup(group.copyWith(
-                  name: name,
-                  description: descController.text.trim().isEmpty
-                      ? null
-                      : descController.text.trim(),
-                  updatedAt: DateTime.now(),
-                ));
+                await controller.updateGroup(
+                  group.copyWith(
+                    name: name,
+                    description: descController.text.trim().isEmpty
+                        ? null
+                        : descController.text.trim(),
+                    updatedAt: DateTime.now(),
+                  ),
+                );
                 Get.back();
               }
             },
@@ -161,7 +167,10 @@ class ClassGroupListPage extends GetView<ClassGroupController> {
           'Excluir "${group.name}"? Todos os contatos serao removidos.',
         ),
         actions: [
-          TextButton(onPressed: () => Get.back(result: false), child: const Text('Cancelar')),
+          TextButton(
+            onPressed: () => Get.back(result: false),
+            child: const Text('Cancelar'),
+          ),
           FilledButton(
             onPressed: () => Get.back(result: true),
             style: FilledButton.styleFrom(
@@ -175,9 +184,9 @@ class ClassGroupListPage extends GetView<ClassGroupController> {
     if (ok == true) {
       await controller.deleteGroup(group.id);
       if (context.mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text('Turma excluida')),
-        );
+        ScaffoldMessenger.of(
+          context,
+        ).showSnackBar(const SnackBar(content: Text('Turma excluida')));
       }
     }
   }
@@ -198,8 +207,9 @@ class _GroupCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final color = DesignTokens.groupPalette[
-        group.name.hashCode.abs() % DesignTokens.groupPalette.length];
+    final color =
+        DesignTokens.groupPalette[group.name.hashCode.abs() %
+            DesignTokens.groupPalette.length];
     return AppSurfaceCard(
       margin: const EdgeInsets.only(bottom: DesignTokens.spaceXs),
       child: InkWell(
@@ -230,10 +240,8 @@ class _GroupCard extends StatelessWidget {
                       Text(
                         group.description!,
                         style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                              color: Theme.of(context)
-                                  .colorScheme
-                                  .onSurfaceVariant,
-                            ),
+                          color: Theme.of(context).colorScheme.onSurfaceVariant,
+                        ),
                         maxLines: 2,
                         overflow: TextOverflow.ellipsis,
                       ),

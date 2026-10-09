@@ -22,11 +22,13 @@ class AccountPromptUtils {
         ),
         actions: [
           TextButton(
-            onPressed: () => Get.back(result: AccountPromptDecision.continueWithoutAccount),
+            onPressed: () =>
+                Get.back(result: AccountPromptDecision.continueWithoutAccount),
             child: const Text('Continuar sem criar conta'),
           ),
           FilledButton(
-            onPressed: () => Get.back(result: AccountPromptDecision.createAccount),
+            onPressed: () =>
+                Get.back(result: AccountPromptDecision.createAccount),
             child: const Text('Criar conta'),
           ),
         ],

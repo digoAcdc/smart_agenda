@@ -38,8 +38,10 @@ class _ConfigPageState extends State<ConfigPage> {
     super.initState();
     _loadVersionInfo();
     _checkPlanStatus();
-    _authWorker =
-        ever(Get.find<AuthController>().isLoggedIn, (_) => _checkPlanStatus());
+    _authWorker = ever(
+      Get.find<AuthController>().isLoggedIn,
+      (_) => _checkPlanStatus(),
+    );
   }
 
   @override
@@ -99,8 +101,7 @@ class _ConfigPageState extends State<ConfigPage> {
   Future<void> _runDeleteAllDataFlow() async {
     final auth = Get.find<AuthController>();
     final loggedIn = auth.isLoggedIn.value;
-    final hasCloud =
-        SupabaseConfig.isConfigured && loggedIn;
+    final hasCloud = SupabaseConfig.isConfigured && loggedIn;
 
     final goOn = await Get.dialog<bool>(
       barrierDismissible: false,
@@ -109,13 +110,13 @@ class _ConfigPageState extends State<ConfigPage> {
         content: Text(
           hasCloud
               ? 'Isso apaga permanentemente no seu aparelho e na nuvem: eventos, '
-                  'grupos, anotacoes, notificacoes e turmas. Se voce participa de '
-                  'uma Familia, voce sai dela (os eventos da Familia continuam com ela). '
-                  'Sua conta de login continua ativa.\n\n'
-                  'Esta acao nao pode ser desfeita.'
+                    'grupos, anotacoes, notificacoes e turmas. Se voce participa de '
+                    'uma Familia, voce sai dela (os eventos da Familia continuam com ela). '
+                    'Sua conta de login continua ativa.\n\n'
+                    'Esta acao nao pode ser desfeita.'
               : 'Isso apaga permanentemente no seu aparelho: eventos, grupos, '
-                  'anotacoes e demais dados salvos localmente.\n\n'
-                  'Esta acao nao pode ser desfeita.',
+                    'anotacoes e demais dados salvos localmente.\n\n'
+                    'Esta acao nao pode ser desfeita.',
         ),
         actions: [
           TextButton(
@@ -189,7 +190,8 @@ class _ConfigPageState extends State<ConfigPage> {
 
     setState(() => _deletingData = true);
     try {
-      final result = await Get.find<IUserDataDeletionService>().deleteAllUserData();
+      final result = await Get.find<IUserDataDeletionService>()
+          .deleteAllUserData();
       if (!mounted) return;
       if (!result.isSuccess) {
         Get.snackbar(
@@ -226,7 +228,9 @@ class _ConfigPageState extends State<ConfigPage> {
     return SafeArea(
       bottom: false,
       child: ListView(
-        padding: const EdgeInsets.only(bottom: DesignTokens.bottomNavHeight + 16),
+        padding: const EdgeInsets.only(
+          bottom: DesignTokens.bottomNavHeight + 16,
+        ),
         children: [
           _buildProfileCard(),
           if (!_isPremium) _buildPremiumCard(),
@@ -251,8 +255,9 @@ class _ConfigPageState extends State<ConfigPage> {
             children: [
               CircleAvatar(
                 radius: 28,
-                backgroundColor:
-                    Theme.of(context).colorScheme.surfaceContainerHigh,
+                backgroundColor: Theme.of(
+                  context,
+                ).colorScheme.surfaceContainerHigh,
                 child: Icon(
                   Icons.person,
                   size: 32,
@@ -267,8 +272,8 @@ class _ConfigPageState extends State<ConfigPage> {
                     Text(
                       email ?? 'Usuário',
                       style: Theme.of(context).textTheme.titleMedium?.copyWith(
-                            fontWeight: FontWeight.w700,
-                          ),
+                        fontWeight: FontWeight.w700,
+                      ),
                       maxLines: 1,
                       overflow: TextOverflow.ellipsis,
                     ),
@@ -280,15 +285,15 @@ class _ConfigPageState extends State<ConfigPage> {
                           vertical: 2,
                         ),
                         decoration: BoxDecoration(
-                          color: Theme.of(context)
-                              .colorScheme
-                              .outline
-                              .withValues(alpha: 0.12),
+                          color: Theme.of(
+                            context,
+                          ).colorScheme.outline.withValues(alpha: 0.12),
                           borderRadius: BorderRadius.circular(999),
                         ),
                         child: Text(
                           'Premium',
-                          style: Theme.of(context).textTheme.labelSmall?.copyWith(
+                          style: Theme.of(context).textTheme.labelSmall
+                              ?.copyWith(
                                 color: Theme.of(context).colorScheme.outline,
                                 fontWeight: FontWeight.w700,
                               ),
@@ -316,8 +321,8 @@ class _ConfigPageState extends State<ConfigPage> {
               Text(
                 'Entre na sua conta',
                 style: Theme.of(context).textTheme.bodyLarge?.copyWith(
-                      color: Theme.of(context).colorScheme.onSurfaceVariant,
-                    ),
+                  color: Theme.of(context).colorScheme.onSurfaceVariant,
+                ),
               ),
               const SizedBox(height: 12),
               FilledButton.icon(
@@ -342,65 +347,65 @@ class _ConfigPageState extends State<ConfigPage> {
         borderRadius: BorderRadius.circular(DesignTokens.radiusLg),
       ),
       child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Row(
-              children: [
-                Icon(
-                  Icons.workspace_premium_outlined,
-                  color: scheme.onSurfaceVariant,
-                  size: 24,
-                ),
-                const SizedBox(width: 8),
-                Text(
-                  'Plano Premium',
-                  style: Theme.of(context).textTheme.titleMedium?.copyWith(
-                        fontWeight: FontWeight.w700,
-                        color: scheme.onSurface,
-                      ),
-                ),
-              ],
-            ),
-            const SizedBox(height: 12),
-            // Preco real do Google Play (nada fixo no codigo).
-            Obx(() {
-              final price = Get.isRegistered<BillingController>()
-                  ? Get.find<BillingController>().productPrice.value
-                  : null;
-              if (price == null) return const SizedBox.shrink();
-              return Text(
-                price,
-                style: Theme.of(context).textTheme.headlineSmall?.copyWith(
-                      fontWeight: FontWeight.w800,
-                      color: scheme.onSurface,
-                    ),
-              );
-            }),
-            const SizedBox(height: 8),
-            Text(
-              'Desbloqueie todo o potencial',
-              style: Theme.of(context).textTheme.titleSmall?.copyWith(
-                    fontWeight: FontWeight.w600,
-                    color: scheme.onSurface,
-                  ),
-            ),
-            const SizedBox(height: 8),
-            Text(
-              'Familia com agenda compartilhada, varios filhos, sincronizacao e zero anuncios.',
-              style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                    color: scheme.onSurfaceVariant,
-                  ),
-            ),
-            const SizedBox(height: 16),
-            SizedBox(
-              width: double.infinity,
-              child: FilledButton(
-                onPressed: _openAreaPremium,
-                child: const Text('Tornar-se Premium'),
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            children: [
+              Icon(
+                Icons.workspace_premium_outlined,
+                color: scheme.onSurfaceVariant,
+                size: 24,
               ),
+              const SizedBox(width: 8),
+              Text(
+                'Plano Premium',
+                style: Theme.of(context).textTheme.titleMedium?.copyWith(
+                  fontWeight: FontWeight.w700,
+                  color: scheme.onSurface,
+                ),
+              ),
+            ],
+          ),
+          const SizedBox(height: 12),
+          // Preco real do Google Play (nada fixo no codigo).
+          Obx(() {
+            final price = Get.isRegistered<BillingController>()
+                ? Get.find<BillingController>().productPrice.value
+                : null;
+            if (price == null) return const SizedBox.shrink();
+            return Text(
+              price,
+              style: Theme.of(context).textTheme.headlineSmall?.copyWith(
+                fontWeight: FontWeight.w800,
+                color: scheme.onSurface,
+              ),
+            );
+          }),
+          const SizedBox(height: 8),
+          Text(
+            'Desbloqueie todo o potencial',
+            style: Theme.of(context).textTheme.titleSmall?.copyWith(
+              fontWeight: FontWeight.w600,
+              color: scheme.onSurface,
             ),
-          ],
-        ),
+          ),
+          const SizedBox(height: 8),
+          Text(
+            'Familia com agenda compartilhada, varios filhos, sincronizacao e zero anuncios.',
+            style: Theme.of(
+              context,
+            ).textTheme.bodySmall?.copyWith(color: scheme.onSurfaceVariant),
+          ),
+          const SizedBox(height: 16),
+          SizedBox(
+            width: double.infinity,
+            child: FilledButton(
+              onPressed: _openAreaPremium,
+              child: const Text('Tornar-se Premium'),
+            ),
+          ),
+        ],
+      ),
     );
   }
 
@@ -417,97 +422,92 @@ class _ConfigPageState extends State<ConfigPage> {
     return Opacity(
       opacity: opacity,
       child: InkWell(
-      onTap: onTap,
-      borderRadius: BorderRadius.circular(DesignTokens.radiusMd),
-      child: Padding(
-        padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 12),
-        child: Row(
-          children: [
-            Container(
-              width: 44,
-              height: 44,
-              decoration: BoxDecoration(
-                color: iconColor.withValues(alpha: 0.12),
-                shape: BoxShape.circle,
+        onTap: onTap,
+        borderRadius: BorderRadius.circular(DesignTokens.radiusMd),
+        child: Padding(
+          padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 12),
+          child: Row(
+            children: [
+              Container(
+                width: 44,
+                height: 44,
+                decoration: BoxDecoration(
+                  color: iconColor.withValues(alpha: 0.12),
+                  shape: BoxShape.circle,
+                ),
+                child: Icon(icon, color: iconColor, size: 22),
               ),
-              child: Icon(icon, color: iconColor, size: 22),
-            ),
-            const SizedBox(width: 16),
-            Expanded(
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  if (isPremiumLocked)
-                    Padding(
-                      padding: const EdgeInsets.only(bottom: 4),
-                      child: Container(
-                        padding: const EdgeInsets.symmetric(
-                          horizontal: 8,
-                          vertical: 2,
-                        ),
-                        decoration: BoxDecoration(
-                          color: Theme.of(context)
-                              .colorScheme
-                              .outline
-                              .withValues(alpha: 0.12),
-                          borderRadius: BorderRadius.circular(999),
-                        ),
-                        child: Row(
-                          mainAxisSize: MainAxisSize.min,
-                          children: [
-                            Icon(
-                              Icons.lock_outline,
-                              size: 14,
-                              color: Theme.of(context).colorScheme.outline,
-                            ),
-                            const SizedBox(width: 4),
-                            Text(
-                              'Premium',
-                              style: Theme.of(context)
-                                  .textTheme
-                                  .labelSmall
-                                  ?.copyWith(
-                                    color: Theme.of(context).colorScheme.outline,
-                                    fontWeight: FontWeight.w600,
-                                  ),
-                            ),
-                          ],
+              const SizedBox(width: 16),
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    if (isPremiumLocked)
+                      Padding(
+                        padding: const EdgeInsets.only(bottom: 4),
+                        child: Container(
+                          padding: const EdgeInsets.symmetric(
+                            horizontal: 8,
+                            vertical: 2,
+                          ),
+                          decoration: BoxDecoration(
+                            color: Theme.of(
+                              context,
+                            ).colorScheme.outline.withValues(alpha: 0.12),
+                            borderRadius: BorderRadius.circular(999),
+                          ),
+                          child: Row(
+                            mainAxisSize: MainAxisSize.min,
+                            children: [
+                              Icon(
+                                Icons.lock_outline,
+                                size: 14,
+                                color: Theme.of(context).colorScheme.outline,
+                              ),
+                              const SizedBox(width: 4),
+                              Text(
+                                'Premium',
+                                style: Theme.of(context).textTheme.labelSmall
+                                    ?.copyWith(
+                                      color: Theme.of(
+                                        context,
+                                      ).colorScheme.outline,
+                                      fontWeight: FontWeight.w600,
+                                    ),
+                              ),
+                            ],
+                          ),
                         ),
                       ),
+                    Text(
+                      title,
+                      style: Theme.of(context).textTheme.titleSmall?.copyWith(
+                        fontWeight: FontWeight.w600,
+                      ),
+                      overflow: TextOverflow.ellipsis,
                     ),
-                  Text(
-                    title,
-                    style: Theme.of(context).textTheme.titleSmall?.copyWith(
-                          fontWeight: FontWeight.w600,
-                        ),
-                    overflow: TextOverflow.ellipsis,
-                  ),
-                  const SizedBox(height: 2),
-                  Text(
-                    subtitle,
-                    style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                          color: Theme.of(context).colorScheme.onSurfaceVariant,
-                        ),
-                  ),
-                ],
+                    const SizedBox(height: 2),
+                    Text(
+                      subtitle,
+                      style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                        color: Theme.of(context).colorScheme.onSurfaceVariant,
+                      ),
+                    ),
+                  ],
+                ),
               ),
-            ),
-            if (loading)
-              const SizedBox(
-                width: 24,
-                height: 24,
-                child: CircularProgressIndicator(strokeWidth: 2),
-              )
-            else
-              Icon(
-                Icons.chevron_right,
-                size: 24,
-                color: iconColor,
-              ),
-          ],
+              if (loading)
+                const SizedBox(
+                  width: 24,
+                  height: 24,
+                  child: CircularProgressIndicator(strokeWidth: 2),
+                )
+              else
+                Icon(Icons.chevron_right, size: 24, color: iconColor),
+            ],
+          ),
         ),
       ),
-    ),
     );
   }
 
@@ -520,10 +520,10 @@ class _ConfigPageState extends State<ConfigPage> {
           child: Text(
             'GERAL',
             style: Theme.of(context).textTheme.labelMedium?.copyWith(
-                  color: Theme.of(context).colorScheme.outline,
-                  fontWeight: FontWeight.w700,
-                  letterSpacing: 0.8,
-                ),
+              color: Theme.of(context).colorScheme.outline,
+              fontWeight: FontWeight.w700,
+              letterSpacing: 0.8,
+            ),
           ),
         ),
         AppSurfaceCard(
@@ -565,10 +565,10 @@ class _ConfigPageState extends State<ConfigPage> {
           child: Text(
             'PRIVACIDADE',
             style: Theme.of(context).textTheme.labelMedium?.copyWith(
-                  color: Theme.of(context).colorScheme.outline,
-                  fontWeight: FontWeight.w700,
-                  letterSpacing: 0.8,
-                ),
+              color: Theme.of(context).colorScheme.outline,
+              fontWeight: FontWeight.w700,
+              letterSpacing: 0.8,
+            ),
           ),
         ),
         AppSurfaceCard(
@@ -600,7 +600,10 @@ class _ConfigPageState extends State<ConfigPage> {
                   onTap: _deletingData ? null : _runDeleteAllDataFlow,
                   borderRadius: BorderRadius.circular(DesignTokens.radiusMd),
                   child: Padding(
-                    padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 12),
+                    padding: const EdgeInsets.symmetric(
+                      horizontal: 12,
+                      vertical: 12,
+                    ),
                     child: Row(
                       children: [
                         Container(
@@ -610,7 +613,11 @@ class _ConfigPageState extends State<ConfigPage> {
                             color: danger.withValues(alpha: 0.12),
                             shape: BoxShape.circle,
                           ),
-                          child: Icon(Icons.delete_forever_outlined, color: danger, size: 22),
+                          child: Icon(
+                            Icons.delete_forever_outlined,
+                            color: danger,
+                            size: 22,
+                          ),
                         ),
                         const SizedBox(width: 16),
                         Expanded(
@@ -619,7 +626,8 @@ class _ConfigPageState extends State<ConfigPage> {
                             children: [
                               Text(
                                 'Apagar todos os meus dados',
-                                style: Theme.of(context).textTheme.titleSmall?.copyWith(
+                                style: Theme.of(context).textTheme.titleSmall
+                                    ?.copyWith(
                                       fontWeight: FontWeight.w600,
                                       color: danger,
                                     ),
@@ -628,8 +636,11 @@ class _ConfigPageState extends State<ConfigPage> {
                               Text(
                                 'Remove dados do aparelho e da nuvem (se estiver logado). '
                                 'A conta de login permanece.',
-                                style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                                      color: Theme.of(context).colorScheme.onSurfaceVariant,
+                                style: Theme.of(context).textTheme.bodySmall
+                                    ?.copyWith(
+                                      color: Theme.of(
+                                        context,
+                                      ).colorScheme.onSurfaceVariant,
                                     ),
                               ),
                             ],
@@ -654,7 +665,10 @@ class _ConfigPageState extends State<ConfigPage> {
                   onTap: _deletingData ? null : _runDeleteAccountFlow,
                   borderRadius: BorderRadius.circular(DesignTokens.radiusMd),
                   child: Padding(
-                    padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 12),
+                    padding: const EdgeInsets.symmetric(
+                      horizontal: 12,
+                      vertical: 12,
+                    ),
                     child: Row(
                       children: [
                         Container(
@@ -664,7 +678,11 @@ class _ConfigPageState extends State<ConfigPage> {
                             color: danger.withValues(alpha: 0.12),
                             shape: BoxShape.circle,
                           ),
-                          child: Icon(Icons.person_remove_outlined, color: danger, size: 22),
+                          child: Icon(
+                            Icons.person_remove_outlined,
+                            color: danger,
+                            size: 22,
+                          ),
                         ),
                         const SizedBox(width: 16),
                         Expanded(
@@ -673,7 +691,8 @@ class _ConfigPageState extends State<ConfigPage> {
                             children: [
                               Text(
                                 'Excluir minha conta',
-                                style: Theme.of(context).textTheme.titleSmall?.copyWith(
+                                style: Theme.of(context).textTheme.titleSmall
+                                    ?.copyWith(
                                       fontWeight: FontWeight.w600,
                                       color: danger,
                                     ),
@@ -681,8 +700,11 @@ class _ConfigPageState extends State<ConfigPage> {
                               const SizedBox(height: 2),
                               Text(
                                 'Exclui a conta de login e todos os seus dados.',
-                                style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                                      color: Theme.of(context).colorScheme.onSurfaceVariant,
+                                style: Theme.of(context).textTheme.bodySmall
+                                    ?.copyWith(
+                                      color: Theme.of(
+                                        context,
+                                      ).colorScheme.onSurfaceVariant,
                                     ),
                               ),
                             ],
@@ -731,7 +753,10 @@ class _ConfigPageState extends State<ConfigPage> {
             ],
           ),
           actions: [
-            TextButton(onPressed: () => Get.back(result: false), child: const Text('Cancelar')),
+            TextButton(
+              onPressed: () => Get.back(result: false),
+              child: const Text('Cancelar'),
+            ),
             FilledButton(
               style: FilledButton.styleFrom(
                 backgroundColor: Theme.of(dialogContext).colorScheme.error,
@@ -753,16 +778,22 @@ class _ConfigPageState extends State<ConfigPage> {
     if (!mounted) return;
     setState(() => _deletingData = false);
     if (!result.isSuccess) {
-      Get.snackbar('Não foi possível excluir', result.errorMessage ?? 'Erro.',
-          snackPosition: SnackPosition.BOTTOM);
+      Get.snackbar(
+        'Não foi possível excluir',
+        result.errorMessage ?? 'Erro.',
+        snackPosition: SnackPosition.BOTTOM,
+      );
       return;
     }
     try {
       await Get.find<AuthController>().signOut();
     } catch (_) {}
     Get.offAllNamed(AppRoutes.home);
-    Get.snackbar('Conta excluída', 'Sua conta e seus dados foram excluídos.',
-        snackPosition: SnackPosition.BOTTOM);
+    Get.snackbar(
+      'Conta excluída',
+      'Sua conta e seus dados foram excluídos.',
+      snackPosition: SnackPosition.BOTTOM,
+    );
   }
 
   Widget _buildFooter() {
@@ -773,8 +804,8 @@ class _ConfigPageState extends State<ConfigPage> {
           Text(
             _versionText,
             style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                  color: Theme.of(context).colorScheme.onSurfaceVariant,
-                ),
+              color: Theme.of(context).colorScheme.onSurfaceVariant,
+            ),
           ),
           const SizedBox(height: 4),
           Row(
@@ -790,14 +821,11 @@ class _ConfigPageState extends State<ConfigPage> {
                 child: Text(
                   'Termos',
                   style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                        color: Theme.of(context).colorScheme.primary,
-                      ),
+                    color: Theme.of(context).colorScheme.primary,
+                  ),
                 ),
               ),
-              Text(
-                ' • ',
-                style: Theme.of(context).textTheme.bodySmall,
-              ),
+              Text(' • ', style: Theme.of(context).textTheme.bodySmall),
               TextButton(
                 onPressed: _openPrivacyPolicy,
                 style: TextButton.styleFrom(
@@ -808,8 +836,8 @@ class _ConfigPageState extends State<ConfigPage> {
                 child: Text(
                   'Privacidade',
                   style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                        color: Theme.of(context).colorScheme.primary,
-                      ),
+                    color: Theme.of(context).colorScheme.primary,
+                  ),
                 ),
               ),
             ],

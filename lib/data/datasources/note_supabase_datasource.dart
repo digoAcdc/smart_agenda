@@ -15,14 +15,16 @@ class NoteSupabaseDataSource {
     final uid = _userId;
     if (uid == null) throw StateError('Usuario nao autenticado');
 
-    await _client.from('notes').upsert(
-          _noteToSupabase(note, uid),
-          onConflict: 'id',
-        );
+    await _client
+        .from('notes')
+        .upsert(_noteToSupabase(note, uid), onConflict: 'id');
     debugPrint('[NoteSupabaseDS] upsert note ${note.id}');
   }
 
-  Future<void> upsertChecklistItems(String noteId, List<ChecklistItem> items) async {
+  Future<void> upsertChecklistItems(
+    String noteId,
+    List<ChecklistItem> items,
+  ) async {
     final uid = _userId;
     if (uid == null) throw StateError('Usuario nao autenticado');
 
@@ -42,14 +44,20 @@ class NoteSupabaseDataSource {
         'updated_at': item.updatedAt.toIso8601String(),
       });
     }
-    debugPrint('[NoteSupabaseDS] upsert ${items.length} checklist items for note $noteId');
+    debugPrint(
+      '[NoteSupabaseDS] upsert ${items.length} checklist items for note $noteId',
+    );
   }
 
   Future<void> deleteNote(String id) async {
     final uid = _userId;
     if (uid == null) throw StateError('Usuario nao autenticado');
 
-    await _client.from('note_checklist_items').delete().eq('note_id', id).eq('user_id', uid);
+    await _client
+        .from('note_checklist_items')
+        .delete()
+        .eq('note_id', id)
+        .eq('user_id', uid);
     await _client.from('notes').delete().eq('id', id).eq('user_id', uid);
     debugPrint('[NoteSupabaseDS] delete note $id');
   }

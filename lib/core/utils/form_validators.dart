@@ -2,7 +2,10 @@ import 'package:brasil_fields/brasil_fields.dart';
 import 'package:flutter/services.dart';
 
 /// Validador para campo obrigatorio.
-String? requiredValidator(String? value, [String message = 'Campo obrigatorio']) {
+String? requiredValidator(
+  String? value, [
+  String message = 'Campo obrigatorio',
+]) {
   if (value == null || value.trim().isEmpty) return message;
   return null;
 }
@@ -51,6 +54,6 @@ String formatPhoneForDisplay(String? value) {
 
 /// Formatters para campo de telefone (mascara brasileira).
 List<TextInputFormatter> get phoneInputFormatters => [
-      FilteringTextInputFormatter.digitsOnly,
-      TelefoneInputFormatter(),
-    ];
+  FilteringTextInputFormatter.digitsOnly,
+  TelefoneInputFormatter(),
+];

@@ -70,9 +70,7 @@ class _ResetPasswordPageState extends State<ResetPasswordPage> {
       });
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
-          content: const Text(
-            'Código enviado! Confira seu e-mail.',
-          ),
+          content: const Text('Código enviado! Confira seu e-mail.'),
           backgroundColor: Theme.of(context).colorScheme.primaryContainer,
         ),
       );
@@ -175,16 +173,16 @@ class _ResetPasswordPageState extends State<ResetPasswordPage> {
                   Text(
                     'Esqueceu sua senha?',
                     style: Theme.of(context).textTheme.titleLarge?.copyWith(
-                          fontWeight: FontWeight.w700,
-                        ),
+                      fontWeight: FontWeight.w700,
+                    ),
                     textAlign: TextAlign.center,
                   ),
                   const SizedBox(height: DesignTokens.spaceXs),
                   Text(
                     'Informe seu e-mail e enviaremos um código de 6 dígitos para redefinir sua senha.',
                     style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                          color: Theme.of(context).colorScheme.onSurfaceVariant,
-                        ),
+                      color: Theme.of(context).colorScheme.onSurfaceVariant,
+                    ),
                     textAlign: TextAlign.center,
                   ),
                   const SizedBox(height: DesignTokens.spaceXl),
@@ -207,8 +205,9 @@ class _ResetPasswordPageState extends State<ResetPasswordPage> {
                             if (v == null || v.trim().isEmpty) {
                               return 'Informe seu e-mail';
                             }
-                            if (!RegExp(r'^[\w-\.]+@([\w-]+\.)+[\w-]{2,4}$')
-                                .hasMatch(v.trim())) {
+                            if (!RegExp(
+                              r'^[\w-\.]+@([\w-]+\.)+[\w-]{2,4}$',
+                            ).hasMatch(v.trim())) {
                               return 'E-mail invalido';
                             }
                             return null;
@@ -227,28 +226,24 @@ class _ResetPasswordPageState extends State<ResetPasswordPage> {
                                 : _handleSendCode,
                           ),
                         ),
-                        Obx(
-                          () {
-                            final msg = authController.errorMessage.value;
-                            if (msg == null || msg.isEmpty) {
-                              return const SizedBox.shrink();
-                            }
-                            return Padding(
-                              padding: const EdgeInsets.only(
-                                top: DesignTokens.spaceSm,
-                              ),
-                              child: Text(
-                                msg,
-                                style: Theme.of(context)
-                                    .textTheme
-                                    .bodySmall
-                                    ?.copyWith(
-                                      color: context.semanticColors.danger,
-                                    ),
-                              ),
-                            );
-                          },
-                        ),
+                        Obx(() {
+                          final msg = authController.errorMessage.value;
+                          if (msg == null || msg.isEmpty) {
+                            return const SizedBox.shrink();
+                          }
+                          return Padding(
+                            padding: const EdgeInsets.only(
+                              top: DesignTokens.spaceSm,
+                            ),
+                            child: Text(
+                              msg,
+                              style: Theme.of(context).textTheme.bodySmall
+                                  ?.copyWith(
+                                    color: context.semanticColors.danger,
+                                  ),
+                            ),
+                          );
+                        }),
                       ],
                     ),
                   ),
@@ -256,25 +251,25 @@ class _ResetPasswordPageState extends State<ResetPasswordPage> {
                   Text(
                     'Digite o codigo',
                     style: Theme.of(context).textTheme.titleLarge?.copyWith(
-                          fontWeight: FontWeight.w700,
-                        ),
+                      fontWeight: FontWeight.w700,
+                    ),
                     textAlign: TextAlign.center,
                   ),
                   const SizedBox(height: DesignTokens.spaceXs),
                   Text(
                     'Enviamos um código de 6 dígitos para $_emailSent',
                     style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                          color: Theme.of(context).colorScheme.onSurfaceVariant,
-                        ),
+                      color: Theme.of(context).colorScheme.onSurfaceVariant,
+                    ),
                     textAlign: TextAlign.center,
                   ),
                   const SizedBox(height: DesignTokens.spaceXs),
                   Text(
                     'Não chegou? Confira a caixa de spam ou lixo eletrônico.',
                     style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                          color: Theme.of(context).colorScheme.onSurfaceVariant,
-                          fontStyle: FontStyle.italic,
-                        ),
+                      color: Theme.of(context).colorScheme.onSurfaceVariant,
+                      fontStyle: FontStyle.italic,
+                    ),
                     textAlign: TextAlign.center,
                   ),
                   const SizedBox(height: DesignTokens.spaceXl),
@@ -347,28 +342,24 @@ class _ResetPasswordPageState extends State<ResetPasswordPage> {
                             onPressed: _handleResetPassword,
                           ),
                         ),
-                        Obx(
-                          () {
-                            final msg = authController.errorMessage.value;
-                            if (msg == null || msg.isEmpty) {
-                              return const SizedBox.shrink();
-                            }
-                            return Padding(
-                              padding: const EdgeInsets.only(
-                                top: DesignTokens.spaceSm,
-                              ),
-                              child: Text(
-                                msg,
-                                style: Theme.of(context)
-                                    .textTheme
-                                    .bodySmall
-                                    ?.copyWith(
-                                      color: context.semanticColors.danger,
-                                    ),
-                              ),
-                            );
-                          },
-                        ),
+                        Obx(() {
+                          final msg = authController.errorMessage.value;
+                          if (msg == null || msg.isEmpty) {
+                            return const SizedBox.shrink();
+                          }
+                          return Padding(
+                            padding: const EdgeInsets.only(
+                              top: DesignTokens.spaceSm,
+                            ),
+                            child: Text(
+                              msg,
+                              style: Theme.of(context).textTheme.bodySmall
+                                  ?.copyWith(
+                                    color: context.semanticColors.danger,
+                                  ),
+                            ),
+                          );
+                        }),
                         const SizedBox(height: DesignTokens.spaceSm),
                         TextButton.icon(
                           onPressed: _cooldownSeconds > 0

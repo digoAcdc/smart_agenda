@@ -66,8 +66,8 @@ class UpgradePage extends StatelessWidget {
               Text(
                 isPremium ? 'Voce e Premium' : 'Plano Premium',
                 style: Theme.of(context).textTheme.headlineSmall?.copyWith(
-                      fontWeight: FontWeight.w800,
-                    ),
+                  fontWeight: FontWeight.w800,
+                ),
                 textAlign: TextAlign.center,
               ),
               const SizedBox(height: DesignTokens.spaceSm),
@@ -75,11 +75,11 @@ class UpgradePage extends StatelessWidget {
                 isPremium
                     ? 'Sua Familia, agenda compartilhada, sincronizacao e zero anuncios.'
                     : 'Organize a rotina da familia: agenda compartilhada com ate 5 pessoas, '
-                        'varios filhos, permissoes, sincronizacao entre aparelhos e zero anuncios. '
-                        'Quem voce convidar nao precisa assinar.',
+                          'varios filhos, permissoes, sincronizacao entre aparelhos e zero anuncios. '
+                          'Quem voce convidar nao precisa assinar.',
                 style: Theme.of(context).textTheme.bodyLarge?.copyWith(
-                      color: Theme.of(context).colorScheme.onSurfaceVariant,
-                    ),
+                  color: Theme.of(context).colorScheme.onSurfaceVariant,
+                ),
                 textAlign: TextAlign.center,
               ),
               if (isPremium) ...[
@@ -95,8 +95,8 @@ class UpgradePage extends StatelessWidget {
                   'periodo ja pago. Depois disso a agenda da Familia fica disponivel '
                   'para consulta e nada e apagado.',
                   style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                        color: Theme.of(context).colorScheme.onSurfaceVariant,
-                      ),
+                    color: Theme.of(context).colorScheme.onSurfaceVariant,
+                  ),
                   textAlign: TextAlign.center,
                 ),
               ],
@@ -125,7 +125,8 @@ class UpgradePage extends StatelessWidget {
                 ),
                 const SizedBox(height: DesignTokens.spaceSm),
               ],
-              if (ctrl.errorMessage.value != null && ctrl.errorMessage.value!.isNotEmpty) ...[
+              if (ctrl.errorMessage.value != null &&
+                  ctrl.errorMessage.value!.isNotEmpty) ...[
                 AppSurfaceCard(
                   margin: EdgeInsets.zero,
                   padding: const EdgeInsets.all(DesignTokens.spaceSm),
@@ -140,7 +141,8 @@ class UpgradePage extends StatelessWidget {
                       Expanded(
                         child: Text(
                           ctrl.errorMessage.value!,
-                          style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+                          style: Theme.of(context).textTheme.bodyMedium
+                              ?.copyWith(
                                 color: Theme.of(context).colorScheme.error,
                               ),
                         ),
@@ -204,8 +206,8 @@ class UpgradePage extends StatelessWidget {
                       Text(
                         'Assinatura ativada com sucesso!',
                         style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                              fontWeight: FontWeight.w600,
-                            ),
+                          fontWeight: FontWeight.w600,
+                        ),
                       ),
                     ],
                   ),
@@ -222,22 +224,23 @@ class UpgradePage extends StatelessWidget {
                     children: [
                       Text(
                         ctrl.productPrice.value ?? 'Carregando preço...',
-                        style: Theme.of(context).textTheme.headlineSmall?.copyWith(
-                              fontWeight: FontWeight.w800,
-                            ),
+                        style: Theme.of(context).textTheme.headlineSmall
+                            ?.copyWith(fontWeight: FontWeight.w800),
                       ),
                       const SizedBox(height: 8),
                       Text(
                         'Assinatura mensal. Cancele quando quiser.',
                         style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                              color: Theme.of(context).colorScheme.onSurfaceVariant,
-                            ),
+                          color: Theme.of(context).colorScheme.onSurfaceVariant,
+                        ),
                       ),
                     ],
                   ),
                 ),
               ],
-              if ((!ctrl.isAvailable.value || !ctrl.isRuntimeConfigured.value) && !isPremium) ...[
+              if ((!ctrl.isAvailable.value ||
+                      !ctrl.isRuntimeConfigured.value) &&
+                  !isPremium) ...[
                 AppSurfaceCard(
                   margin: EdgeInsets.zero,
                   child: Column(
@@ -253,8 +256,8 @@ class UpgradePage extends StatelessWidget {
                             ? 'A compra in-app esta disponivel apenas no Android. Em breve para outras plataformas.'
                             : 'A cobranca in-app nao esta configurada neste build.',
                         style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                              color: Theme.of(context).colorScheme.onSurfaceVariant,
-                            ),
+                          color: Theme.of(context).colorScheme.onSurfaceVariant,
+                        ),
                       ),
                     ],
                   ),
@@ -288,7 +291,9 @@ class UpgradePage extends StatelessWidget {
                 SizedBox(
                   width: double.infinity,
                   child: TextButton(
-                    onPressed: _isBusy(status) ? null : () => ctrl.restorePurchases(),
+                    onPressed: _isBusy(status)
+                        ? null
+                        : () => ctrl.restorePurchases(),
                     child: const Text('Restaurar compras'),
                   ),
                 ),

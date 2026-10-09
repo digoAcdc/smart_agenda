@@ -63,9 +63,7 @@ class _RegisterPageState extends State<RegisterPage> {
     final authController = Get.find<AuthController>();
     return Scaffold(
       backgroundColor: context.palette.appBackground,
-      appBar: AppBar(
-        title: const Text('Cadastro'),
-      ),
+      appBar: AppBar(title: const Text('Cadastro')),
       body: SafeArea(
         child: SingleChildScrollView(
           padding: const EdgeInsets.symmetric(horizontal: DesignTokens.spaceMd),
@@ -76,16 +74,16 @@ class _RegisterPageState extends State<RegisterPage> {
                 const SizedBox(height: DesignTokens.spaceLg),
                 Text(
                   'Crie sua conta',
-                  style: Theme.of(context).textTheme.titleLarge?.copyWith(
-                        fontWeight: FontWeight.w700,
-                      ),
+                  style: Theme.of(
+                    context,
+                  ).textTheme.titleLarge?.copyWith(fontWeight: FontWeight.w700),
                 ),
                 const SizedBox(height: DesignTokens.spaceXs),
                 Text(
                   'Preencha os dados abaixo para se cadastrar',
                   style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                        color: Theme.of(context).colorScheme.onSurfaceVariant,
-                      ),
+                    color: Theme.of(context).colorScheme.onSurfaceVariant,
+                  ),
                   textAlign: TextAlign.center,
                 ),
                 const SizedBox(height: DesignTokens.spaceXl),
@@ -107,8 +105,9 @@ class _RegisterPageState extends State<RegisterPage> {
                           if (v == null || v.trim().isEmpty) {
                             return 'Informe seu e-mail';
                           }
-                          if (!RegExp(r'^[\w-\.]+@([\w-]+\.)+[\w-]{2,4}$')
-                              .hasMatch(v.trim())) {
+                          if (!RegExp(
+                            r'^[\w-\.]+@([\w-]+\.)+[\w-]{2,4}$',
+                          ).hasMatch(v.trim())) {
                             return 'E-mail invalido';
                           }
                           return null;
@@ -161,27 +160,24 @@ class _RegisterPageState extends State<RegisterPage> {
                           onPressed: _handleRegister,
                         ),
                       ),
-                      Obx(
-                        () {
-                          final msg = authController.errorMessage.value;
-                          if (msg == null || msg.isEmpty) {
-                            return const SizedBox.shrink();
-                          }
-                          return Padding(
-                            padding:
-                                const EdgeInsets.only(top: DesignTokens.spaceSm),
-                            child: Text(
-                              msg,
-                              style: Theme.of(context)
-                                  .textTheme
-                                  .bodySmall
-                                  ?.copyWith(
-                                    color: context.semanticColors.danger,
-                                  ),
-                            ),
-                          );
-                        },
-                      ),
+                      Obx(() {
+                        final msg = authController.errorMessage.value;
+                        if (msg == null || msg.isEmpty) {
+                          return const SizedBox.shrink();
+                        }
+                        return Padding(
+                          padding: const EdgeInsets.only(
+                            top: DesignTokens.spaceSm,
+                          ),
+                          child: Text(
+                            msg,
+                            style: Theme.of(context).textTheme.bodySmall
+                                ?.copyWith(
+                                  color: context.semanticColors.danger,
+                                ),
+                          ),
+                        );
+                      }),
                     ],
                   ),
                 ),

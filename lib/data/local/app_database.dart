@@ -186,53 +186,77 @@ class AppDatabase extends _$AppDatabase {
 
   @override
   MigrationStrategy get migration => MigrationStrategy(
-        onCreate: (m) async => m.createAll(),
-        onUpgrade: (m, from, to) async {
-          if (from < 2) {
-            await m.createTable(classScheduleSlotsTable);
-          }
-          if (from < 3) {
-            await m.addColumn(agendaGroupsTable, agendaGroupsTable.syncState);
-            await m.addColumn(classScheduleSlotsTable, classScheduleSlotsTable.syncState);
-          }
-          if (from < 4) {
-            await m.addColumn(classScheduleSlotsTable, classScheduleSlotsTable.professorName);
-            await m.addColumn(classScheduleSlotsTable, classScheduleSlotsTable.professorEmail);
-            await m.addColumn(classScheduleSlotsTable, classScheduleSlotsTable.professorPhone);
-          }
-          if (from < 5) {
-            await m.createTable(classGroupsTable);
-            await m.createTable(studentsTable);
-          }
-          if (from < 6) {
-            await m.createTable(notesTable);
-            await m.createTable(noteChecklistItemsTable);
-          }
-          if (from < 7) {
-            await m.addColumn(agendaItemsTable, agendaItemsTable.familyId);
-            await m.addColumn(agendaItemsTable, agendaItemsTable.kind);
-            await m.addColumn(agendaItemsTable, agendaItemsTable.subjectType);
-            await m.addColumn(agendaItemsTable, agendaItemsTable.subjectChildId);
-            await m.addColumn(agendaItemsTable, agendaItemsTable.subjectUserId);
-            await m.addColumn(agendaItemsTable, agendaItemsTable.assigneeType);
-            await m.addColumn(agendaItemsTable, agendaItemsTable.assigneeUserId);
-            await m.addColumn(agendaItemsTable, agendaItemsTable.createdBy);
-            await m.addColumn(agendaItemsTable, agendaItemsTable.updatedBy);
-            await m.addColumn(agendaItemsTable, agendaItemsTable.completedBy);
-            await m.addColumn(agendaGroupsTable, agendaGroupsTable.familyId);
-          }
-          if (from < 8) {
-            await m.addColumn(classScheduleSlotsTable, classScheduleSlotsTable.familyId);
-            await m.addColumn(classScheduleSlotsTable, classScheduleSlotsTable.childId);
-            await m.addColumn(classScheduleSlotsTable, classScheduleSlotsTable.deletedAt);
-          }
-          if (from < 9) {
-            await m.createTable(classSchedulesTable);
-            await m.addColumn(classScheduleSlotsTable, classScheduleSlotsTable.scheduleId);
-            await migrateSlotsToNamedSchedules();
-          }
-        },
-      );
+    onCreate: (m) async => m.createAll(),
+    onUpgrade: (m, from, to) async {
+      if (from < 2) {
+        await m.createTable(classScheduleSlotsTable);
+      }
+      if (from < 3) {
+        await m.addColumn(agendaGroupsTable, agendaGroupsTable.syncState);
+        await m.addColumn(
+          classScheduleSlotsTable,
+          classScheduleSlotsTable.syncState,
+        );
+      }
+      if (from < 4) {
+        await m.addColumn(
+          classScheduleSlotsTable,
+          classScheduleSlotsTable.professorName,
+        );
+        await m.addColumn(
+          classScheduleSlotsTable,
+          classScheduleSlotsTable.professorEmail,
+        );
+        await m.addColumn(
+          classScheduleSlotsTable,
+          classScheduleSlotsTable.professorPhone,
+        );
+      }
+      if (from < 5) {
+        await m.createTable(classGroupsTable);
+        await m.createTable(studentsTable);
+      }
+      if (from < 6) {
+        await m.createTable(notesTable);
+        await m.createTable(noteChecklistItemsTable);
+      }
+      if (from < 7) {
+        await m.addColumn(agendaItemsTable, agendaItemsTable.familyId);
+        await m.addColumn(agendaItemsTable, agendaItemsTable.kind);
+        await m.addColumn(agendaItemsTable, agendaItemsTable.subjectType);
+        await m.addColumn(agendaItemsTable, agendaItemsTable.subjectChildId);
+        await m.addColumn(agendaItemsTable, agendaItemsTable.subjectUserId);
+        await m.addColumn(agendaItemsTable, agendaItemsTable.assigneeType);
+        await m.addColumn(agendaItemsTable, agendaItemsTable.assigneeUserId);
+        await m.addColumn(agendaItemsTable, agendaItemsTable.createdBy);
+        await m.addColumn(agendaItemsTable, agendaItemsTable.updatedBy);
+        await m.addColumn(agendaItemsTable, agendaItemsTable.completedBy);
+        await m.addColumn(agendaGroupsTable, agendaGroupsTable.familyId);
+      }
+      if (from < 8) {
+        await m.addColumn(
+          classScheduleSlotsTable,
+          classScheduleSlotsTable.familyId,
+        );
+        await m.addColumn(
+          classScheduleSlotsTable,
+          classScheduleSlotsTable.childId,
+        );
+        await m.addColumn(
+          classScheduleSlotsTable,
+          classScheduleSlotsTable.deletedAt,
+        );
+      }
+      if (from < 9) {
+        await m.createTable(classSchedulesTable);
+        await m.addColumn(
+          classScheduleSlotsTable,
+          classScheduleSlotsTable.scheduleId,
+        );
+        await migrateSlotsToNamedSchedules();
+      }
+    },
+  );
 
   /// v9: aulas existentes ganham uma grade. Pessoal vira "Minha grade";
   /// cada filho ganha a grade "Escola" (id igual ao da migration 021).

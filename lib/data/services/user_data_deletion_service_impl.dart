@@ -15,10 +15,7 @@ import '../local/app_database.dart';
 /// Ordem: nuvem primeiro (se logado); se falhar, não apaga local.
 /// Assinaturas (`user_subscriptions` / `purchase_validations`) não são apagadas.
 class UserDataDeletionServiceImpl implements IUserDataDeletionService {
-  UserDataDeletionServiceImpl(
-    this._db,
-    this._client,
-  );
+  UserDataDeletionServiceImpl(this._db, this._client);
 
   final AppDatabase _db;
   final SupabaseClient? _client;
@@ -79,21 +76,30 @@ class UserDataDeletionServiceImpl implements IUserDataDeletionService {
       final request = await http.postUrl(
         Uri.parse('${BillingConstants.billingApiBaseUrl}/account/delete'),
       );
-      request.headers.set(HttpHeaders.authorizationHeader, 'Bearer ${session.accessToken}');
-      final response = await request.close().timeout(const Duration(seconds: 30));
+      request.headers.set(
+        HttpHeaders.authorizationHeader,
+        'Bearer ${session.accessToken}',
+      );
+      final response = await request.close().timeout(
+        const Duration(seconds: 30),
+      );
       final body = await response.transform(utf8.decoder).join();
       if (response.statusCode != 200) {
-        final parsed = body.isEmpty ? null : jsonDecode(body) as Map<String, dynamic>;
+        final parsed = body.isEmpty
+            ? null
+            : jsonDecode(body) as Map<String, dynamic>;
         return Result.failure(
           response.statusCode == 409
               ? (parsed?['error'] as String? ??
-                  'Você é dono de uma Família. Exclua a Família antes de excluir a conta.')
+                    'Você é dono de uma Família. Exclua a Família antes de excluir a conta.')
               : 'Não foi possível excluir a conta agora. Tente novamente.',
         );
       }
     } catch (e) {
       debugPrint('[UserDataDeletion] excluir conta falhou: $e');
-      return Result.failure('Sem conexão. Tente novamente quando estiver online.');
+      return Result.failure(
+        'Sem conexão. Tente novamente quando estiver online.',
+      );
     } finally {
       http.close();
     }
@@ -134,7 +140,10 @@ class UserDataDeletionServiceImpl implements IUserDataDeletionService {
         .eq('user_id', uid)
         .maybeSingle();
     if (family != null) {
-      await client.rpc('leave_family', params: {'p_family': family['family_id']});
+      await client.rpc(
+        'leave_family',
+        params: {'p_family': family['family_id']},
+      );
     }
 
     await client.from('user_notifications').delete().eq('user_id', uid);

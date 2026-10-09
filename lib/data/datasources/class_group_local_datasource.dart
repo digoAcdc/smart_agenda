@@ -11,23 +11,25 @@ class ClassGroupLocalDataSource {
   final AppDatabase _db;
 
   Future<List<ClassGroup>> getGroups() async {
-    final rows = await (_db.select(_db.classGroupsTable)
-          ..orderBy([(t) => OrderingTerm(expression: t.name)]))
-        .get();
+    final rows = await (_db.select(
+      _db.classGroupsTable,
+    )..orderBy([(t) => OrderingTerm(expression: t.name)])).get();
     return rows.map(_toGroup).toList();
   }
 
   Future<ClassGroup?> getGroupById(String id) async {
-    final row = await (_db.select(_db.classGroupsTable)
-          ..where((t) => t.id.equals(id)))
-        .getSingleOrNull();
+    final row = await (_db.select(
+      _db.classGroupsTable,
+    )..where((t) => t.id.equals(id))).getSingleOrNull();
     return row != null ? _toGroup(row) : null;
   }
 
   Future<ClassGroup> createGroup(String name, {String? description}) async {
     final now = DateTime.now();
     final id = const Uuid().v4();
-    await _db.into(_db.classGroupsTable).insert(
+    await _db
+        .into(_db.classGroupsTable)
+        .insert(
           ClassGroupsTableCompanion.insert(
             id: id,
             name: name.trim(),
@@ -46,8 +48,9 @@ class ClassGroupLocalDataSource {
   }
 
   Future<void> updateGroup(ClassGroup group) async {
-    await (_db.update(_db.classGroupsTable)..where((t) => t.id.equals(group.id)))
-        .write(
+    await (_db.update(
+      _db.classGroupsTable,
+    )..where((t) => t.id.equals(group.id))).write(
       ClassGroupsTableCompanion(
         name: Value(group.name),
         description: Value(group.description),
@@ -57,31 +60,36 @@ class ClassGroupLocalDataSource {
   }
 
   Future<void> deleteGroup(String id) async {
-    await (_db.delete(_db.studentsTable)..where((t) => t.groupId.equals(id)))
-        .go();
-    await (_db.delete(_db.classGroupsTable)..where((t) => t.id.equals(id)))
-        .go();
+    await (_db.delete(
+      _db.studentsTable,
+    )..where((t) => t.groupId.equals(id))).go();
+    await (_db.delete(
+      _db.classGroupsTable,
+    )..where((t) => t.id.equals(id))).go();
   }
 
   Future<List<Student>> getStudentsByGroup(String groupId) async {
-    final rows = await (_db.select(_db.studentsTable)
-          ..where((t) => t.groupId.equals(groupId))
-          ..orderBy([(t) => OrderingTerm(expression: t.name)]))
-        .get();
+    final rows =
+        await (_db.select(_db.studentsTable)
+              ..where((t) => t.groupId.equals(groupId))
+              ..orderBy([(t) => OrderingTerm(expression: t.name)]))
+            .get();
     return rows.map(_toStudent).toList();
   }
 
   Future<Student?> getStudentById(String id) async {
-    final row = await (_db.select(_db.studentsTable)
-          ..where((t) => t.id.equals(id)))
-        .getSingleOrNull();
+    final row = await (_db.select(
+      _db.studentsTable,
+    )..where((t) => t.id.equals(id))).getSingleOrNull();
     return row != null ? _toStudent(row) : null;
   }
 
   Future<Student> createStudent(Student student) async {
     final now = DateTime.now();
     final id = student.id.isEmpty ? const Uuid().v4() : student.id;
-    await _db.into(_db.studentsTable).insert(
+    await _db
+        .into(_db.studentsTable)
+        .insert(
           StudentsTableCompanion.insert(
             id: id,
             groupId: student.groupId,
@@ -109,8 +117,9 @@ class ClassGroupLocalDataSource {
   }
 
   Future<void> updateStudent(Student student) async {
-    await (_db.update(_db.studentsTable)..where((t) => t.id.equals(student.id)))
-        .write(
+    await (_db.update(
+      _db.studentsTable,
+    )..where((t) => t.id.equals(student.id))).write(
       StudentsTableCompanion(
         name: Value(student.name),
         email: Value(_trimOrNull(student.email)),

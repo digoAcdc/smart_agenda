@@ -317,7 +317,9 @@ class SyncEngineImpl implements ISyncService {
         });
         await _localSchedule.markScheduleSynced(row.id);
       } on PostgrestException catch (e) {
-        debugPrint('[SyncEngine] grade ${row.id} recusada: ${e.code} ${e.message}');
+        debugPrint(
+          '[SyncEngine] grade ${row.id} recusada: ${e.code} ${e.message}',
+        );
         if (e.code == '42501') {
           await _localSchedule.deleteLocalSchedule(row.id);
           resetCursors = changed = true;
@@ -349,7 +351,9 @@ class SyncEngineImpl implements ISyncService {
         });
         await _localSchedule.markSlotSynced(row.id);
       } on PostgrestException catch (e) {
-        debugPrint('[SyncEngine] aula ${row.id} recusada: ${e.code} ${e.message}');
+        debugPrint(
+          '[SyncEngine] aula ${row.id} recusada: ${e.code} ${e.message}',
+        );
         if (e.code == '42501' || e.code == '23503' || e.code == '23514') {
           await _localSchedule.deleteLocalSlot(row.id);
           resetCursors = changed = true;
@@ -475,7 +479,11 @@ class SyncEngineImpl implements ISyncService {
     }
 
     if (familyId != null) {
-      for (final table in ['agenda_items', 'class_schedules', 'class_schedule_slots']) {
+      for (final table in [
+        'agenda_items',
+        'class_schedules',
+        'class_schedule_slots',
+      ]) {
         channel.onPostgresChanges(
           event: PostgresChangeEvent.all,
           schema: 'public',
@@ -523,7 +531,10 @@ class SyncEngineImpl implements ISyncService {
   Future<void> _pushClassSchedule(String uid) async {
     final prefs = await SharedPreferences.getInstance();
     final cleared =
-        prefs.getBool(ClassScheduleLocalDataSource.personalSchedulesClearedKey) ?? false;
+        prefs.getBool(
+          ClassScheduleLocalDataSource.personalSchedulesClearedKey,
+        ) ??
+        false;
     if (!cleared && !await _localSchedule.hasPersonalPending()) return;
     final schedules = await _localSchedule.getAllPersonalSchedules();
     final slots = await _localSchedule.getAllPersonalSlots();
@@ -533,11 +544,15 @@ class SyncEngineImpl implements ISyncService {
       if (cleared) {
         await _client.from('class_schedules').delete().eq('owner_user_id', uid);
         await _client.from('class_schedule_slots').delete().eq('user_id', uid);
-        await prefs.remove(ClassScheduleLocalDataSource.personalSchedulesClearedKey);
+        await prefs.remove(
+          ClassScheduleLocalDataSource.personalSchedulesClearedKey,
+        );
       }
       return;
     }
-    await prefs.remove(ClassScheduleLocalDataSource.personalSchedulesClearedKey);
+    await prefs.remove(
+      ClassScheduleLocalDataSource.personalSchedulesClearedKey,
+    );
 
     // Aulas com schedule_id saem em cascata; linhas antigas sem grade tambem.
     await _client.from('class_schedules').delete().eq('owner_user_id', uid);
@@ -568,9 +583,13 @@ class SyncEngineImpl implements ISyncService {
           'created_at': row.createdAt.toUtc().toIso8601String(),
         },
     ];
-    if (rows.isNotEmpty) await _client.from('class_schedule_slots').insert(rows);
+    if (rows.isNotEmpty) {
+      await _client.from('class_schedule_slots').insert(rows);
+    }
     await _localSchedule.markPersonalSynced();
-    debugPrint('[SyncEngine] ${schedules.length} grades pessoais sincronizadas');
+    debugPrint(
+      '[SyncEngine] ${schedules.length} grades pessoais sincronizadas',
+    );
   }
 
   Future<void> _pushClassGroups(String uid) async {

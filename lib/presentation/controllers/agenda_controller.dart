@@ -113,7 +113,11 @@ class AgendaController extends GetxController {
     upcomingItems.assignAll(items.take(_upcomingLimit));
   }
 
-  Future<void> loadWeek(DateTime start, DateTime end, {bool silent = false}) async {
+  Future<void> loadWeek(
+    DateTime start,
+    DateTime end, {
+    bool silent = false,
+  }) async {
     if (!silent) loading.value = true;
     final result = await getAgendaItemsByRange(start, end);
     if (result.isSuccess) {

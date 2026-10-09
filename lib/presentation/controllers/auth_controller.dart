@@ -59,7 +59,9 @@ class AuthController extends GetxController with WidgetsBindingObserver {
       return;
     }
     _lastResumeRevalidation = now;
-    unawaited(_revalidateSubscription(reason: 'app_resume', withRestore: false));
+    unawaited(
+      _revalidateSubscription(reason: 'app_resume', withRestore: false),
+    );
   }
 
   Future<void> _loadRememberMe() async {
@@ -85,7 +87,9 @@ class AuthController extends GetxController with WidgetsBindingObserver {
       isLoggedIn.value = result.data ?? false;
       if (isLoggedIn.value) {
         await _planService.refresh();
-        unawaited(_revalidateSubscription(reason: 'auth_check', withRestore: false));
+        unawaited(
+          _revalidateSubscription(reason: 'auth_check', withRestore: false),
+        );
         await _loadFamilyAndSync();
         await _updateUserInfo();
       } else {
@@ -115,16 +119,23 @@ class AuthController extends GetxController with WidgetsBindingObserver {
   }) async {
     if (!Get.isRegistered<BillingController>()) return;
     try {
-      debugPrint('[auth_subscription_revalidation_start] reason=$reason restore=$withRestore');
+      debugPrint(
+        '[auth_subscription_revalidation_start] reason=$reason restore=$withRestore',
+      );
       final billing = Get.find<BillingController>();
-      await billing.revalidateInBackground(triggerRestore: withRestore, reason: reason);
+      await billing.revalidateInBackground(
+        triggerRestore: withRestore,
+        reason: reason,
+      );
       await _planService.refresh();
       isPremium.value = await _planService.isPremium();
       _refreshPremiumService();
       await _loadFamilyAndSync();
       debugPrint('[auth_subscription_revalidation_done] reason=$reason');
     } catch (e) {
-      debugPrint('[auth_subscription_revalidation_error] reason=$reason error=$e');
+      debugPrint(
+        '[auth_subscription_revalidation_error] reason=$reason error=$e',
+      );
     }
   }
 
@@ -149,12 +160,18 @@ class AuthController extends GetxController with WidgetsBindingObserver {
       return;
     }
     if (!Get.isRegistered<FcmTokenSupabaseDataSource>()) {
-      if (kDebugMode) debugPrint('[FCM] FcmTokenSupabaseDataSource nao registrado');
+      if (kDebugMode) {
+        debugPrint('[FCM] FcmTokenSupabaseDataSource nao registrado');
+      }
       return;
     }
     final token = await FirebaseService.getToken();
     if (token == null) {
-      if (kDebugMode) debugPrint('[FCM] Token FCM null (Firebase nao init ou permissao negada)');
+      if (kDebugMode) {
+        debugPrint(
+          '[FCM] Token FCM null (Firebase nao init ou permissao negada)',
+        );
+      }
       return;
     }
     try {

@@ -19,7 +19,8 @@ class BillingConstants {
     defaultValue: 'https://smart-agenda-billing-api.vybg0t.easypanel.host',
   );
 
-  static bool get hasBillingApiConfigured => billingApiBaseUrl.trim().isNotEmpty;
+  static bool get hasBillingApiConfigured =>
+      billingApiBaseUrl.trim().isNotEmpty;
 
   /// Plataforma para envio ao backend.
   static const String platform = 'android';

@@ -13,4 +13,3 @@ abstract class IPremiumService {
   /// Atualiza o cache consultando IPlanService.
   Future<void> refresh();
 }
-

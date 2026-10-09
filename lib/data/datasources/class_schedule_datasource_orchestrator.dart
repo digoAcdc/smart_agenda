@@ -26,12 +26,9 @@ class ClassScheduleDataSourceOrchestrator implements IClassScheduleDataSource {
     required String name,
     String? familyId,
     String? childId,
-  }) =>
-      _thenSync(_local.createSchedule(
-        name: name,
-        familyId: familyId,
-        childId: childId,
-      ));
+  }) => _thenSync(
+    _local.createSchedule(name: name, familyId: familyId, childId: childId),
+  );
 
   @override
   Future<void> renameSchedule(String id, String name) =>
@@ -59,14 +56,15 @@ class ClassScheduleDataSourceOrchestrator implements IClassScheduleDataSource {
     String? professorName,
     String? professorEmail,
     String? professorPhone,
-  }) =>
-      _thenSync(_local.updateSlotDetails(
-        id,
-        subject: subject,
-        professorName: professorName,
-        professorEmail: professorEmail,
-        professorPhone: professorPhone,
-      ));
+  }) => _thenSync(
+    _local.updateSlotDetails(
+      id,
+      subject: subject,
+      professorName: professorName,
+      professorEmail: professorEmail,
+      professorPhone: professorPhone,
+    ),
+  );
 
   @override
   Future<void> removeTimeRange(ClassSchedule schedule, int start, int end) =>
@@ -79,6 +77,7 @@ class ClassScheduleDataSourceOrchestrator implements IClassScheduleDataSource {
     int oldEnd,
     int newStart,
     int newEnd,
-  ) =>
-      _thenSync(_local.updateTimeRange(schedule, oldStart, oldEnd, newStart, newEnd));
+  ) => _thenSync(
+    _local.updateTimeRange(schedule, oldStart, oldEnd, newStart, newEnd),
+  );
 }

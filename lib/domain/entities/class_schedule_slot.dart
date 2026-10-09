@@ -21,7 +21,14 @@ class ClassSchedule extends Equatable {
   bool get isFamily => familyId != null;
 
   @override
-  List<Object?> get props => [id, name, familyId, childId, createdAt, updatedAt];
+  List<Object?> get props => [
+    id,
+    name,
+    familyId,
+    childId,
+    createdAt,
+    updatedAt,
+  ];
 }
 
 /// Slot de horario de aula (domain entity, independente de Drift/Supabase).
@@ -60,18 +67,18 @@ class ClassScheduleSlot extends Equatable {
 
   @override
   List<Object?> get props => [
-        id,
-        scheduleId,
-        dayOfWeek,
-        startMinutes,
-        endMinutes,
-        subject,
-        professorName,
-        professorEmail,
-        professorPhone,
-        familyId,
-        childId,
-        createdAt,
-        updatedAt,
-      ];
+    id,
+    scheduleId,
+    dayOfWeek,
+    startMinutes,
+    endMinutes,
+    subject,
+    professorName,
+    professorEmail,
+    professorPhone,
+    familyId,
+    childId,
+    createdAt,
+    updatedAt,
+  ];
 }

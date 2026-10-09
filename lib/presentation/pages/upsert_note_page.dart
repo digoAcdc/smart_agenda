@@ -79,7 +79,9 @@ class _UpsertNotePageState extends State<UpsertNotePage> {
     if (!_isPremium) {
       if (!mounted) return;
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Upload de imagem e uma funcionalidade Premium.')),
+        const SnackBar(
+          content: Text('Upload de imagem e uma funcionalidade Premium.'),
+        ),
       );
       return;
     }
@@ -180,9 +182,9 @@ class _UpsertNotePageState extends State<UpsertNotePage> {
       await controller.createNote(note);
     }
     if (mounted) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Anotacao salva')),
-      );
+      ScaffoldMessenger.of(
+        context,
+      ).showSnackBar(const SnackBar(content: Text('Anotacao salva')));
       Get.back();
     }
   }
@@ -192,9 +194,7 @@ class _UpsertNotePageState extends State<UpsertNotePage> {
     final ok = await Get.dialog<bool>(
       AlertDialog(
         title: const Text('Excluir anotacao?'),
-        content: const Text(
-          'Esta acao nao pode ser desfeita.',
-        ),
+        content: const Text('Esta acao nao pode ser desfeita.'),
         actions: [
           TextButton(
             onPressed: () => Get.back(result: false),
@@ -213,9 +213,9 @@ class _UpsertNotePageState extends State<UpsertNotePage> {
     if (ok != true) return;
     await Get.find<NoteController>().deleteNote(_editingNote!.id);
     if (mounted) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Anotacao excluida')),
-      );
+      ScaffoldMessenger.of(
+        context,
+      ).showSnackBar(const SnackBar(content: Text('Anotacao excluida')));
     }
     Get.back();
   }
@@ -229,10 +229,7 @@ class _UpsertNotePageState extends State<UpsertNotePage> {
       appBar: AppBar(
         title: Text(isEditing ? 'Editar anotacao' : 'Nova anotacao'),
         actions: [
-          TextButton(
-            onPressed: _save,
-            child: const Text('Salvar'),
-          ),
+          TextButton(onPressed: _save, child: const Text('Salvar')),
           if (isEditing)
             IconButton(
               icon: const Icon(Icons.delete_outline),
@@ -267,10 +264,7 @@ class _UpsertNotePageState extends State<UpsertNotePage> {
               textCapitalization: TextCapitalization.sentences,
             ),
             const SizedBox(height: DesignTokens.spaceLg),
-            Text(
-              'Checklist',
-              style: theme.textTheme.titleSmall,
-            ),
+            Text('Checklist', style: theme.textTheme.titleSmall),
             const SizedBox(height: DesignTokens.spaceSm),
             ...List.generate(_checklistItems.length, (i) {
               final item = _checklistItems[i];
@@ -280,7 +274,10 @@ class _UpsertNotePageState extends State<UpsertNotePage> {
                 onChanged: (completed) {
                   _updateChecklistItem(
                     i,
-                    item.copyWith(completed: completed, updatedAt: DateTime.now()),
+                    item.copyWith(
+                      completed: completed,
+                      updatedAt: DateTime.now(),
+                    ),
                   );
                 },
                 onRemove: () => _removeChecklistItem(i),
@@ -308,10 +305,7 @@ class _UpsertNotePageState extends State<UpsertNotePage> {
               ],
             ),
             const SizedBox(height: DesignTokens.spaceLg),
-            Text(
-              'Imagem (opcional)',
-              style: theme.textTheme.titleSmall,
-            ),
+            Text('Imagem (opcional)', style: theme.textTheme.titleSmall),
             if (!_isPremium) ...[
               const SizedBox(height: DesignTokens.spaceXs),
               Container(
@@ -332,9 +326,9 @@ class _UpsertNotePageState extends State<UpsertNotePage> {
                     Text(
                       'Premium',
                       style: theme.textTheme.labelSmall?.copyWith(
-                            color: theme.colorScheme.outline,
-                            fontWeight: FontWeight.w600,
-                          ),
+                        color: theme.colorScheme.outline,
+                        fontWeight: FontWeight.w600,
+                      ),
                     ),
                   ],
                 ),
@@ -345,8 +339,7 @@ class _UpsertNotePageState extends State<UpsertNotePage> {
               Stack(
                 children: [
                   ClipRRect(
-                    borderRadius:
-                        BorderRadius.circular(DesignTokens.radiusMd),
+                    borderRadius: BorderRadius.circular(DesignTokens.radiusMd),
                     child: _imagePath != null
                         ? Image.file(
                             File(_imagePath!),

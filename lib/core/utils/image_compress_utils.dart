@@ -9,10 +9,7 @@ import '../constants/image_upload_constants.dart';
 
 /// Resultado de [prepareImageForStorage]: caminho a usar e se deve apagar após cópia/upload.
 class ImagePrepareResult {
-  const ImagePrepareResult({
-    required this.path,
-    required this.isTemporary,
-  });
+  const ImagePrepareResult({required this.path, required this.isTemporary});
 
   final String path;
   final bool isTemporary;
@@ -37,8 +34,7 @@ class ImageCompressUtils {
 
     try {
       final tempDir = await getTemporaryDirectory();
-      final targetPath =
-          '${tempDir.path}/smart_agenda_img_${_uuid.v4()}.jpg';
+      final targetPath = '${tempDir.path}/smart_agenda_img_${_uuid.v4()}.jpg';
 
       final xfile = await FlutterImageCompress.compressAndGetFile(
         sourcePath,

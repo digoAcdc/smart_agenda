@@ -20,40 +20,44 @@ class GroupsPage extends StatelessWidget {
       body: SafeArea(
         top: false,
         bottom: false,
-        child: Obx(
-          () {
-            if (controller.groups.isEmpty) {
-              return EmptyStateWidget(
-                icon: Icons.category_outlined,
-                title: 'Sem grupos ainda',
-                message: 'Crie grupos para organizar melhor seus eventos.',
-                ctaLabel: 'Criar grupo',
-                onTapCta: () => _openCreateDialog(context, controller),
-              );
-            }
-            return Column(
-              children: [
-                const SectionHeader(
-                  title: 'Seus grupos',
-                  subtitle: 'Organize eventos por contexto ou projeto',
-                ),
-                Expanded(
-                  child: ListView.builder(
-                    itemCount: controller.groups.length,
-                    itemBuilder: (context, index) {
-                      final group = controller.groups[index];
-                      final avatarColor =
-                          _resolveGroupColor(group.colorHex, index, context);
-                      return AppSurfaceCard(
-                        child: ListTile(
+        child: Obx(() {
+          if (controller.groups.isEmpty) {
+            return EmptyStateWidget(
+              icon: Icons.category_outlined,
+              title: 'Sem grupos ainda',
+              message: 'Crie grupos para organizar melhor seus eventos.',
+              ctaLabel: 'Criar grupo',
+              onTapCta: () => _openCreateDialog(context, controller),
+            );
+          }
+          return Column(
+            children: [
+              const SectionHeader(
+                title: 'Seus grupos',
+                subtitle: 'Organize eventos por contexto ou projeto',
+              ),
+              Expanded(
+                child: ListView.builder(
+                  itemCount: controller.groups.length,
+                  itemBuilder: (context, index) {
+                    final group = controller.groups[index];
+                    final avatarColor = _resolveGroupColor(
+                      group.colorHex,
+                      index,
+                      context,
+                    );
+                    return AppSurfaceCard(
+                      child: ListTile(
                         shape: RoundedRectangleBorder(
-                            borderRadius: BorderRadius.circular(16)),
+                          borderRadius: BorderRadius.circular(16),
+                        ),
                         contentPadding: const EdgeInsets.symmetric(
-                            horizontal: 16, vertical: 8),
+                          horizontal: 16,
+                          vertical: 8,
+                        ),
                         leading: CircleAvatar(
                           backgroundColor: avatarColor.withValues(alpha: 0.22),
-                          child:
-                              Text(
+                          child: Text(
                             group.name.characters.first.toUpperCase(),
                             style: TextStyle(
                               color: avatarColor,
@@ -69,35 +73,45 @@ class GroupsPage extends StatelessWidget {
                             }
                             if (value == 'edit') {
                               final formKey = GlobalKey<FormState>();
-                              final textController =
-                                  TextEditingController(text: group.name);
+                              final textController = TextEditingController(
+                                text: group.name,
+                              );
                               await Get.dialog(
                                 AlertDialog(
                                   title: const Text('Editar grupo'),
                                   content: Form(
                                     key: formKey,
-                                    autovalidateMode: AutovalidateMode.onUserInteraction,
+                                    autovalidateMode:
+                                        AutovalidateMode.onUserInteraction,
                                     child: TextFormField(
                                       controller: textController,
                                       decoration: const InputDecoration(
                                         labelText: 'Nome do grupo',
                                       ),
-                                      validator: (v) =>
-                                          requiredValidator(v, 'Nome e obrigatorio'),
+                                      validator: (v) => requiredValidator(
+                                        v,
+                                        'Nome e obrigatorio',
+                                      ),
                                     ),
                                   ),
                                   actions: [
                                     TextButton(
-                                        onPressed: Get.back,
-                                        child: const Text('Cancelar')),
+                                      onPressed: Get.back,
+                                      child: const Text('Cancelar'),
+                                    ),
                                     FilledButton(
                                       onPressed: () async {
-                                        if (formKey.currentState?.validate() != true) return;
+                                        if (formKey.currentState?.validate() !=
+                                            true) {
+                                          return;
+                                        }
                                         final canProceed =
                                             await AccountPromptUtils.confirmSaveWithoutAccount();
                                         if (!canProceed) return;
                                         await controller.updateGroup(
-                                            group, textController.text);
+                                          group,
+                                          textController.text,
+                                        );
                                         Get.back();
                                       },
                                       child: const Text('Salvar'),
@@ -110,18 +124,19 @@ class GroupsPage extends StatelessWidget {
                           itemBuilder: (context) => const [
                             PopupMenuItem(value: 'edit', child: Text('Editar')),
                             PopupMenuItem(
-                                value: 'delete', child: Text('Excluir')),
+                              value: 'delete',
+                              child: Text('Excluir'),
+                            ),
                           ],
                         ),
-                        ),
-                      );
-                    },
-                  ),
+                      ),
+                    );
+                  },
                 ),
-              ],
-            );
-          },
-        ),
+              ),
+            ],
+          );
+        }),
       ),
       bottomNavigationBar: SafeArea(
         top: false,
@@ -138,7 +153,9 @@ class GroupsPage extends StatelessWidget {
   }
 
   Future<void> _openCreateDialog(
-      BuildContext context, GroupsController controller) async {
+    BuildContext context,
+    GroupsController controller,
+  ) async {
     final formKey = GlobalKey<FormState>();
     final textController = TextEditingController();
     await Get.dialog(
@@ -162,7 +179,8 @@ class GroupsPage extends StatelessWidget {
           FilledButton(
             onPressed: () async {
               if (formKey.currentState?.validate() != true) return;
-              final canProceed = await AccountPromptUtils.confirmSaveWithoutAccount();
+              final canProceed =
+                  await AccountPromptUtils.confirmSaveWithoutAccount();
               if (!canProceed) return;
               await controller.create(textController.text);
               Get.back();
@@ -177,8 +195,9 @@ class GroupsPage extends StatelessWidget {
   Color _resolveGroupColor(String? colorHex, int index, BuildContext context) {
     if (colorHex != null && colorHex.isNotEmpty) {
       final sanitized = colorHex.replaceAll('#', '');
-      final normalized =
-          sanitized.length == 6 ? 'FF$sanitized' : sanitized.padLeft(8, 'F');
+      final normalized = sanitized.length == 6
+          ? 'FF$sanitized'
+          : sanitized.padLeft(8, 'F');
       final value = int.tryParse(normalized, radix: 16);
       if (value != null) return Color(value);
     }

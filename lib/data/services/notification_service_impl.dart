@@ -26,8 +26,9 @@ class NotificationServiceImpl implements INotificationService {
       } catch (_) {
         tz.setLocalLocation(tz.getLocation('America/Sao_Paulo'));
       }
-      const androidSettings =
-          AndroidInitializationSettings('@mipmap/ic_launcher');
+      const androidSettings = AndroidInitializationSettings(
+        '@mipmap/ic_launcher',
+      );
       final settings = InitializationSettings(
         android: androidSettings,
         iOS: DarwinInitializationSettings(),
@@ -42,9 +43,10 @@ class NotificationServiceImpl implements INotificationService {
         },
       );
 
-      final androidImplementation =
-          _notificationsPlugin.resolvePlatformSpecificImplementation<
-              AndroidFlutterLocalNotificationsPlugin>();
+      final androidImplementation = _notificationsPlugin
+          .resolvePlatformSpecificImplementation<
+            AndroidFlutterLocalNotificationsPlugin
+          >();
       await androidImplementation?.createNotificationChannel(
         const AndroidNotificationChannel(
           AppConstants.notificationChannelId,
@@ -54,8 +56,8 @@ class NotificationServiceImpl implements INotificationService {
       );
 
       if (onNotificationTap != null) {
-        final launchDetails =
-            await _notificationsPlugin.getNotificationAppLaunchDetails();
+        final launchDetails = await _notificationsPlugin
+            .getNotificationAppLaunchDetails();
         if (launchDetails != null &&
             launchDetails.didNotificationLaunchApp &&
             launchDetails.notificationResponse?.payload != null) {
@@ -80,9 +82,10 @@ class NotificationServiceImpl implements INotificationService {
       bool granted = true;
       var handledRuntimePermission = false;
 
-      final androidImplementation =
-          _notificationsPlugin.resolvePlatformSpecificImplementation<
-              AndroidFlutterLocalNotificationsPlugin>();
+      final androidImplementation = _notificationsPlugin
+          .resolvePlatformSpecificImplementation<
+            AndroidFlutterLocalNotificationsPlugin
+          >();
       if (androidImplementation != null) {
         handledRuntimePermission = true;
         final enabled =
@@ -92,13 +95,14 @@ class NotificationServiceImpl implements INotificationService {
         } else {
           granted =
               await androidImplementation.requestNotificationsPermission() ??
-                  false;
+              false;
         }
       }
 
-      final iosImplementation =
-          _notificationsPlugin.resolvePlatformSpecificImplementation<
-              IOSFlutterLocalNotificationsPlugin>();
+      final iosImplementation = _notificationsPlugin
+          .resolvePlatformSpecificImplementation<
+            IOSFlutterLocalNotificationsPlugin
+          >();
       if (iosImplementation != null) {
         handledRuntimePermission = true;
         final iosGranted = await iosImplementation.requestPermissions(
@@ -109,9 +113,10 @@ class NotificationServiceImpl implements INotificationService {
         granted = granted && (iosGranted ?? false);
       }
 
-      final macImplementation =
-          _notificationsPlugin.resolvePlatformSpecificImplementation<
-              MacOSFlutterLocalNotificationsPlugin>();
+      final macImplementation = _notificationsPlugin
+          .resolvePlatformSpecificImplementation<
+            MacOSFlutterLocalNotificationsPlugin
+          >();
       if (macImplementation != null) {
         handledRuntimePermission = true;
         final macGranted = await macImplementation.requestPermissions(
@@ -150,8 +155,9 @@ class NotificationServiceImpl implements INotificationService {
         return Result.success(null);
       }
 
-      final scheduledAt =
-          item.startAt.subtract(Duration(minutes: reminder.minutesBefore!));
+      final scheduledAt = item.startAt.subtract(
+        Duration(minutes: reminder.minutesBefore!),
+      );
       if (scheduledAt.isBefore(DateTime.now())) {
         return Result.success(null);
       }
@@ -220,7 +226,11 @@ class NotificationServiceImpl implements INotificationService {
   }
 
   @override
-  Future<Result<void>> showPush(String title, String body, {String? payload}) async {
+  Future<Result<void>> showPush(
+    String title,
+    String body, {
+    String? payload,
+  }) async {
     try {
       const details = NotificationDetails(
         android: AndroidNotificationDetails(
