@@ -28,7 +28,6 @@ class ConfigPage extends StatefulWidget {
 }
 
 class _ConfigPageState extends State<ConfigPage> {
-  bool _isPremium = false;
   bool _deletingData = false;
   String _versionText = 'Smart Agenda';
 
@@ -75,10 +74,6 @@ class _ConfigPageState extends State<ConfigPage> {
       authController.userEmail.value = email;
       authController.isPremium.value = isPremium;
     }
-    if (!mounted) return;
-    setState(() {
-      _isPremium = isPremium;
-    });
   }
 
   void _openPrivacyPolicy() {
@@ -237,7 +232,12 @@ class _ConfigPageState extends State<ConfigPage> {
         children: [
           const SectionHeader(title: 'Configurações'),
           _buildProfileCard(),
-          if (!_isPremium) _buildPremiumCard(),
+          // Reage na hora a compra/renovacao (antes so lia ao abrir a tela).
+          Obx(
+            () => Get.find<AuthController>().isPremium.value
+                ? const SizedBox.shrink()
+                : _buildPremiumCard(),
+          ),
           _buildPrivacySection(),
           _buildFooter(),
         ],
