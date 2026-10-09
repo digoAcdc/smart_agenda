@@ -68,7 +68,7 @@ void main() {
     await tester.pumpWidget(GetMaterialApp(theme: AppTheme.light(), home: const FamilyPage()));
     await tester.pump();
 
-    final inviteButton = find.textContaining('Convidar pessoa');
+    final inviteButton = find.text('Convidar por e-mail');
     await tester.scrollUntilVisible(inviteButton, 200);
     await tester.tap(inviteButton);
     await tester.pumpAndSettle();

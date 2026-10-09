@@ -28,11 +28,13 @@ no emulador antes do commit. Marque `[x]` ao concluir.
 
 ## Fase 2 — Família viva
 
-- [ ] **Avisos da Família na hora**: trigger no banco (`pg_net`) → webhook do n8n →
-  FCM para os outros membros (e para o responsável). Agrupar edições seguidas;
-  opção de desligar em Notificações.
-- [ ] **Convite pelo WhatsApp com link** `rbarbosa.tech/convite/<token>`
-  (Android App Links + página com botão da Play Store; convite vale após o cadastro).
+- [x] **Avisos da Família na hora** — build 39. Trigger no banco enche uma fila
+  (`private.family_change_queue`); o n8n busca a cada minuto e envia pelo FCM
+  (sem pg_net). Edições seguidas viram um aviso só; opção em Notificações.
+- [x] **Convite pelo WhatsApp com link** `rbarbosa.tech/convite/<token>` — build 39
+  (página na billing-api, smartagenda:// e App Links, install referrer do Play).
+  Pendente: digital SHA-256 da chave de assinatura do Play em `invite.js`
+  para o link abrir o app direto (sem passar pela página).
 
 ## Fase 3 — Escola
 

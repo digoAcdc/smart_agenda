@@ -37,6 +37,11 @@ abstract class IFamilyService {
   Future<Result<void>> revokeInvite(String inviteId);
   Future<Result<void>> acceptInvite(String inviteId, {String? nickname});
   Future<Result<void>> declineInvite(String inviteId);
+
+  /// Convite por link: cria o codigo usado em rbarbosa.tech/convite/CODIGO.
+  Future<Result<String>> createInviteLink(FamilyRole role);
+  Future<Result<FamilyLinkInvite?>> getInviteByToken(String token);
+  Future<Result<void>> acceptInviteByToken(String token, {String? nickname});
   Future<Result<void>> changeRole(String userId, FamilyRole role);
   Future<Result<void>> removeMember(String userId);
   Future<Result<void>> leave();

@@ -37,6 +37,7 @@ class PushPreferencesSupabaseDataSource {
       pushDailySummary: r['push_daily_summary'] as bool? ?? true,
       pushTomorrowSummary: r['push_tomorrow_summary'] as bool? ?? false,
       pushWeeklySummary: r['push_weekly_summary'] as bool? ?? true,
+      pushFamilyChanges: r['push_family_changes'] as bool? ?? true,
     );
   }
 
@@ -44,6 +45,7 @@ class PushPreferencesSupabaseDataSource {
     required bool pushDailySummary,
     required bool pushTomorrowSummary,
     required bool pushWeeklySummary,
+    required bool pushFamilyChanges,
   }) async {
     final uid = _client.auth.currentUser?.id;
     if (uid == null) return;
@@ -53,6 +55,7 @@ class PushPreferencesSupabaseDataSource {
       'push_daily_summary': pushDailySummary,
       'push_tomorrow_summary': pushTomorrowSummary,
       'push_weekly_summary': pushWeeklySummary,
+      'push_family_changes': pushFamilyChanges,
       'updated_at': DateTime.now().toIso8601String(),
     }, onConflict: 'user_id');
   }

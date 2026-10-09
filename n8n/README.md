@@ -14,3 +14,11 @@ só `service_role`) → só quem tem `event_count > 0` → FCM v1
 
 `smart_agenda_push_workflow.json` é o workflow exportado sem segredos: troque
 `<SERVICE_ROLE_KEY>` pela chave service_role do Supabase antes de importar.
+
+## Avisos da Família (na hora)
+
+Workflow "Smart Agenda - Avisos da Familia" (`smart_agenda_family_alerts_workflow.json`):
+a cada minuto chama `take_due_family_notifications()` (migration 030) e envia
+um push por aparelho dos outros membros. A fila (`private.family_change_queue`)
+é preenchida por trigger em `agenda_items` da Família; edições seguidas viram
+um aviso só (90 s). Execuções com sucesso não são salvas (roda a cada minuto).

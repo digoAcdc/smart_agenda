@@ -260,3 +260,23 @@ class FamilyInvite extends Equatable {
     expiresAt,
   ];
 }
+
+/// Convite por link (WhatsApp): o que a tela "aceitar" mostra.
+class FamilyLinkInvite extends Equatable {
+  const FamilyLinkInvite({
+    required this.token,
+    required this.familyName,
+    required this.role,
+    required this.isValid,
+    this.invitedByName,
+  });
+
+  final String token;
+  final String familyName;
+  final String? invitedByName;
+  final FamilyRole role;
+  final bool isValid;
+
+  @override
+  List<Object?> get props => [token, familyName, invitedByName, role, isValid];
+}

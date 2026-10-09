@@ -211,6 +211,33 @@ class FamilyServiceImpl extends GetxController implements IFamilyService {
       _run(() => _ds.declineInvite(inviteId));
 
   @override
+  Future<Result<String>> createInviteLink(FamilyRole role) async {
+    final id = _familyId;
+    if (id == null) return Result.failure('Você ainda não tem uma Família.');
+    try {
+      final token = await _ds.createInviteLink(id, role);
+      await refresh(); // o convite ocupa vaga e aparece na lista
+      return Result.success(token);
+    } catch (e) {
+      debugPrint('[FamilyService] convite por link falhou: $e');
+      return Result.failure(familyErrorMessage(e));
+    }
+  }
+
+  @override
+  Future<Result<FamilyLinkInvite?>> getInviteByToken(String token) async {
+    try {
+      return Result.success(await _ds.getInviteByToken(token));
+    } catch (e) {
+      return Result.failure(familyErrorMessage(e));
+    }
+  }
+
+  @override
+  Future<Result<void>> acceptInviteByToken(String token, {String? nickname}) =>
+      _run(() => _ds.acceptInviteByToken(token, nickname: _clean(nickname)));
+
+  @override
   Future<Result<void>> changeRole(String userId, FamilyRole role) =>
       _run(() => _requireFamily((id) => _ds.changeRole(id, userId, role)));
 

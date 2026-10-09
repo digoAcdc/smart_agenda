@@ -1,5 +1,6 @@
 import 'package:supabase_flutter/supabase_flutter.dart';
 
+import '../../domain/entities/agenda_enums.dart';
 import '../../domain/entities/family.dart';
 
 /// Acesso as tabelas e RPCs da Familia. As regras (papeis, limite de membros,
@@ -145,6 +146,44 @@ class FamilySupabaseDataSource {
     final id = await _client.rpc(
       'accept_family_invite',
       params: {'p_invite': inviteId, 'p_nickname': nickname},
+    );
+    return id as String;
+  }
+
+  Future<String> createInviteLink(String familyId, FamilyRole role) async {
+    final token = await _client.rpc(
+      'create_family_invite_link',
+      params: {'p_family': familyId, 'p_role': role.name},
+    );
+    return token as String;
+  }
+
+  Future<FamilyLinkInvite?> getInviteByToken(String token) async {
+    final rows =
+        await _client.rpc(
+              'get_family_invite_by_token',
+              params: {'p_token': token},
+            )
+            as List;
+    if (rows.isEmpty) return null;
+    final r = Map<String, dynamic>.from(rows.first as Map);
+    return FamilyLinkInvite(
+      token: token,
+      familyName: r['family_name'] as String? ?? 'Família',
+      invitedByName: r['invited_by_name'] as String?,
+      role: enumByName(
+        FamilyRole.values,
+        r['role'] as String?,
+        FamilyRole.editor,
+      ),
+      isValid: r['is_valid'] as bool? ?? false,
+    );
+  }
+
+  Future<String> acceptInviteByToken(String token, {String? nickname}) async {
+    final id = await _client.rpc(
+      'accept_family_invite_by_token',
+      params: {'p_token': token, 'p_nickname': nickname},
     );
     return id as String;
   }
