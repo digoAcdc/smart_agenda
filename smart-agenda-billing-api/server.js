@@ -98,6 +98,10 @@ const deleteAccountPage = readFileSync(new URL("./pages/excluir-conta.html", imp
 app.get("/excluir-conta", async (request, reply) =>
   reply.type("text/html; charset=utf-8").send(deleteAccountPage)
 );
+const privacyPage = readFileSync(new URL("./pages/privacidade.html", import.meta.url), "utf8");
+app.get("/privacidade", async (request, reply) =>
+  reply.type("text/html; charset=utf-8").send(privacyPage)
+);
 
 app.post(
   "/account/delete",
