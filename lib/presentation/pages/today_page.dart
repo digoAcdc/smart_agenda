@@ -20,6 +20,7 @@ import '../widgets/loading_placeholder_list.dart';
 import '../widgets/section_header.dart';
 import '../utils/family_item_labels.dart';
 import '../../domain/repositories/i_sync_service.dart';
+import '../widgets/family_invite_banner.dart';
 
 enum AgendaHomeViewMode { day, week, month }
 
@@ -325,6 +326,7 @@ class _TodayPageState extends State<TodayPage> {
                   ),
                 ),
                 const SizedBox(height: 8),
+                const FamilyInviteBanner(),
                 const AdBannerWidget(),
               ],
             ),

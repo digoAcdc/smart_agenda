@@ -93,19 +93,22 @@ class FamilySupabaseDataSource {
   /// Convites recebidos pelo usuario logado.
   Future<List<FamilyInvite>> getMyInvites() async {
     final rows = await _client.rpc('list_my_family_invites') as List;
+    return parseMyInvites(rows);
+  }
+
+  /// Resposta de list_my_family_invites -> convites.
+  static List<FamilyInvite> parseMyInvites(List rows) {
     return rows
         .map((raw) => Map<String, dynamic>.from(raw as Map))
-        .map(
-          (r) => FamilyInvite(
-            id: r['invite_id'] as String,
-            familyId: r['family_id'] as String,
-            familyName: r['family_name'] as String?,
-            invitedByName: r['invited_by_name'] as String?,
-            role: familyRoleFromName(r['role'] as String?),
-            createdAt: DateTime.parse(r['created_at'] as String),
-            expiresAt: DateTime.parse(r['expires_at'] as String),
-          ),
-        )
+        .map((r) => FamilyInvite(
+              id: r['invite_id'] as String,
+              familyId: r['family_id'] as String,
+              familyName: r['family_name'] as String?,
+              invitedByName: r['invited_by_name'] as String?,
+              role: familyRoleFromName(r['role'] as String?),
+              createdAt: DateTime.parse(r['created_at'] as String),
+              expiresAt: DateTime.parse(r['expires_at'] as String),
+            ))
         .toList();
   }
 

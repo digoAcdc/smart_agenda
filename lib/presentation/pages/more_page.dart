@@ -16,9 +16,7 @@ class MorePage extends StatelessWidget {
   Widget build(BuildContext context) {
     final primary = Theme.of(context).colorScheme.primary;
     return Scaffold(
-      appBar: AppBar(
-        title: const Text('Mais'),
-      ),
+      appBar: AppBar(title: const Text('Mais')),
       body: SafeArea(
         top: false,
         bottom: false,
@@ -30,10 +28,10 @@ class MorePage extends StatelessWidget {
               child: Text(
                 'FUNCIONALIDADES',
                 style: Theme.of(context).textTheme.labelMedium?.copyWith(
-                      color: Theme.of(context).colorScheme.outline,
-                      fontWeight: FontWeight.w700,
-                      letterSpacing: 0.8,
-                    ),
+                  color: Theme.of(context).colorScheme.outline,
+                  fontWeight: FontWeight.w700,
+                  letterSpacing: 0.8,
+                ),
               ),
             ),
             AppSurfaceCard(
@@ -69,7 +67,9 @@ class MorePage extends StatelessWidget {
                   if (SupabaseConfig.isConfigured) ...[
                     const Divider(height: 1),
                     Obx(() {
-                      final ctx = Get.find<IFamilyService>().context;
+                      final family = Get.find<IFamilyService>();
+                      final ctx = family.context;
+                      final invites = family.myInvites.length;
                       return _buildActionTile(
                         context: context,
                         icon: Icons.family_restroom_rounded,
@@ -77,6 +77,10 @@ class MorePage extends StatelessWidget {
                         title: 'Família',
                         subtitle: ctx.hasFamily
                             ? ctx.familyName ?? 'Sua Família'
+                            : invites > 0
+                            ? (invites == 1
+                                  ? '1 convite pendente'
+                                  : '$invites convites pendentes')
                             : 'Agenda compartilhada da família',
                         onTap: () => Get.toNamed(AppRoutes.family),
                       );
@@ -132,65 +136,58 @@ class MorePage extends StatelessWidget {
                             horizontal: 8,
                             vertical: 2,
                           ),
-                        decoration: BoxDecoration(
-                          color: Theme.of(context)
-                              .colorScheme
-                              .outline
-                              .withValues(alpha: 0.12),
-                          borderRadius: BorderRadius.circular(999),
-                        ),
-                        child: Row(
-                          mainAxisSize: MainAxisSize.min,
-                          children: [
-                            Icon(
-                              Icons.lock_outline,
-                              size: 14,
-                              color: Theme.of(context).colorScheme.outline,
-                            ),
-                            const SizedBox(width: 4),
-                            Text(
-                              'Premium',
-                              style: Theme.of(context)
-                                  .textTheme
-                                  .labelSmall
-                                  ?.copyWith(
-                                    color: Theme.of(context).colorScheme.outline,
-                                    fontWeight: FontWeight.w600,
-                                  ),
-                            ),
-                          ],
+                          decoration: BoxDecoration(
+                            color: Theme.of(
+                              context,
+                            ).colorScheme.outline.withValues(alpha: 0.12),
+                            borderRadius: BorderRadius.circular(999),
+                          ),
+                          child: Row(
+                            mainAxisSize: MainAxisSize.min,
+                            children: [
+                              Icon(
+                                Icons.lock_outline,
+                                size: 14,
+                                color: Theme.of(context).colorScheme.outline,
+                              ),
+                              const SizedBox(width: 4),
+                              Text(
+                                'Premium',
+                                style: Theme.of(context).textTheme.labelSmall
+                                    ?.copyWith(
+                                      color: Theme.of(
+                                        context,
+                                      ).colorScheme.outline,
+                                      fontWeight: FontWeight.w600,
+                                    ),
+                              ),
+                            ],
+                          ),
                         ),
                       ),
-                    ),
                     Text(
                       title,
                       style: Theme.of(context).textTheme.titleSmall?.copyWith(
-                            fontWeight: FontWeight.w600,
-                          ),
+                        fontWeight: FontWeight.w600,
+                      ),
                     ),
                     const SizedBox(height: 2),
                     Text(
                       subtitle,
                       style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                            color: Theme.of(context)
-                                .colorScheme
-                                .onSurfaceVariant,
-                          ),
+                        color: Theme.of(context).colorScheme.onSurfaceVariant,
+                      ),
                       maxLines: 2,
                       overflow: TextOverflow.ellipsis,
                     ),
                   ],
                 ),
               ),
-              Icon(
-                Icons.chevron_right,
-                size: 24,
-                color: iconColor,
-              ),
+              Icon(Icons.chevron_right, size: 24, color: iconColor),
             ],
+          ),
         ),
       ),
-    ),
     );
   }
 }
