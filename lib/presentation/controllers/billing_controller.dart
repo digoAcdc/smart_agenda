@@ -105,7 +105,13 @@ class BillingController extends GetxController {
         );
       } else {
         purchaseStatus.value = BillingPurchaseStatus.error;
-        errorMessage.value = 'Assinatura nao ativa. Status: ${result.status}';
+        errorMessage.value = switch (result.status) {
+          'expired' => 'Esta assinatura já venceu. Assine novamente para voltar ao Pro.',
+          'on_hold' || 'in_grace_period' =>
+            'Há um problema com o pagamento da assinatura. Confira no Google Play.',
+          'pending' => 'O pagamento ainda está pendente no Google Play.',
+          _ => 'Assinatura não está ativa (${result.status}).',
+        };
         debugPrint(
           '[subscription_revalidation_completed] isPremium=false status=${result.status} source=${result.source}',
         );
@@ -156,6 +162,12 @@ class BillingController extends GetxController {
       await _restoreWaiter!.future.timeout(const Duration(seconds: 8), onTimeout: () {
         debugPrint('[billing_restore_timeout] waited_ms=8000');
       });
+      // Sem assinatura ativa o Google nao devolve nada e o status ficaria em
+      // loading para sempre.
+      if (purchaseStatus.value == BillingPurchaseStatus.loading) {
+        purchaseStatus.value = BillingPurchaseStatus.idle;
+        errorMessage.value = 'Nenhuma assinatura ativa encontrada nesta conta do Google Play.';
+      }
       debugPrint('[billing_restore_completed] source=user_action');
     } catch (e) {
       debugPrint('[billing_restore_failed] source=user_action error=$e');
