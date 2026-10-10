@@ -35,6 +35,10 @@ class ClassScheduleDataSourceOrchestrator implements IClassScheduleDataSource {
       _thenSync(_local.renameSchedule(id, name));
 
   @override
+  Future<void> setBringItems(String scheduleId, Map<String, String> items) =>
+      _thenSync(_local.setBringItems(scheduleId, items));
+
+  @override
   Future<void> deleteSchedule(ClassSchedule schedule) =>
       _thenSync(_local.deleteSchedule(schedule));
 

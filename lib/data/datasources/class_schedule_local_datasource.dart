@@ -1,3 +1,5 @@
+import 'dart:convert';
+
 import 'package:drift/drift.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:uuid/uuid.dart';
@@ -63,6 +65,27 @@ class ClassScheduleLocalDataSource implements IClassScheduleDataSource {
       childId: row.childId.value,
       createdAt: now,
       updatedAt: now,
+    );
+  }
+
+  @override
+  Future<void> setBringItems(
+    String scheduleId,
+    Map<String, String> items,
+  ) async {
+    final clean = {
+      for (final e in items.entries)
+        if (e.key.trim().isNotEmpty && e.value.trim().isNotEmpty)
+          e.key.trim(): e.value.trim(),
+    };
+    await (_db.update(
+      _db.classSchedulesTable,
+    )..where((t) => t.id.equals(scheduleId))).write(
+      ClassSchedulesTableCompanion(
+        bringJson: Value(clean.isEmpty ? null : jsonEncode(clean)),
+        updatedAt: Value(DateTime.now()),
+        syncState: const Value('pending'),
+      ),
     );
   }
 
@@ -483,6 +506,7 @@ class ClassScheduleLocalDataSource implements IClassScheduleDataSource {
     name: row.name,
     familyId: row.familyId,
     childId: row.childId,
+    bringItems: decodeBringItems(row.bringJson),
     createdAt: row.createdAt,
     updatedAt: row.updatedAt,
   );
@@ -503,5 +527,20 @@ class ClassScheduleLocalDataSource implements IClassScheduleDataSource {
       createdAt: row.createdAt,
       updatedAt: row.updatedAt,
     );
+  }
+}
+
+/// bring_json -> mapa materia -> o que levar (ignora JSON invalido).
+Map<String, String> decodeBringItems(String? json) {
+  if (json == null || json.isEmpty) return const {};
+  try {
+    final raw = jsonDecode(json);
+    if (raw is! Map) return const {};
+    return {
+      for (final e in raw.entries)
+        if (e.value is String) e.key.toString(): e.value as String,
+    };
+  } catch (_) {
+    return const {};
   }
 }

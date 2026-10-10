@@ -645,6 +645,15 @@ class _TodayPageState extends State<TodayPage> {
                             : null,
                       ),
                     const SizedBox(height: 12),
+                    if (agendaController.upcomingSchoolWork.isNotEmpty) ...[
+                      _sectionTitle(context, 'Próximas provas e trabalhos'),
+                      const SizedBox(height: 8),
+                      _buildSchoolWorkStrip(
+                        context,
+                        agendaController.upcomingSchoolWork.toList(),
+                      ),
+                      const SizedBox(height: 12),
+                    ],
                     _sectionTitle(context, 'Próximos eventos'),
                     const SizedBox(height: 8),
                     // Filtro por grupo so quando ha grupos.
@@ -808,6 +817,12 @@ class _TodayPageState extends State<TodayPage> {
   /// Titulo com o icone de repeticao quando o evento se repete.
   InlineSpan _titleSpan(AgendaItem item) => TextSpan(
     children: [
+      // Prova/trabalho: "Prova de Matematica · titulo".
+      if (item.kind.isSchoolWork)
+        TextSpan(
+          text:
+              '${item.kind.label}${(item.schoolSubject ?? '').trim().isEmpty ? '' : ' de ${item.schoolSubject!.trim()}'} · ',
+        ),
       TextSpan(text: item.title),
       if (item.isRecurring)
         const WidgetSpan(
@@ -1042,6 +1057,85 @@ class _TodayPageState extends State<TodayPage> {
               ),
           ],
         ),
+      ),
+    );
+  }
+
+  /// Provas e trabalhos com contagem regressiva ("em 3 dias").
+  Widget _buildSchoolWorkStrip(BuildContext context, List<AgendaItem> items) {
+    final theme = Theme.of(context);
+    final scheme = theme.colorScheme;
+    final today = DateUtilsEx.startOfDay(DateTime.now());
+    return SizedBox(
+      height: 92,
+      child: ListView.separated(
+        scrollDirection: Axis.horizontal,
+        itemCount: items.length,
+        separatorBuilder: (_, _) => const SizedBox(width: 8),
+        itemBuilder: (context, i) {
+          final item = items[i];
+          final days = DateUtilsEx.startOfDay(
+            item.startAt,
+          ).difference(today).inDays;
+          final when = switch (days) {
+            0 => 'hoje',
+            1 => 'amanhã',
+            _ => 'em $days dias',
+          };
+          final urgent = days <= 2;
+          final color = urgent ? context.semanticColors.danger : scheme.primary;
+          final subject = (item.schoolSubject ?? '').trim();
+          return InkWell(
+            borderRadius: BorderRadius.circular(14),
+            onTap: () => Get.toNamed(AppRoutes.eventDetail, arguments: item),
+            child: Container(
+              width: 150,
+              padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 8),
+              decoration: BoxDecoration(
+                color: scheme.surface,
+                borderRadius: BorderRadius.circular(14),
+                border: Border.all(color: color.withValues(alpha: 0.45)),
+              ),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: [
+                  Text(
+                    '${item.kind.label} · $when',
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
+                    style: theme.textTheme.labelSmall?.copyWith(
+                      color: color,
+                      fontWeight: FontWeight.w800,
+                    ),
+                  ),
+                  const SizedBox(height: 4),
+                  Text(
+                    subject.isNotEmpty ? subject : item.title,
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
+                    style: theme.textTheme.titleSmall?.copyWith(
+                      fontWeight: FontWeight.w700,
+                    ),
+                  ),
+                  Text(
+                    subject.isNotEmpty
+                        ? item.title
+                        : DateFormat(
+                            'EEE, dd/MM',
+                            'pt_BR',
+                          ).format(item.startAt),
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
+                    style: theme.textTheme.bodySmall?.copyWith(
+                      color: scheme.onSurfaceVariant,
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          );
+        },
       ),
     );
   }

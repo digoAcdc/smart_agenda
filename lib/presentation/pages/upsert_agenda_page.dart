@@ -22,6 +22,7 @@ import '../../domain/repositories/i_notification_service.dart';
 import '../../domain/repositories/i_plan_service.dart';
 import '../controllers/agenda_controller.dart';
 import '../controllers/billing_controller.dart';
+import '../controllers/class_schedule_controller.dart';
 import '../controllers/groups_controller.dart';
 
 class UpsertAgendaPage extends StatefulWidget {
@@ -34,6 +35,7 @@ class UpsertAgendaPage extends StatefulWidget {
 class _UpsertAgendaPageState extends State<UpsertAgendaPage> {
   final _formKey = GlobalKey<FormState>();
   final titleController = TextEditingController();
+  final schoolSubjectController = TextEditingController();
   final descriptionController = TextEditingController();
   final imagePicker = ImagePicker();
 
@@ -105,6 +107,7 @@ class _UpsertAgendaPageState extends State<UpsertAgendaPage> {
                 .toList();
       familyId = arg.familyId;
       kind = arg.kind;
+      schoolSubjectController.text = arg.schoolSubject ?? '';
       subjectType = arg.subjectType;
       subjectChildId = arg.subjectChildId;
       subjectUserId = arg.subjectUserId;
@@ -908,10 +911,10 @@ class _UpsertAgendaPageState extends State<UpsertAgendaPage> {
                             Wrap(
                               spacing: 8,
                               runSpacing: 8,
-                              children: [5, 10, 15, 30, 60]
+                              children: [5, 10, 15, 30, 60, 1440, 2880]
                                   .map(
                                     (e) => ChoiceChip(
-                                      label: Text('$e min antes'),
+                                      label: Text(_reminderLabel(e)),
                                       selected: reminderMinutes == e,
                                       selectedColor: accentGreen.withValues(
                                         alpha: 0.2,
@@ -1044,6 +1047,11 @@ class _UpsertAgendaPageState extends State<UpsertAgendaPage> {
       attachments: base.attachments,
       familyId: familyId,
       kind: kind,
+      schoolSubject: kind.isSchoolWork
+          ? (schoolSubjectController.text.trim().isEmpty
+                ? null
+                : schoolSubjectController.text.trim())
+          : null,
       subjectType: isFamily ? subjectType : AgendaSubjectType.none,
       subjectChildId: isFamily && subjectType == AgendaSubjectType.child
           ? subjectChildId
@@ -1063,6 +1071,48 @@ class _UpsertAgendaPageState extends State<UpsertAgendaPage> {
       createdAt: base.createdAt,
       updatedAt: base.updatedAt,
       deletedAt: base.deletedAt,
+    );
+  }
+
+  String _reminderLabel(int minutes) => switch (minutes) {
+    60 => '1 h antes',
+    1440 => '1 dia antes',
+    2880 => '2 dias antes',
+    _ => '$minutes min antes',
+  };
+
+  /// Materia da prova/trabalho, com sugestoes das grades de aula.
+  Widget _schoolSubjectField(BuildContext context) {
+    final subjects = Get.isRegistered<ClassScheduleController>()
+        ? (Get.find<ClassScheduleController>().allSlots
+              .map((s) => s.subject?.trim() ?? '')
+              .where((s) => s.isNotEmpty)
+              .toSet()
+              .toList()
+            ..sort())
+        : <String>[];
+    return Autocomplete<String>(
+      initialValue: TextEditingValue(text: schoolSubjectController.text),
+      optionsBuilder: (value) {
+        final q = value.text.trim().toLowerCase();
+        return q.isEmpty
+            ? subjects
+            : subjects.where((s) => s.toLowerCase().contains(q));
+      },
+      onSelected: (v) => schoolSubjectController.text = v,
+      fieldViewBuilder: (context, controller, focusNode, onSubmit) {
+        return TextField(
+          controller: controller,
+          focusNode: focusNode,
+          textCapitalization: TextCapitalization.sentences,
+          onChanged: (v) => schoolSubjectController.text = v,
+          decoration: const InputDecoration(
+            labelText: 'Matéria',
+            hintText: 'Ex.: Matemática',
+            prefixIcon: Icon(Icons.menu_book_outlined),
+          ),
+        );
+      },
     );
   }
 
@@ -1095,22 +1145,33 @@ class _UpsertAgendaPageState extends State<UpsertAgendaPage> {
               for (final k in AgendaItemKind.values)
                 _groupTile(
                   context,
-                  title: switch (k) {
-                    AgendaItemKind.event => 'Compromisso',
-                    AgendaItemKind.task => 'Tarefa',
-                    AgendaItemKind.reminder => 'Lembrete',
-                  },
+                  title: k.label,
                   icon: switch (k) {
                     AgendaItemKind.event => Icons.event_rounded,
                     AgendaItemKind.task => Icons.task_alt_rounded,
                     AgendaItemKind.reminder => Icons.notifications_none_rounded,
+                    AgendaItemKind.exam => Icons.school_rounded,
+                    AgendaItemKind.assignment => Icons.assignment_rounded,
                   },
                   perRow: 3,
                   selected: kind == k,
-                  onTap: () => setState(() => kind = k),
+                  onTap: () => setState(() {
+                    kind = k;
+                    // Prova/trabalho novo: lembrete para estudar 2 dias antes.
+                    if (k.isSchoolWork &&
+                        editingItem == null &&
+                        !reminderEnabled) {
+                      reminderEnabled = true;
+                      reminderMinutes = 2 * 24 * 60;
+                    }
+                  }),
                 ),
             ],
           ),
+          if (kind.isSchoolWork) ...[
+            const SizedBox(height: 12),
+            _schoolSubjectField(context),
+          ],
           if (editingItem == null && ctx.hasFamily && !ctx.canEditAgenda) ...[
             const SizedBox(height: 12),
             Row(

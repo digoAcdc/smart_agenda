@@ -47,6 +47,7 @@ AgendaItem agendaItemFromSupabase(
       row['kind'] as String?,
       AgendaItemKind.event,
     ),
+    schoolSubject: row['school_subject'] as String?,
     subjectType: enumByName(
       AgendaSubjectType.values,
       row['subject_type'] as String?,
@@ -112,6 +113,7 @@ Map<String, dynamic> agendaItemToSupabase(AgendaItem item, String userId) {
     'family_id': item.familyId,
     'owner_user_id': isFamily ? null : userId,
     'kind': item.kind.name,
+    'school_subject': item.schoolSubject,
     'title': item.title,
     'description': item.description,
     'start_at': item.startAt.toUtc().toIso8601String(),

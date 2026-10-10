@@ -174,6 +174,14 @@ class EventDetailPage extends StatelessWidget {
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
+                  if (arg.kind.isSchoolWork)
+                    Text(
+                      '${arg.kind.label}${(arg.schoolSubject ?? '').trim().isEmpty ? '' : ' de ${arg.schoolSubject!.trim()}'}',
+                      style: Theme.of(context).textTheme.labelLarge?.copyWith(
+                        color: Theme.of(context).colorScheme.primary,
+                        fontWeight: FontWeight.w800,
+                      ),
+                    ),
                   Text(
                     arg.title,
                     style: Theme.of(context).textTheme.headlineSmall?.copyWith(

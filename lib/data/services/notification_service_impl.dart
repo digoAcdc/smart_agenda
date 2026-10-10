@@ -255,6 +255,48 @@ class NotificationServiceImpl implements INotificationService {
   }
 
   @override
+  Future<Result<void>> scheduleAt(
+    int id,
+    String title,
+    String body,
+    DateTime at,
+  ) async {
+    try {
+      if (!at.isAfter(DateTime.now())) return Result.success(null);
+      final details = const NotificationDetails(
+        android: AndroidNotificationDetails(
+          AppConstants.notificationChannelId,
+          AppConstants.notificationChannelName,
+          importance: Importance.high,
+          priority: Priority.high,
+        ),
+      );
+      // Horario aproximado basta (aviso das 20h): nao exige alarme exato.
+      await _notificationsPlugin.zonedSchedule(
+        id,
+        title,
+        body,
+        tz.TZDateTime.from(at, tz.local),
+        details,
+        androidScheduleMode: AndroidScheduleMode.inexactAllowWhileIdle,
+      );
+      return Result.success(null);
+    } catch (e) {
+      return Result.failure('Erro ao agendar aviso: $e');
+    }
+  }
+
+  @override
+  Future<Result<void>> cancelById(int id) async {
+    try {
+      await _notificationsPlugin.cancel(id);
+      return Result.success(null);
+    } catch (e) {
+      return Result.failure('Erro ao cancelar aviso: $e');
+    }
+  }
+
+  @override
   Future<Result<void>> scheduleDailySummary() async {
     return Result.success(null);
   }

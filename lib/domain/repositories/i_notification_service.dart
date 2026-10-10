@@ -10,6 +10,15 @@ abstract class INotificationService {
   Future<Result<void>> cancelForItem(AgendaItem item);
   Future<Result<void>> scheduleDailySummary();
 
+  /// Aviso local simples numa data (ex.: Mochila de amanha).
+  Future<Result<void>> scheduleAt(
+    int id,
+    String title,
+    String body,
+    DateTime at,
+  );
+  Future<Result<void>> cancelById(int id);
+
   /// Exibe notificação push imediata (ex: FCM em foreground).
   Future<Result<void>> showPush(String title, String body, {String? payload});
 }

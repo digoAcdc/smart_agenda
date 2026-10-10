@@ -37,10 +37,11 @@ no emulador antes do commit. Marque `[x]` ao concluir.
 
 ## Fase 3 — Escola
 
-- [ ] **Provas e trabalhos**: novos tipos ligados a matéria/filho, bloco
-  "Próximas provas" com contagem regressiva, lembrete 2 dias antes.
-- [ ] **Mochila de amanhã**: campo "o que levar" por matéria na grade; aviso
-  local às 20h com o que levar no dia seguinte.
+- [x] **Provas e trabalhos** — build 40. Tipos Prova/Trabalho com matéria
+  (`school_subject`, sugestões da grade), "Próximas provas e trabalhos" na
+  Início com contagem regressiva, lembrete 2 dias antes.
+- [x] **Mochila de amanhã** — build 40. "O que levar" por matéria na grade
+  (`bring_json`); aviso local às 20h das próximas 7 noites; opção em Notificações.
 
 ## Fase 4 — Assinaturas
 

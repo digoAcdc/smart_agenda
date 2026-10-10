@@ -51,6 +51,9 @@ class AgendaController extends GetxController {
 
   /// Proximos eventos a partir de agora, mesmo que distantes.
   final RxList<AgendaItem> upcomingItems = <AgendaItem>[].obs;
+
+  /// Provas e trabalhos pendentes dos proximos 45 dias (bloco da Inicio).
+  final RxList<AgendaItem> upcomingSchoolWork = <AgendaItem>[].obs;
   static const _upcomingHorizon = Duration(days: 365);
   static const _upcomingLimit = 15;
   final RxSet<DateTime> monthMarkers = <DateTime>{}.obs;
@@ -71,6 +74,7 @@ class AgendaController extends GetxController {
     WidgetsBinding.instance.addPostFrameCallback((_) async {
       loadToday();
       await loadUpcoming();
+      await loadUpcomingSchoolWork();
       await _scheduleUpcomingOccurrenceReminders();
     });
     // Alteracoes de outros membros/dispositivos chegam pelo sync.
@@ -118,6 +122,20 @@ class AgendaController extends GetxController {
             .toList()
           ..sort((a, b) => a.startAt.compareTo(b.startAt));
     upcomingItems.assignAll(items.take(_upcomingLimit));
+  }
+
+  Future<void> loadUpcomingSchoolWork() async {
+    final today = DateUtilsEx.startOfDay(DateTime.now());
+    final result = await getAgendaItemsByRange(
+      today,
+      today.add(const Duration(days: 45)),
+    );
+    if (!result.isSuccess) return;
+    upcomingSchoolWork.assignAll(
+      (result.data ?? []).where(
+        (e) => e.kind.isSchoolWork && e.status == AgendaStatus.pending,
+      ),
+    );
   }
 
   Future<void> loadWeek(
@@ -306,6 +324,7 @@ class AgendaController extends GetxController {
     final now = DateTime.now();
     await loadToday(silent: true);
     await loadUpcoming();
+    await loadUpcomingSchoolWork();
     await loadByDay(selectedDate.value);
     final week =
         _shownWeek ??

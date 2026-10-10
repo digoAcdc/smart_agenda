@@ -7,6 +7,7 @@ class ClassSchedule extends Equatable {
     required this.name,
     this.familyId,
     this.childId,
+    this.bringItems = const {},
     required this.createdAt,
     required this.updatedAt,
   });
@@ -15,6 +16,9 @@ class ClassSchedule extends Equatable {
   final String name;
   final String? familyId;
   final String? childId;
+
+  /// "O que levar" por materia (Mochila de amanha).
+  final Map<String, String> bringItems;
   final DateTime createdAt;
   final DateTime updatedAt;
 
@@ -26,6 +30,7 @@ class ClassSchedule extends Equatable {
     name,
     familyId,
     childId,
+    bringItems,
     createdAt,
     updatedAt,
   ];

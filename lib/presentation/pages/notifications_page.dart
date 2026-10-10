@@ -7,6 +7,7 @@ import '../../core/routes/app_routes.dart';
 import '../controllers/auth_controller.dart';
 import '../controllers/notifications_controller.dart';
 import '../../domain/repositories/i_family_service.dart';
+import '../services/backpack_reminder_service.dart';
 import '../widgets/ui_primitives.dart';
 
 class NotificationsPage extends StatefulWidget {
@@ -104,6 +105,7 @@ class _NotificationsPageState extends State<NotificationsPage> {
               _buildSystemNotificationSection(),
               _buildPushPreferencesSection(context, controller, isPremium),
               _buildFamilyAlertsSection(context, controller),
+              _buildBackpackSection(),
             ],
           );
         }),
@@ -379,5 +381,26 @@ Widget _buildFamilyAlertsSection(
             : null,
       );
     }),
+  );
+}
+
+/// Mochila de amanha: aviso local (funciona sem conta e no plano Gratis).
+Widget _buildBackpackSection() {
+  if (!Get.isRegistered<BackpackReminderService>()) {
+    return const SizedBox.shrink();
+  }
+  final backpack = Get.find<BackpackReminderService>();
+  return AppSurfaceCard(
+    child: Obx(
+      () => SwitchListTile(
+        contentPadding: EdgeInsets.zero,
+        title: const Text('Mochila de amanhã'),
+        subtitle: const Text(
+          'Às 20h, o que levar no dia seguinte (cadastre em Aulas, em cada matéria).',
+        ),
+        value: backpack.enabled.value,
+        onChanged: backpack.setEnabled,
+      ),
+    ),
   );
 }

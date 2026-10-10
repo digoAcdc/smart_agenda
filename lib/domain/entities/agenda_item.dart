@@ -22,6 +22,7 @@ class AgendaItem extends Equatable {
     this.attachments = const [],
     this.familyId,
     this.kind = AgendaItemKind.event,
+    this.schoolSubject,
     this.subjectType = AgendaSubjectType.none,
     this.subjectChildId,
     this.subjectUserId,
@@ -63,6 +64,9 @@ class AgendaItem extends Equatable {
   final String? familyId;
   final AgendaItemKind kind;
 
+  /// Materia da prova/trabalho (ex.: "Matemática").
+  final String? schoolSubject;
+
   /// De quem e o item (familia toda, filho ou membro). So vale na familia.
   final AgendaSubjectType subjectType;
   final String? subjectChildId;
@@ -101,6 +105,7 @@ class AgendaItem extends Equatable {
     List<AttachmentRef>? attachments,
     String? familyId,
     AgendaItemKind? kind,
+    String? schoolSubject,
     AgendaSubjectType? subjectType,
     String? subjectChildId,
     String? subjectUserId,
@@ -133,6 +138,7 @@ class AgendaItem extends Equatable {
       attachments: attachments ?? this.attachments,
       familyId: familyId ?? this.familyId,
       kind: kind ?? this.kind,
+      schoolSubject: schoolSubject ?? this.schoolSubject,
       subjectType: subjectType ?? this.subjectType,
       subjectChildId: subjectChildId ?? this.subjectChildId,
       subjectUserId: subjectUserId ?? this.subjectUserId,
@@ -167,6 +173,7 @@ class AgendaItem extends Equatable {
     attachments,
     familyId,
     kind,
+    schoolSubject,
     subjectType,
     subjectChildId,
     subjectUserId,

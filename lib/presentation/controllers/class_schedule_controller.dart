@@ -1,3 +1,5 @@
+import '../services/backpack_reminder_service.dart';
+import 'package:flutter/foundation.dart';
 import 'dart:async';
 
 import 'package:flutter/widgets.dart';
@@ -90,6 +92,32 @@ class ClassScheduleController extends GetxController {
     if (selected.value?.id == target?.id) slots.assignAll(data);
     allSlots.assignAll(await _dataSource.getAllSlots());
     loading.value = false;
+    // Grade mudou: refaz os avisos da Mochila de amanha.
+    if (Get.isRegistered<BackpackReminderService>()) {
+      unawaited(Get.find<BackpackReminderService>().reschedule());
+    }
+  }
+
+  /// "O que levar" de [subject] na grade aberta.
+  String? bringFor(String? subject) {
+    final key = subject?.trim();
+    if (key == null || key.isEmpty) return null;
+    return selected.value?.bringItems[key];
+  }
+
+  Future<void> setBringFor(String subject, String text) async {
+    final current = selected.value;
+    final key = subject.trim();
+    if (current == null || key.isEmpty) return;
+    final items = {...current.bringItems};
+    if (text.trim().isEmpty) {
+      items.remove(key);
+    } else {
+      items[key] = text.trim();
+    }
+    if (mapEquals(items, current.bringItems)) return;
+    await _dataSource.setBringItems(current.id, items);
+    await load(silent: true);
   }
 
   Future<void> select(ClassSchedule schedule) async {

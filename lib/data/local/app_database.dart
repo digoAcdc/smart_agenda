@@ -24,6 +24,8 @@ class AgendaItemsTable extends Table {
   // Familia dona do item (nulo = agenda pessoal).
   TextColumn get familyId => text().nullable()();
   TextColumn get kind => text().withDefault(const Constant('event'))();
+  // Materia da prova/trabalho (v10).
+  TextColumn get schoolSubject => text().nullable()();
   TextColumn get subjectType => text().withDefault(const Constant('none'))();
   TextColumn get subjectChildId => text().nullable()();
   TextColumn get subjectUserId => text().nullable()();
@@ -155,6 +157,8 @@ class ClassSchedulesTable extends Table {
   TextColumn get name => text()();
   TextColumn get familyId => text().nullable()();
   TextColumn get childId => text().nullable()();
+  // "O que levar" por materia, em JSON (v10).
+  TextColumn get bringJson => text().nullable()();
   TextColumn get syncState => text().withDefault(const Constant('pending'))();
   DateTimeColumn get createdAt => dateTime()();
   DateTimeColumn get updatedAt => dateTime()();
@@ -182,7 +186,7 @@ class AppDatabase extends _$AppDatabase {
   AppDatabase([QueryExecutor? executor]) : super(executor ?? _openConnection());
 
   @override
-  int get schemaVersion => 9;
+  int get schemaVersion => 10;
 
   @override
   MigrationStrategy get migration => MigrationStrategy(
@@ -254,6 +258,10 @@ class AppDatabase extends _$AppDatabase {
           classScheduleSlotsTable.scheduleId,
         );
         await migrateSlotsToNamedSchedules();
+      }
+      if (from < 10) {
+        await m.addColumn(agendaItemsTable, agendaItemsTable.schoolSubject);
+        await m.addColumn(classSchedulesTable, classSchedulesTable.bringJson);
       }
     },
   );

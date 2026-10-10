@@ -871,6 +871,10 @@ class ClassSchedulePage extends GetView<ClassScheduleController> {
     final items = <Widget>[];
     if (cell.subject?.isNotEmpty == true) {
       items.add(_detailRow(label: 'Matéria', value: cell.subject!));
+      final bring = controller.bringFor(cell.subject);
+      if (bring != null) {
+        items.add(_detailRow(label: '🎒 O que levar', value: bring));
+      }
     }
     if (cell.professorName?.isNotEmpty == true) {
       items.add(_detailRow(label: 'Professor', value: cell.professorName!));
@@ -949,6 +953,9 @@ class ClassSchedulePage extends GetView<ClassScheduleController> {
     final phoneController = TextEditingController(
       text: formatPhoneForDisplay(cell.professorPhone),
     );
+    final bringController = TextEditingController(
+      text: controller.bringFor(cell.subject) ?? '',
+    );
 
     void onDropdownChanged(String? value) {
       dropdownValue = value;
@@ -969,6 +976,10 @@ class ClassSchedulePage extends GetView<ClassScheduleController> {
         emailController.text = slot?.professorEmail ?? '';
         phoneController.text = formatPhoneForDisplay(slot?.professorPhone);
       }
+      // "O que levar" e da materia: acompanha a escolha.
+      bringController.text = value == null || value == _novaMateriaValue
+          ? ''
+          : (controller.bringFor(value) ?? '');
     }
 
     final formKey = GlobalKey<FormState>();
@@ -1075,6 +1086,23 @@ class ClassSchedulePage extends GetView<ClassScheduleController> {
                       inputFormatters: phoneInputFormatters,
                       validator: (v) => phoneValidator(v),
                     ),
+                    const SizedBox(height: 8),
+                    TextFormField(
+                      controller: bringController,
+                      textCapitalization: TextCapitalization.sentences,
+                      decoration: const InputDecoration(
+                        labelText: '🎒 O que levar (opcional)',
+                        hintText: 'Ex.: tênis e uniforme',
+                        helperText:
+                            'Vale para todas as aulas desta matéria. Aviso às 20h da véspera.',
+                        helperMaxLines: 2,
+                        isDense: true,
+                        contentPadding: EdgeInsets.symmetric(
+                          horizontal: 12,
+                          vertical: 8,
+                        ),
+                      ),
+                    ),
                   ],
                 );
               },
@@ -1105,6 +1133,9 @@ class ClassSchedulePage extends GetView<ClassScheduleController> {
                 professorEmail: emailController.text,
                 professorPhone: phone.isEmpty ? null : phone,
               );
+              if (subject.trim().isNotEmpty) {
+                await controller.setBringFor(subject, bringController.text);
+              }
               Get.back();
             },
             child: const Text('Salvar'),
