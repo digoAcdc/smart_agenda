@@ -29,5 +29,6 @@ test("assetlinks com as digitais informadas", () => {
   assert.equal(entry.target.package_name, "com.digo.smartagenda");
   assert.ok(entry.target.sha256_cert_fingerprints.includes("AA:BB"));
   assert.ok(entry.target.sha256_cert_fingerprints.includes("CC:DD"));
-  assert.ok(entry.target.sha256_cert_fingerprints[0].startsWith("4B:75"));
+  assert.ok(entry.target.sha256_cert_fingerprints[0].startsWith("6B:0B"));
+  assert.ok(entry.target.sha256_cert_fingerprints[1].startsWith("4B:75"));
 });

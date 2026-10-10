@@ -33,8 +33,7 @@ no emulador antes do commit. Marque `[x]` ao concluir.
   (sem pg_net). Edições seguidas viram um aviso só; opção em Notificações.
 - [x] **Convite pelo WhatsApp com link** `rbarbosa.tech/convite/<token>` — build 39
   (página na billing-api, smartagenda:// e App Links, install referrer do Play).
-  Pendente: digital SHA-256 da chave de assinatura do Play em `invite.js`
-  para o link abrir o app direto (sem passar pela página).
+  Digitais SHA-256 (assinatura do Play + upload) em `invite.js`.
 
 ## Fase 3 — Escola
 

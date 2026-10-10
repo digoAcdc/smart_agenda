@@ -7,6 +7,9 @@ const PACKAGE = "com.digo.smartagenda";
 // Digitais SHA-256 (publicas) dos certificados do app: chave de upload e chave
 // de assinatura do Google Play (Play Console > Integridade do app).
 const APP_CERT_SHA256 = [
+  // Assinatura do Google Play (apps instalados pela loja).
+  "6B:0B:ED:78:D8:66:79:D8:CE:D8:DF:8C:B7:2A:E3:80:87:1B:70:8B:30:32:0A:86:18:79:91:28:39:99:7F:DF",
+  // Chave de upload (builds instalados direto, ex.: testes).
   "4B:75:58:24:8C:D3:5C:AD:2C:D4:42:A6:73:2E:E7:C0:F0:09:33:CC:1C:95:22:59:1C:B1:91:BA:DC:F8:0C:0F",
 ];
 const TOKEN_RE = /^[a-z2-9]{8,64}$/;
