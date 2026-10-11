@@ -250,6 +250,7 @@ class ClassSchedulePage extends GetView<ClassScheduleController> {
               ],
             ),
           ),
+          _backpackTip(context),
           Expanded(
             child: ListView(
               padding: const EdgeInsets.fromLTRB(12, 4, 12, 120),
@@ -655,17 +656,132 @@ class ClassSchedulePage extends GetView<ClassScheduleController> {
               ? palette.scheduleCellEmpty
               : palette.scheduleCellFilled,
         ),
-        child: Text(
-          subject?.isNotEmpty == true ? subject! : '+ adicionar',
-          textAlign: TextAlign.center,
-          style: Theme.of(context).textTheme.bodySmall?.copyWith(
-            fontWeight: subject?.isNotEmpty == true
-                ? FontWeight.w600
-                : FontWeight.w400,
-          ),
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Text(
+              subject?.isNotEmpty == true ? subject! : '+ adicionar',
+              textAlign: TextAlign.center,
+              style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                fontWeight: subject?.isNotEmpty == true
+                    ? FontWeight.w600
+                    : FontWeight.w400,
+              ),
+            ),
+            // Mochila: o que levar nesta materia, a vista na grade.
+            if (controller.bringFor(subject) case final bring?) ...[
+              const SizedBox(height: 2),
+              Text(
+                '🎒 $bring',
+                textAlign: TextAlign.center,
+                maxLines: 1,
+                overflow: TextOverflow.ellipsis,
+                style: Theme.of(context).textTheme.labelSmall?.copyWith(
+                  color: Theme.of(context).colorScheme.onSurfaceVariant,
+                ),
+              ),
+            ],
+          ],
         ),
       ),
     );
+  }
+
+  /// Dica na tela Aulas enquanto nenhuma materia tem "o que levar".
+  Widget _backpackTip(BuildContext context) {
+    final schedule = controller.selected.value;
+    if (!_canEdit ||
+        schedule == null ||
+        schedule.bringItems.isNotEmpty ||
+        controller.backpackTipDismissed.value) {
+      return const SizedBox.shrink();
+    }
+    final theme = Theme.of(context);
+    return Container(
+      margin: const EdgeInsets.fromLTRB(12, 0, 12, 10),
+      padding: const EdgeInsets.fromLTRB(12, 10, 4, 10),
+      decoration: BoxDecoration(
+        color: theme.colorScheme.primaryContainer.withValues(alpha: 0.6),
+        borderRadius: BorderRadius.circular(14),
+      ),
+      child: Row(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          const Text('🎒', style: TextStyle(fontSize: 22)),
+          const SizedBox(width: 10),
+          Expanded(
+            child: Text.rich(
+              TextSpan(
+                children: [
+                  const TextSpan(
+                    text: 'Mochila de amanhã\n',
+                    style: TextStyle(fontWeight: FontWeight.w700),
+                  ),
+                  TextSpan(
+                    text:
+                        'Toque numa matéria e diga o que levar (ex.: tênis na '
+                        'Ed. Física). Às 20h da véspera você recebe o lembrete.',
+                    style: theme.textTheme.bodySmall,
+                  ),
+                ],
+              ),
+            ),
+          ),
+          IconButton(
+            tooltip: 'Fechar dica',
+            visualDensity: VisualDensity.compact,
+            onPressed: controller.dismissBackpackTip,
+            icon: const Icon(Icons.close_rounded, size: 18),
+          ),
+        ],
+      ),
+    );
+  }
+
+  /// Atalho: so o "o que levar" da materia, sem abrir a edicao completa.
+  Future<void> _openBringDialog(BuildContext context, String subject) async {
+    final textController = TextEditingController(
+      text: controller.bringFor(subject) ?? '',
+    );
+    final save = await Get.dialog<bool>(
+      AlertDialog(
+        title: Text('🎒 O que levar em $subject'),
+        content: Column(
+          mainAxisSize: MainAxisSize.min,
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            TextField(
+              controller: textController,
+              autofocus: true,
+              textCapitalization: TextCapitalization.sentences,
+              decoration: const InputDecoration(
+                hintText: 'Ex.: tênis e uniforme',
+              ),
+            ),
+            const SizedBox(height: 8),
+            Text(
+              'Vale para todas as aulas de $subject. Às 20h da véspera você '
+              'recebe o lembrete do que colocar na mochila.',
+              style: Theme.of(context).textTheme.bodySmall,
+            ),
+          ],
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Get.back(result: false),
+            child: const Text('Cancelar'),
+          ),
+          FilledButton(
+            style: FilledButton.styleFrom(minimumSize: const Size(0, 44)),
+            onPressed: () => Get.back(result: true),
+            child: const Text('Salvar'),
+          ),
+        ],
+      ),
+    );
+    if (save == true) {
+      await controller.setBringFor(subject, textController.text);
+    }
   }
 
   /// Troca o horario de uma linha (todos os dias).
@@ -902,8 +1018,26 @@ class ClassSchedulePage extends GetView<ClassScheduleController> {
         ),
         content: Column(
           mainAxisSize: MainAxisSize.min,
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: items,
+          crossAxisAlignment: CrossAxisAlignment.stretch,
+          children: [
+            ...items,
+            // Atalho da Mochila de amanha.
+            if (_canEdit && cell.subject?.isNotEmpty == true) ...[
+              const SizedBox(height: 8),
+              OutlinedButton(
+                style: OutlinedButton.styleFrom(minimumSize: const Size(0, 44)),
+                onPressed: () {
+                  Get.back();
+                  _openBringDialog(context, cell.subject!);
+                },
+                child: Text(
+                  controller.bringFor(cell.subject) == null
+                      ? '🎒 Dizer o que levar na mochila'
+                      : '🎒 Mudar o que levar',
+                ),
+              ),
+            ],
+          ],
         ),
         actions: [
           TextButton(onPressed: Get.back, child: const Text('Fechar')),

@@ -23,6 +23,7 @@ import '../utils/recurring_scope_prompt.dart';
 import '../../domain/repositories/i_sync_service.dart';
 import '../widgets/family_invite_banner.dart';
 import '../widgets/native_ad_card.dart';
+import '../services/backpack_reminder_service.dart';
 
 enum AgendaHomeViewMode { day, week, month }
 
@@ -645,6 +646,11 @@ class _TodayPageState extends State<TodayPage> {
                             : null,
                       ),
                     const SizedBox(height: 12),
+                    // Mochila de amanha: o que levar (cadastrado em Aulas).
+                    if (_backpackTomorrow() case final bring?) ...[
+                      _buildBackpackCard(context, bring),
+                      const SizedBox(height: 12),
+                    ],
                     if (agendaController.upcomingSchoolWork.isNotEmpty) ...[
                       _sectionTitle(context, 'Próximas provas e trabalhos'),
                       const SizedBox(height: 8),
@@ -1057,6 +1063,43 @@ class _TodayPageState extends State<TodayPage> {
               ),
           ],
         ),
+      ),
+    );
+  }
+
+  String? _backpackTomorrow() => Get.isRegistered<BackpackReminderService>()
+      ? Get.find<BackpackReminderService>().tomorrowSummary()
+      : null;
+
+  Widget _buildBackpackCard(BuildContext context, String bring) {
+    final theme = Theme.of(context);
+    return Container(
+      padding: const EdgeInsets.all(14),
+      decoration: BoxDecoration(
+        color: theme.colorScheme.primaryContainer.withValues(alpha: 0.6),
+        borderRadius: BorderRadius.circular(18),
+      ),
+      child: Row(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          const Text('🎒', style: TextStyle(fontSize: 24)),
+          const SizedBox(width: 10),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  'Mochila de amanhã',
+                  style: theme.textTheme.titleSmall?.copyWith(
+                    fontWeight: FontWeight.w800,
+                  ),
+                ),
+                const SizedBox(height: 2),
+                Text(bring, style: theme.textTheme.bodyMedium),
+              ],
+            ),
+          ),
+        ],
       ),
     );
   }

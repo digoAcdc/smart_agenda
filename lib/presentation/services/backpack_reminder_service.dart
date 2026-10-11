@@ -45,6 +45,22 @@ class BackpackReminderService extends GetxService {
     return family?.childById(schedule.childId)?.name ?? schedule.name;
   }
 
+  /// O que levar amanha (para o quadro da Inicio). Nulo se nada cadastrado.
+  String? tomorrowSummary() {
+    if (!Get.isRegistered<ClassScheduleController>()) return null;
+    final schedules = Get.find<ClassScheduleController>();
+    final now = DateTime.now();
+    final plans = buildBackpackPlans(
+      schedules: schedules.schedules.toList(),
+      slots: schedules.allSlots.toList(),
+      // Meia-noite de hoje: o "aviso de hoje a noite" e o de amanha.
+      now: DateTime(now.year, now.month, now.day),
+      ownerLabel: _ownerLabel,
+      days: 1,
+    );
+    return plans.isEmpty ? null : plans.first.body;
+  }
+
   Future<void> reschedule() async {
     if (!Get.isRegistered<INotificationService>() ||
         !Get.isRegistered<ClassScheduleController>()) {
