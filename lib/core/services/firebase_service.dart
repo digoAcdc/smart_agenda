@@ -1,4 +1,4 @@
-import 'dart:io';
+import 'dart:async';
 
 import 'package:firebase_analytics/firebase_analytics.dart';
 import 'package:firebase_core/firebase_core.dart';
@@ -30,13 +30,19 @@ class FirebaseService {
   FirebaseMessaging? get messaging => _messaging;
   bool get isInitialized => _initialized;
 
+  /// Limite pras chamadas que dependem do Google Play Services ou da rede.
+  /// Sem isso, em aparelho com Play Services desatualizado ou sem internet,
+  /// `getToken()` fica pendurado — e quem esperava por ele (a abertura do
+  /// app, o login, o sair) fica parado junto.
+  static const _timeout = Duration(seconds: 10);
+
   /// Inicializa Firebase. Retorna true se configurado com sucesso.
   static Future<bool> initialize() async {
     if (instance._initialized) return true;
     try {
       await Firebase.initializeApp(
         options: DefaultFirebaseOptions.currentPlatform,
-      );
+      ).timeout(_timeout);
       instance._analytics = FirebaseAnalytics.instance;
       instance._messaging = FirebaseMessaging.instance;
       FirebaseMessaging.onBackgroundMessage(
@@ -64,22 +70,25 @@ class FirebaseService {
       FirebaseMessaging.onMessageOpenedApp.listen(onMessageOpenedApp);
     }
 
-    final settings = await messaging.requestPermission(
-      alert: true,
-      badge: true,
-      sound: true,
-    );
-    if (settings.authorizationStatus == AuthorizationStatus.denied) {
-      return null;
-    }
-
-    if (Platform.isAndroid) {
-      await messaging.getToken();
-    }
     messaging.onTokenRefresh.listen((token) {
       _tokenRefreshCallback?.call(token);
     });
-    final token = await messaging.getToken();
+
+    try {
+      final settings = await messaging.requestPermission(
+        alert: true,
+        badge: true,
+        sound: true,
+      );
+      if (settings.authorizationStatus == AuthorizationStatus.denied) {
+        return null;
+      }
+    } catch (e) {
+      if (kDebugMode) debugPrint('[FCM] Erro ao pedir permissao: $e');
+      return null;
+    }
+
+    final token = await getToken();
     if (kDebugMode && token != null) {
       debugPrint('FCM Token (use para testar push): $token');
     }
@@ -93,16 +102,27 @@ class FirebaseService {
     _tokenRefreshCallback = cb;
   }
 
-  /// Retorna o token FCM atual (para salvar no Supabase).
+  /// Retorna o token FCM atual (para salvar no Supabase), ou null se o
+  /// aparelho não conseguir gerar (sem Play Services, sem rede: o plugin
+  /// lança SERVICE_NOT_AVAILABLE ou nunca responde).
   static Future<String?> getToken() async {
     if (!instance._initialized || instance._messaging == null) return null;
-    return instance._messaging!.getToken();
+    try {
+      return await instance._messaging!.getToken().timeout(_timeout);
+    } catch (e) {
+      if (kDebugMode) debugPrint('[FCM] Token indisponivel: $e');
+      return null;
+    }
   }
 
   /// Mensagem que abriu o app (app estava fechado e usuário tocou na notificação).
   static Future<RemoteMessage?> getInitialMessage() async {
     if (!instance._initialized || instance._messaging == null) return null;
-    return instance._messaging!.getInitialMessage();
+    try {
+      return await instance._messaging!.getInitialMessage().timeout(_timeout);
+    } catch (_) {
+      return null;
+    }
   }
 
   /// Registra evento de analytics.
@@ -117,6 +137,8 @@ class FirebaseService {
   /// Define o user ID para analytics (ex: Supabase user id).
   static Future<void> setUserId(String? userId) async {
     if (!instance._initialized || instance._analytics == null) return;
-    await instance._analytics!.setUserId(id: userId);
+    try {
+      await instance._analytics!.setUserId(id: userId).timeout(_timeout);
+    } catch (_) {}
   }
 }

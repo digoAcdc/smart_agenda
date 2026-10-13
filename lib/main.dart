@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:firebase_messaging/firebase_messaging.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_localizations/flutter_localizations.dart';
@@ -17,29 +19,28 @@ import 'core/theme/app_theme.dart';
 import 'domain/repositories/i_agenda_repository.dart';
 import 'domain/repositories/i_notification_service.dart';
 
+/// Limite pra cada etapa da abertura. Se uma delas travar (aparelho sem
+/// rede, Play Services desatualizado), o app abre sem aquele recurso em
+/// vez de ficar parado na splash.
+const _startupTimeout = Duration(seconds: 8);
+
 Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();
-  await initializeDateFormatting('pt_BR');
+  // Antes do runApp só o que a primeira tela precisa — tudo local. A
+  // splash nativa fica na tela até o primeiro frame: qualquer await que
+  // não termine aqui deixa o app "travado" no ícone.
+  await _startupStep('datas', () => initializeDateFormatting('pt_BR'));
   Intl.defaultLocale = 'pt_BR';
   if (SupabaseConfig.isConfigured) {
-    await Supabase.initialize(
-      url: SupabaseConfig.url,
-      anonKey: SupabaseConfig.anonKey,
+    await _startupStep(
+      'supabase',
+      () => Supabase.initialize(
+        url: SupabaseConfig.url,
+        anonKey: SupabaseConfig.anonKey,
+      ),
     );
   }
   final firebaseOk = await FirebaseService.initialize();
-  if (firebaseOk) {
-    await FirebaseService.setupPushNotifications(
-      onMessage: (m) => _onPushMessage(m),
-      onMessageOpenedApp: (m) => _onPushMessageOpened(m),
-    );
-    final userId = SupabaseConfig.isConfigured
-        ? Supabase.instance.client.auth.currentUser?.id
-        : null;
-    if (userId != null) {
-      await FirebaseService.setUserId(userId);
-    }
-  }
   AppBinding().dependencies();
   if (firebaseOk && SupabaseConfig.isConfigured) {
     FirebaseService.setTokenRefreshCallback((token) async {
@@ -54,19 +55,49 @@ Future<void> main() async {
       }
     });
   }
-  // App aberto ao tocar em notificação (estado terminated)
-  final initialMessage = firebaseOk
-      ? await FirebaseService.getInitialMessage()
-      : null;
-  if (initialMessage != null) {
-    WidgetsBinding.instance.addPostFrameCallback((_) {
-      _onPushMessageOpened(initialMessage);
-    });
-  }
-  await Get.find<INotificationService>().init(
-    onNotificationTap: _handleNotificationTap,
+  await _startupStep(
+    'notificacoes locais',
+    () => Get.find<INotificationService>().init(
+      onNotificationTap: _handleNotificationTap,
+    ),
   );
   runApp(const SmartAgendaApp());
+
+  // Push depende do Play Services e da rede (e no Android 13+ pede
+  // permissão): roda com o app já aberto, sem segurar a splash.
+  if (firebaseOk) unawaited(_setupPush());
+}
+
+Future<void> _startupStep(String name, Future<Object?> Function() step) async {
+  try {
+    await step().timeout(_startupTimeout);
+  } catch (e) {
+    debugPrint('[startup] $name falhou: $e');
+  }
+}
+
+Future<void> _setupPush() async {
+  try {
+    // App aberto ao tocar em notificação (estado terminated). Antes da
+    // permissão: o pedido de permissão espera o usuário responder.
+    final initialMessage = await FirebaseService.getInitialMessage();
+    if (initialMessage != null) {
+      await WidgetsBinding.instance.endOfFrame;
+      _onPushMessageOpened(initialMessage);
+    }
+    await FirebaseService.setupPushNotifications(
+      onMessage: (m) => _onPushMessage(m),
+      onMessageOpenedApp: (m) => _onPushMessageOpened(m),
+    );
+    final userId = SupabaseConfig.isConfigured
+        ? Supabase.instance.client.auth.currentUser?.id
+        : null;
+    if (userId != null) {
+      await FirebaseService.setUserId(userId);
+    }
+  } catch (e) {
+    debugPrint('[startup] push falhou: $e');
+  }
 }
 
 void _onPushMessage(RemoteMessage message) {
