@@ -181,6 +181,14 @@ class SyncEngineImpl implements ISyncService {
       try {
         final withUploads = await _uploadPendingAttachments(item);
         await _remoteAgenda.upsertItem(withUploads);
+        // Imagem que nao subiu (sem rede, etc.): o evento vai, mas fica
+        // pendente no aparelho. Assim o servidor (ainda sem o anexo) nao
+        // sobrescreve a copia local e a proxima sync tenta a imagem de novo.
+        if (_hasUnsentAttachment(withUploads)) {
+          debugPrint('[SyncEngine] ${item.id}: anexo pendente, tenta depois');
+          pushed++;
+          continue;
+        }
         await _localAgenda.markSynced(item.id);
         pushed++;
       } on PostgrestException catch (e) {
@@ -202,6 +210,13 @@ class SyncEngineImpl implements ISyncService {
     await _localAgenda.discardLocal(itemId);
     if (remote != null) await _applyRemoteItem(remote);
   }
+
+  bool _hasUnsentAttachment(AgendaItem item) => item.attachments.any(
+    (a) =>
+        a.remoteUrl == null &&
+        a.localPath != null &&
+        File(a.localPath!).existsSync(),
+  );
 
   Future<AgendaItem> _uploadPendingAttachments(AgendaItem item) async {
     if (item.attachments.every(
@@ -312,6 +327,7 @@ class SyncEngineImpl implements ISyncService {
           'family_id': row.familyId,
           'child_id': row.childId,
           'name': row.name,
+          'bring_json': row.bringJson,
           'created_at': row.createdAt.toUtc().toIso8601String(),
           'deleted_at': row.deletedAt?.toUtc().toIso8601String(),
         });
@@ -387,6 +403,7 @@ class SyncEngineImpl implements ISyncService {
           name: Value(r['name'] as String),
           familyId: Value(r['family_id'] as String?),
           childId: Value(r['child_id'] as String?),
+          bringJson: Value(r['bring_json'] as String?),
           createdAt: Value(_parseDate(r['created_at'])!),
           updatedAt: Value(_parseDate(r['updated_at'])!),
           deletedAt: Value(_parseDate(r['deleted_at'])),
@@ -563,6 +580,7 @@ class SyncEngineImpl implements ISyncService {
           'id': g.id,
           'owner_user_id': uid,
           'name': g.name,
+          'bring_json': g.bringJson,
           'created_at': g.createdAt.toUtc().toIso8601String(),
         },
     ]);

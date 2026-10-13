@@ -22,6 +22,7 @@ class AgendaItem extends Equatable {
     this.attachments = const [],
     this.familyId,
     this.kind = AgendaItemKind.event,
+    this.schoolSubject,
     this.subjectType = AgendaSubjectType.none,
     this.subjectChildId,
     this.subjectUserId,
@@ -35,6 +36,7 @@ class AgendaItem extends Equatable {
     required this.createdAt,
     required this.updatedAt,
     this.deletedAt,
+    this.occurrenceDate,
   }) : assert(title != '');
 
   final String id;
@@ -51,9 +53,19 @@ class AgendaItem extends Equatable {
   final RecurrenceRule? recurrence;
   final List<AttachmentRef> attachments;
 
+  /// Dia desta ocorrencia quando o item vem de um evento que se repete
+  /// (gerado na leitura, nao e salvo). Nulo = o proprio evento salvo.
+  final DateTime? occurrenceDate;
+
+  bool get isRecurring => recurrence?.repeats ?? false;
+  bool get isOccurrence => occurrenceDate != null;
+
   /// Familia dona do item. Nulo = agenda pessoal.
   final String? familyId;
   final AgendaItemKind kind;
+
+  /// Materia da prova/trabalho (ex.: "Matemática").
+  final String? schoolSubject;
 
   /// De quem e o item (familia toda, filho ou membro). So vale na familia.
   final AgendaSubjectType subjectType;
@@ -93,6 +105,7 @@ class AgendaItem extends Equatable {
     List<AttachmentRef>? attachments,
     String? familyId,
     AgendaItemKind? kind,
+    String? schoolSubject,
     AgendaSubjectType? subjectType,
     String? subjectChildId,
     String? subjectUserId,
@@ -106,6 +119,8 @@ class AgendaItem extends Equatable {
     DateTime? createdAt,
     DateTime? updatedAt,
     DateTime? deletedAt,
+    DateTime? occurrenceDate,
+    bool clearRecurrence = false,
   }) {
     return AgendaItem(
       id: id ?? this.id,
@@ -119,10 +134,11 @@ class AgendaItem extends Equatable {
       status: status ?? this.status,
       locationText: locationText ?? this.locationText,
       reminder: reminder ?? this.reminder,
-      recurrence: recurrence ?? this.recurrence,
+      recurrence: clearRecurrence ? null : (recurrence ?? this.recurrence),
       attachments: attachments ?? this.attachments,
       familyId: familyId ?? this.familyId,
       kind: kind ?? this.kind,
+      schoolSubject: schoolSubject ?? this.schoolSubject,
       subjectType: subjectType ?? this.subjectType,
       subjectChildId: subjectChildId ?? this.subjectChildId,
       subjectUserId: subjectUserId ?? this.subjectUserId,
@@ -136,38 +152,41 @@ class AgendaItem extends Equatable {
       createdAt: createdAt ?? this.createdAt,
       updatedAt: updatedAt ?? this.updatedAt,
       deletedAt: deletedAt ?? this.deletedAt,
+      occurrenceDate: occurrenceDate ?? this.occurrenceDate,
     );
   }
 
   @override
   List<Object?> get props => [
-        id,
-        title,
-        description,
-        startAt,
-        endAt,
-        allDay,
-        timezone,
-        groupId,
-        status,
-        locationText,
-        reminder,
-        recurrence,
-        attachments,
-        familyId,
-        kind,
-        subjectType,
-        subjectChildId,
-        subjectUserId,
-        assigneeType,
-        assigneeUserId,
-        createdBy,
-        updatedBy,
-        completedBy,
-        source,
-        syncState,
-        createdAt,
-        updatedAt,
-        deletedAt,
-      ];
+    id,
+    title,
+    description,
+    startAt,
+    endAt,
+    allDay,
+    timezone,
+    groupId,
+    status,
+    locationText,
+    reminder,
+    recurrence,
+    attachments,
+    familyId,
+    kind,
+    schoolSubject,
+    subjectType,
+    subjectChildId,
+    subjectUserId,
+    assigneeType,
+    assigneeUserId,
+    createdBy,
+    updatedBy,
+    completedBy,
+    source,
+    syncState,
+    createdAt,
+    updatedAt,
+    occurrenceDate,
+    deletedAt,
+  ];
 }

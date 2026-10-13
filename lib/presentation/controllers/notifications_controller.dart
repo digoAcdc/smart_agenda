@@ -20,6 +20,7 @@ class NotificationsController extends GetxController {
   final RxBool pushDaily = true.obs;
   final RxBool pushTomorrow = false.obs;
   final RxBool pushWeekly = true.obs;
+  final RxBool pushFamily = true.obs;
 
   final RxBool savingPrefs = false.obs;
 
@@ -40,6 +41,7 @@ class NotificationsController extends GetxController {
       pushDaily.value = prefs.pushDailySummary;
       pushTomorrow.value = prefs.pushTomorrowSummary;
       pushWeekly.value = prefs.pushWeeklySummary;
+      pushFamily.value = prefs.pushFamilyChanges;
     } catch (_) {
       notifications.clear();
     } finally {
@@ -51,6 +53,7 @@ class NotificationsController extends GetxController {
     required bool daily,
     required bool tomorrow,
     required bool weekly,
+    bool? family,
   }) async {
     if (!SupabaseConfig.isConfigured) return;
     savingPrefs.value = true;
@@ -59,10 +62,12 @@ class NotificationsController extends GetxController {
         pushDailySummary: daily,
         pushTomorrowSummary: tomorrow,
         pushWeeklySummary: weekly,
+        pushFamilyChanges: family ?? pushFamily.value,
       );
       pushDaily.value = daily;
       pushTomorrow.value = tomorrow;
       pushWeekly.value = weekly;
+      if (family != null) pushFamily.value = family;
     } finally {
       savingPrefs.value = false;
     }

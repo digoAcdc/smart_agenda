@@ -72,10 +72,14 @@ import '../../presentation/controllers/notifications_controller.dart';
 import '../../presentation/controllers/sync_controller.dart';
 import '../../presentation/controllers/groups_controller.dart';
 import '../../presentation/controllers/home_controller.dart';
+import '../../presentation/services/invite_link_handler.dart';
+import '../../presentation/services/backpack_reminder_service.dart';
 
 class AppBinding extends Bindings {
   @override
   void dependencies() {
+    Get.put(InviteLinkHandler(), permanent: true);
+    Get.put(BackpackReminderService(), permanent: true);
     Get.put(AppDatabase(), permanent: true);
 
     Get.lazyPut<IUserDataDeletionService>(

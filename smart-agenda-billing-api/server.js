@@ -18,6 +18,7 @@ import {
 } from "./recovery.js";
 import { startRecheckSchedule } from "./revalidation.js";
 import { deleteAccount, AccountDeletionError } from "./account.js";
+import { assetLinks, fetchInvite, isValidInviteToken, renderInvitePage } from "./invite.js";
 import { readFileSync } from "node:fs";
 
 dotenv.config();
@@ -104,6 +105,25 @@ app.get("/app-ads.txt", async (request, reply) =>
   reply
     .type("text/plain; charset=utf-8")
     .send("google.com, pub-1515466936385187, DIRECT, f08c47fec0942fa0\n")
+);
+
+// Convite por link (WhatsApp). Sem o app, mostra a pagina com os botoes.
+app.get("/convite/:token", async (request, reply) => {
+  const token = String(request.params.token || "").toLowerCase();
+  let invite = null;
+  if (isValidInviteToken(token)) {
+    try {
+      invite = await fetchInvite(supabase, token);
+    } catch (error) {
+      request.log.error({ err: error.message }, "[invite_page_failed]");
+    }
+  }
+  return reply.type("text/html; charset=utf-8").send(renderInvitePage(token, invite));
+});
+
+// Android App Links: o Android confere este arquivo para abrir o app direto.
+app.get("/.well-known/assetlinks.json", async (request, reply) =>
+  reply.type("application/json").send(assetLinks(process.env.ANDROID_CERT_SHA256 || ""))
 );
 
 const privacyPage = readFileSync(new URL("./pages/privacidade.html", import.meta.url), "utf8");

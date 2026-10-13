@@ -5,6 +5,7 @@ import 'package:path_provider/path_provider.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 import 'package:uuid/uuid.dart';
 
+import '../../core/constants/image_upload_constants.dart';
 import '../../core/result/result.dart';
 import '../../core/utils/image_compress_utils.dart';
 import '../../domain/repositories/i_file_storage_service.dart';
@@ -27,7 +28,15 @@ class FileStorageServiceOrchestrator implements IFileStorageService {
       if (!source.existsSync()) {
         return Result.failure('Arquivo de origem não encontrado');
       }
-      return _copyLocal(source);
+      // O servidor recusa acima de 5 MB; avisa ja na hora de anexar.
+      if (await source.length() > ImageUploadConstants.hardMaxBytes) {
+        return Result.failure(
+          'Imagem muito grande. Escolha outra ou tire um print dela.',
+        );
+      }
+      // await: sem ele o finally apagava o arquivo comprimido antes da
+      // copia terminar e o anexo nunca era salvo.
+      return await _copyLocal(source);
     } catch (e) {
       return Result.failure('Falha ao salvar imagem: $e');
     } finally {
@@ -90,7 +99,7 @@ class FileStorageServiceOrchestrator implements IFileStorageService {
       debugPrint('[FileStorageOrchestrator] uploaded to $storagePath');
       return Result.success(url);
     } catch (e) {
-      return Result.failure('Upload falhou: $e');
+      return Result.failure('Envio da imagem falhou: $e');
     }
   }
 }

@@ -1,11 +1,15 @@
 import 'dart:async';
 
+import 'package:flutter/foundation.dart';
+
 import 'package:flutter/widgets.dart';
 import 'package:get/get.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 
 import '../../domain/entities/class_schedule_slot.dart';
 import '../../domain/repositories/i_class_schedule_datasource.dart';
 import '../../domain/repositories/i_sync_service.dart';
+import '../services/backpack_reminder_service.dart';
 
 class TimeRange {
   const TimeRange({required this.start, required this.end});
@@ -61,6 +65,7 @@ class ClassScheduleController extends GetxController {
   void onInit() {
     super.onInit();
     WidgetsBinding.instance.addPostFrameCallback((_) => load());
+    _loadBackpackTip();
     // Grades dos filhos editadas por outros membros chegam pelo sync.
     _remoteChangesSub = _syncService?.onDataChanged.listen(
       (_) => load(silent: true),
@@ -90,6 +95,52 @@ class ClassScheduleController extends GetxController {
     if (selected.value?.id == target?.id) slots.assignAll(data);
     allSlots.assignAll(await _dataSource.getAllSlots());
     loading.value = false;
+    // Grade mudou: refaz os avisos da Mochila de amanha.
+    if (Get.isRegistered<BackpackReminderService>()) {
+      unawaited(Get.find<BackpackReminderService>().reschedule());
+    }
+  }
+
+  static const _backpackTipKey = 'backpack_tip_dismissed';
+
+  /// Dica da Mochila na tela Aulas (some depois de fechada).
+  final RxBool backpackTipDismissed = false.obs;
+
+  Future<void> _loadBackpackTip() async {
+    try {
+      final prefs = await SharedPreferences.getInstance();
+      backpackTipDismissed.value = prefs.getBool(_backpackTipKey) ?? false;
+    } catch (_) {}
+  }
+
+  Future<void> dismissBackpackTip() async {
+    backpackTipDismissed.value = true;
+    try {
+      final prefs = await SharedPreferences.getInstance();
+      await prefs.setBool(_backpackTipKey, true);
+    } catch (_) {}
+  }
+
+  /// "O que levar" de [subject] na grade aberta.
+  String? bringFor(String? subject) {
+    final key = subject?.trim();
+    if (key == null || key.isEmpty) return null;
+    return selected.value?.bringItems[key];
+  }
+
+  Future<void> setBringFor(String subject, String text) async {
+    final current = selected.value;
+    final key = subject.trim();
+    if (current == null || key.isEmpty) return;
+    final items = {...current.bringItems};
+    if (text.trim().isEmpty) {
+      items.remove(key);
+    } else {
+      items[key] = text.trim();
+    }
+    if (mapEquals(items, current.bringItems)) return;
+    await _dataSource.setBringItems(current.id, items);
+    await load(silent: true);
   }
 
   Future<void> select(ClassSchedule schedule) async {

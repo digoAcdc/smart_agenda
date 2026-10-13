@@ -13,6 +13,7 @@ import '../../core/utils/form_validators.dart';
 import '../../domain/entities/agenda_enums.dart';
 import '../../domain/entities/agenda_item.dart';
 import '../../domain/entities/attachment_ref.dart';
+import '../../domain/entities/recurrence_rule.dart';
 import '../../domain/entities/reminder_config.dart';
 import '../../domain/entities/family.dart';
 import '../../domain/repositories/i_family_service.dart';
@@ -21,6 +22,7 @@ import '../../domain/repositories/i_notification_service.dart';
 import '../../domain/repositories/i_plan_service.dart';
 import '../controllers/agenda_controller.dart';
 import '../controllers/billing_controller.dart';
+import '../controllers/class_schedule_controller.dart';
 import '../controllers/groups_controller.dart';
 
 class UpsertAgendaPage extends StatefulWidget {
@@ -33,6 +35,7 @@ class UpsertAgendaPage extends StatefulWidget {
 class _UpsertAgendaPageState extends State<UpsertAgendaPage> {
   final _formKey = GlobalKey<FormState>();
   final titleController = TextEditingController();
+  final schoolSubjectController = TextEditingController();
   final descriptionController = TextEditingController();
   final imagePicker = ImagePicker();
 
@@ -44,6 +47,18 @@ class _UpsertAgendaPageState extends State<UpsertAgendaPage> {
   bool reminderEnabled = false;
   int? reminderMinutes = 10;
   List<AttachmentRef> attachments = [];
+
+  // Repeticao (Fase 1 do roadmap).
+  RecurrenceType repeatType = RecurrenceType.none;
+  Set<int> repeatDays = {};
+  _RepeatEnd repeatEnd = _RepeatEnd.never;
+  DateTime? repeatUntil;
+  int repeatCount = 10;
+  RecurrenceRule? _originalRule;
+
+  /// "Editar so este dia" de um evento que se repete: salva como evento
+  /// novo e tira o dia da serie original.
+  AgendaItem? _detachFrom;
   AgendaItem? editingItem;
   bool _isPremium = false;
 
@@ -58,14 +73,23 @@ class _UpsertAgendaPageState extends State<UpsertAgendaPage> {
   String? assigneeUserId;
 
   /// Imagens: Pro pessoal, ou item de Familia (a assinatura e do dono).
-  bool get _canAttachImages => _isPremium || familyId != null;
+  /// Fotos liberadas para todos. Sem Pro (e fora da Familia) ficam so no
+  /// aparelho; o servidor so aceita upload com Pro ou na Familia.
+  bool get _photosStayOnDevice => !_isPremium && familyId == null;
 
   @override
   void initState() {
     super.initState();
-    final arg = Get.arguments;
+    final rawArg = Get.arguments;
+    final detach = rawArg is Map ? rawArg['detachOccurrence'] : null;
+    final arg = detach is AgendaItem ? detach : rawArg;
     if (arg is AgendaItem) {
-      editingItem = arg;
+      if (detach is AgendaItem) {
+        _detachFrom = detach;
+      } else {
+        editingItem = arg;
+        _loadRecurrence(arg.recurrence, arg.startAt);
+      }
       titleController.text = arg.title;
       descriptionController.text = arg.description ?? '';
       startAt = arg.startAt;
@@ -75,9 +99,15 @@ class _UpsertAgendaPageState extends State<UpsertAgendaPage> {
       groupId = arg.groupId;
       reminderEnabled = arg.reminder?.enabled ?? false;
       reminderMinutes = arg.reminder?.minutesBefore;
-      attachments = [...arg.attachments];
+      attachments = _detachFrom == null
+          ? [...arg.attachments]
+          // Copia de evento da serie: anexos com ids novos.
+          : arg.attachments
+                .map((a) => a.copyWith(id: const Uuid().v4()))
+                .toList();
       familyId = arg.familyId;
       kind = arg.kind;
+      schoolSubjectController.text = arg.schoolSubject ?? '';
       subjectType = arg.subjectType;
       subjectChildId = arg.subjectChildId;
       subjectUserId = arg.subjectUserId;
@@ -109,6 +139,196 @@ class _UpsertAgendaPageState extends State<UpsertAgendaPage> {
     }
     if (!mounted) return;
     setState(() => _isPremium = isPremium);
+  }
+
+  void _loadRecurrence(RecurrenceRule? rule, DateTime start) {
+    if (rule == null || !rule.repeats) return;
+    _originalRule = rule;
+    repeatType = rule.type;
+    repeatDays = {...?rule.byWeekDays};
+    if (rule.until != null) {
+      repeatEnd = _RepeatEnd.until;
+      repeatUntil = rule.until;
+    } else if (rule.count != null) {
+      repeatEnd = _RepeatEnd.count;
+      repeatCount = rule.count!;
+    }
+  }
+
+  RecurrenceRule? _buildRecurrence() {
+    if (repeatType == RecurrenceType.none) return null;
+    // Mesmo tipo de antes: mantem dias concluidos/excluidos da serie.
+    final keep = _originalRule?.type == repeatType ? _originalRule : null;
+    final days = repeatDays.isEmpty ? {startAt.weekday} : repeatDays;
+    return RecurrenceRule(
+      type: repeatType,
+      byWeekDays: repeatType == RecurrenceType.weekly
+          ? (days.toList()..sort())
+          : null,
+      until: repeatEnd == _RepeatEnd.until ? repeatUntil : null,
+      count: repeatEnd == _RepeatEnd.count ? repeatCount : null,
+      exceptions: keep?.exceptions ?? const [],
+      completedDates: keep?.completedDates ?? const [],
+    );
+  }
+
+  static const _weekdayShort = {
+    1: 'Seg',
+    2: 'Ter',
+    3: 'Qua',
+    4: 'Qui',
+    5: 'Sex',
+    6: 'Sáb',
+    7: 'Dom',
+  };
+
+  Widget _buildRepeatSection(BuildContext context, Color accent) {
+    final theme = Theme.of(context);
+    final muted = theme.textTheme.bodySmall?.copyWith(
+      color: theme.colorScheme.onSurfaceVariant,
+    );
+    String typeLabel(RecurrenceType t) => switch (t) {
+      RecurrenceType.none => 'Não repete',
+      RecurrenceType.daily => 'Todo dia',
+      RecurrenceType.weekly => 'Toda semana',
+      RecurrenceType.monthly => 'Todo mês',
+      RecurrenceType.custom => 'Personalizado',
+    };
+    final untilLabel = repeatUntil == null
+        ? 'Até uma data'
+        : 'Até ${DateFormat('dd/MM/yyyy').format(repeatUntil!)}';
+    return _sectionCard(
+      context,
+      children: [
+        Row(
+          children: [
+            Icon(Icons.repeat_rounded, size: 16, color: accent),
+            const SizedBox(width: 6),
+            Text(
+              'Repetir',
+              style: theme.textTheme.titleSmall?.copyWith(
+                fontWeight: FontWeight.w700,
+              ),
+            ),
+          ],
+        ),
+        const SizedBox(height: 10),
+        Wrap(
+          spacing: 8,
+          runSpacing: 8,
+          children: [
+            for (final t in const [
+              RecurrenceType.none,
+              RecurrenceType.daily,
+              RecurrenceType.weekly,
+              RecurrenceType.monthly,
+            ])
+              ChoiceChip(
+                label: Text(typeLabel(t)),
+                selected: repeatType == t,
+                onSelected: (_) => setState(() {
+                  repeatType = t;
+                  if (t == RecurrenceType.weekly && repeatDays.isEmpty) {
+                    repeatDays = {startAt.weekday};
+                  }
+                }),
+              ),
+          ],
+        ),
+        if (repeatType == RecurrenceType.weekly) ...[
+          const SizedBox(height: 12),
+          Text('Nos dias', style: muted),
+          const SizedBox(height: 6),
+          Wrap(
+            spacing: 6,
+            runSpacing: 6,
+            children: [
+              for (var d = 1; d <= 7; d++)
+                FilterChip(
+                  label: Text(_weekdayShort[d]!),
+                  selected: repeatDays.contains(d),
+                  showCheckmark: false,
+                  onSelected: (on) => setState(() {
+                    if (on) {
+                      repeatDays = {...repeatDays, d};
+                    } else if (repeatDays.length > 1) {
+                      repeatDays = {...repeatDays}..remove(d);
+                    }
+                  }),
+                ),
+            ],
+          ),
+        ],
+        if (repeatType == RecurrenceType.monthly) ...[
+          const SizedBox(height: 8),
+          Text('Todo dia ${startAt.day} do mês', style: muted),
+        ],
+        if (repeatType != RecurrenceType.none) ...[
+          const SizedBox(height: 12),
+          Text('Termina', style: muted),
+          const SizedBox(height: 6),
+          Wrap(
+            spacing: 8,
+            runSpacing: 8,
+            children: [
+              ChoiceChip(
+                label: const Text('Nunca'),
+                selected: repeatEnd == _RepeatEnd.never,
+                onSelected: (_) => setState(() => repeatEnd = _RepeatEnd.never),
+              ),
+              ChoiceChip(
+                label: Text(untilLabel),
+                selected: repeatEnd == _RepeatEnd.until,
+                onSelected: (_) => _pickRepeatUntil(),
+              ),
+              ChoiceChip(
+                label: const Text('Depois de N vezes'),
+                selected: repeatEnd == _RepeatEnd.count,
+                onSelected: (_) => setState(() => repeatEnd = _RepeatEnd.count),
+              ),
+            ],
+          ),
+          if (repeatEnd == _RepeatEnd.count)
+            Row(
+              children: [
+                IconButton(
+                  tooltip: 'Menos',
+                  onPressed: repeatCount > 2
+                      ? () => setState(() => repeatCount--)
+                      : null,
+                  icon: const Icon(Icons.remove_circle_outline),
+                ),
+                Text('$repeatCount vezes', style: theme.textTheme.titleSmall),
+                IconButton(
+                  tooltip: 'Mais',
+                  onPressed: repeatCount < 365
+                      ? () => setState(() => repeatCount++)
+                      : null,
+                  icon: const Icon(Icons.add_circle_outline),
+                ),
+              ],
+            ),
+        ],
+      ],
+    );
+  }
+
+  Future<void> _pickRepeatUntil() async {
+    final first = DateTime(startAt.year, startAt.month, startAt.day);
+    final picked = await showDatePicker(
+      context: context,
+      firstDate: first,
+      lastDate: DateTime(2050),
+      initialDate: repeatUntil != null && !repeatUntil!.isBefore(first)
+          ? repeatUntil!
+          : first.add(const Duration(days: 30)),
+      helpText: 'Repetir até',
+    );
+    if (picked == null || !mounted) return;
+    setState(() {
+      repeatUntil = picked;
+      repeatEnd = _RepeatEnd.until;
+    });
   }
 
   Future<void> _pickStartDateTime() async {
@@ -159,9 +379,14 @@ class _UpsertAgendaPageState extends State<UpsertAgendaPage> {
     });
   }
 
+  bool get _attachmentsFull =>
+      attachments.length >= ImageUploadConstants.maxAttachmentsPerItem;
+
   Future<void> _addImageAttachment() async {
-    if (!_canAttachImages) {
-      _showSaved('Anexar imagens é um recurso do plano Pro.');
+    if (_attachmentsFull) {
+      _showSaved(
+        'Máximo de ${ImageUploadConstants.maxAttachmentsPerItem} fotos por evento.',
+      );
       return;
     }
     final fileStorage = Get.find<IFileStorageService>();
@@ -173,7 +398,14 @@ class _UpsertAgendaPageState extends State<UpsertAgendaPage> {
     );
     if (picked == null) return;
     final stored = await fileStorage.copyImageToAppStorage(picked.path);
-    if (!stored.isSuccess || stored.data == null) return;
+    if (!stored.isSuccess || stored.data == null) {
+      _showSaved(
+        stored.errorMessage?.startsWith('Imagem muito grande') == true
+            ? stored.errorMessage!
+            : 'Não foi possível anexar a imagem. Tente de novo.',
+      );
+      return;
+    }
 
     final itemId = editingItem?.id ?? const Uuid().v4();
     final pathOrUrl = stored.data!;
@@ -255,7 +487,7 @@ class _UpsertAgendaPageState extends State<UpsertAgendaPage> {
         groupId: familyId == null ? groupId : null,
         status: status,
         reminder: reminder,
-        recurrence: null,
+        recurrence: _buildRecurrence(),
         attachments: const [],
       );
       final item = _withFamilyFields(
@@ -266,6 +498,9 @@ class _UpsertAgendaPageState extends State<UpsertAgendaPage> {
         ),
       );
       final ok = await controller.createItem(item);
+      if (ok && _detachFrom != null) {
+        await controller.deleteOccurrence(_detachFrom!);
+      }
       if (ok) {
         if (controller.errorMessage.value != null &&
             controller.errorMessage.value!.isNotEmpty) {
@@ -275,7 +510,7 @@ class _UpsertAgendaPageState extends State<UpsertAgendaPage> {
         } else {
           _showSaved('Evento criado com sucesso');
         }
-        Get.back();
+        Get.back(result: true);
       }
       return;
     }
@@ -289,7 +524,8 @@ class _UpsertAgendaPageState extends State<UpsertAgendaPage> {
       groupId: familyId == null ? groupId : null,
       status: status,
       reminder: reminder,
-      recurrence: null,
+      recurrence: _buildRecurrence(),
+      clearRecurrence: repeatType == RecurrenceType.none,
       attachments: attachments
           .map((a) => a.copyWith(itemId: editingItem!.id))
           .toList(),
@@ -305,7 +541,7 @@ class _UpsertAgendaPageState extends State<UpsertAgendaPage> {
       } else {
         _showSaved('Evento atualizado');
       }
-      Get.back();
+      Get.back(result: true);
     }
   }
 
@@ -399,7 +635,11 @@ class _UpsertAgendaPageState extends State<UpsertAgendaPage> {
                     Expanded(
                       child: Center(
                         child: Text(
-                          editingItem == null ? 'Novo evento' : 'Editar evento',
+                          _detachFrom != null
+                              ? 'Editar este dia'
+                              : editingItem == null
+                              ? 'Novo evento'
+                              : 'Editar evento',
                           style: Theme.of(context).textTheme.titleMedium
                               ?.copyWith(fontWeight: FontWeight.w700),
                         ),
@@ -543,6 +783,8 @@ class _UpsertAgendaPageState extends State<UpsertAgendaPage> {
                           ),
                         ],
                       ),
+                      if (_detachFrom == null)
+                        _buildRepeatSection(context, accentGreen),
                       // V1: categorias sao da agenda pessoal.
                       if (familyId == null)
                         _sectionCard(
@@ -669,10 +911,10 @@ class _UpsertAgendaPageState extends State<UpsertAgendaPage> {
                             Wrap(
                               spacing: 8,
                               runSpacing: 8,
-                              children: [5, 10, 15, 30, 60]
+                              children: [5, 10, 15, 30, 60, 1440, 2880]
                                   .map(
                                     (e) => ChoiceChip(
-                                      label: Text('$e min antes'),
+                                      label: Text(_reminderLabel(e)),
                                       selected: reminderMinutes == e,
                                       selectedColor: accentGreen.withValues(
                                         alpha: 0.2,
@@ -805,6 +1047,11 @@ class _UpsertAgendaPageState extends State<UpsertAgendaPage> {
       attachments: base.attachments,
       familyId: familyId,
       kind: kind,
+      schoolSubject: kind.isSchoolWork
+          ? (schoolSubjectController.text.trim().isEmpty
+                ? null
+                : schoolSubjectController.text.trim())
+          : null,
       subjectType: isFamily ? subjectType : AgendaSubjectType.none,
       subjectChildId: isFamily && subjectType == AgendaSubjectType.child
           ? subjectChildId
@@ -824,6 +1071,48 @@ class _UpsertAgendaPageState extends State<UpsertAgendaPage> {
       createdAt: base.createdAt,
       updatedAt: base.updatedAt,
       deletedAt: base.deletedAt,
+    );
+  }
+
+  String _reminderLabel(int minutes) => switch (minutes) {
+    60 => '1 h antes',
+    1440 => '1 dia antes',
+    2880 => '2 dias antes',
+    _ => '$minutes min antes',
+  };
+
+  /// Materia da prova/trabalho, com sugestoes das grades de aula.
+  Widget _schoolSubjectField(BuildContext context) {
+    final subjects = Get.isRegistered<ClassScheduleController>()
+        ? (Get.find<ClassScheduleController>().allSlots
+              .map((s) => s.subject?.trim() ?? '')
+              .where((s) => s.isNotEmpty)
+              .toSet()
+              .toList()
+            ..sort())
+        : <String>[];
+    return Autocomplete<String>(
+      initialValue: TextEditingValue(text: schoolSubjectController.text),
+      optionsBuilder: (value) {
+        final q = value.text.trim().toLowerCase();
+        return q.isEmpty
+            ? subjects
+            : subjects.where((s) => s.toLowerCase().contains(q));
+      },
+      onSelected: (v) => schoolSubjectController.text = v,
+      fieldViewBuilder: (context, controller, focusNode, onSubmit) {
+        return TextField(
+          controller: controller,
+          focusNode: focusNode,
+          textCapitalization: TextCapitalization.sentences,
+          onChanged: (v) => schoolSubjectController.text = v,
+          decoration: const InputDecoration(
+            labelText: 'Matéria',
+            hintText: 'Ex.: Matemática',
+            prefixIcon: Icon(Icons.menu_book_outlined),
+          ),
+        );
+      },
     );
   }
 
@@ -856,22 +1145,33 @@ class _UpsertAgendaPageState extends State<UpsertAgendaPage> {
               for (final k in AgendaItemKind.values)
                 _groupTile(
                   context,
-                  title: switch (k) {
-                    AgendaItemKind.event => 'Compromisso',
-                    AgendaItemKind.task => 'Tarefa',
-                    AgendaItemKind.reminder => 'Lembrete',
-                  },
+                  title: k.label,
                   icon: switch (k) {
                     AgendaItemKind.event => Icons.event_rounded,
                     AgendaItemKind.task => Icons.task_alt_rounded,
                     AgendaItemKind.reminder => Icons.notifications_none_rounded,
+                    AgendaItemKind.exam => Icons.school_rounded,
+                    AgendaItemKind.assignment => Icons.assignment_rounded,
                   },
                   perRow: 3,
                   selected: kind == k,
-                  onTap: () => setState(() => kind = k),
+                  onTap: () => setState(() {
+                    kind = k;
+                    // Prova/trabalho novo: lembrete para estudar 2 dias antes.
+                    if (k.isSchoolWork &&
+                        editingItem == null &&
+                        !reminderEnabled) {
+                      reminderEnabled = true;
+                      reminderMinutes = 2 * 24 * 60;
+                    }
+                  }),
                 ),
             ],
           ),
+          if (kind.isSchoolWork) ...[
+            const SizedBox(height: 12),
+            _schoolSubjectField(context),
+          ],
           if (editingItem == null && ctx.hasFamily && !ctx.canEditAgenda) ...[
             const SizedBox(height: 12),
             Row(
@@ -998,6 +1298,26 @@ class _UpsertAgendaPageState extends State<UpsertAgendaPage> {
     });
   }
 
+  Widget _photosOnDeviceNotice(BuildContext context) {
+    final scheme = Theme.of(context).colorScheme;
+    return Row(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Icon(Icons.phone_android_rounded, size: 16, color: scheme.primary),
+        const SizedBox(width: 6),
+        Expanded(
+          child: Text(
+            'No plano Grátis as fotos ficam só neste celular. Com o Pro elas '
+            'vão para a nuvem e aparecem nos seus outros aparelhos.',
+            style: Theme.of(
+              context,
+            ).textTheme.bodySmall?.copyWith(color: scheme.onSurfaceVariant),
+          ),
+        ),
+      ],
+    );
+  }
+
   Widget _buildAttachmentsSection(BuildContext context) {
     final scheme = Theme.of(context).colorScheme;
     return Column(
@@ -1006,38 +1326,17 @@ class _UpsertAgendaPageState extends State<UpsertAgendaPage> {
         Row(
           children: [
             Text(
-              'ANEXOS',
+              attachments.isEmpty
+                  ? 'ANEXOS'
+                  : 'ANEXOS ${attachments.length}/${ImageUploadConstants.maxAttachmentsPerItem}',
               style: Theme.of(context).textTheme.labelSmall?.copyWith(
                 fontWeight: FontWeight.w700,
                 color: Theme.of(context).colorScheme.onSurfaceVariant,
               ),
             ),
             const Spacer(),
-            if (!_canAttachImages)
-              Container(
-                margin: const EdgeInsets.only(right: 8),
-                padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
-                decoration: BoxDecoration(
-                  color: scheme.outline.withValues(alpha: 0.12),
-                  borderRadius: BorderRadius.circular(999),
-                ),
-                child: Row(
-                  mainAxisSize: MainAxisSize.min,
-                  children: [
-                    Icon(Icons.lock_outline, size: 14, color: scheme.outline),
-                    const SizedBox(width: 4),
-                    Text(
-                      'Pro',
-                      style: Theme.of(context).textTheme.labelSmall?.copyWith(
-                        color: scheme.outline,
-                        fontWeight: FontWeight.w600,
-                      ),
-                    ),
-                  ],
-                ),
-              ),
             FilledButton.tonalIcon(
-              onPressed: _canAttachImages ? _addImageAttachment : null,
+              onPressed: _attachmentsFull ? null : _addImageAttachment,
               icon: const Icon(Icons.attach_file_rounded),
               label: const Text('Adicionar'),
               style: FilledButton.styleFrom(
@@ -1053,6 +1352,10 @@ class _UpsertAgendaPageState extends State<UpsertAgendaPage> {
             ),
           ],
         ),
+        if (_photosStayOnDevice) ...[
+          const SizedBox(height: 6),
+          _photosOnDeviceNotice(context),
+        ],
         const SizedBox(height: 10),
         if (attachments.isEmpty)
           Container(
@@ -1084,13 +1387,14 @@ class _UpsertAgendaPageState extends State<UpsertAgendaPage> {
             height: 118,
             child: ListView.separated(
               scrollDirection: Axis.horizontal,
-              itemCount: attachments.length + 1,
+              // Sem o quadro "Adicionar" quando ja chegou no limite.
+              itemCount: attachments.length + (_attachmentsFull ? 0 : 1),
               separatorBuilder: (_, separatorIndex) =>
                   const SizedBox(width: 10),
               itemBuilder: (context, index) {
                 if (index == attachments.length) {
                   return InkWell(
-                    onTap: _canAttachImages ? _addImageAttachment : null,
+                    onTap: _addImageAttachment,
                     borderRadius: BorderRadius.circular(14),
                     child: Container(
                       width: 104,
@@ -1108,7 +1412,7 @@ class _UpsertAgendaPageState extends State<UpsertAgendaPage> {
                           ),
                           const SizedBox(height: 6),
                           Text(
-                            'Upload',
+                            'Adicionar',
                             style: Theme.of(context).textTheme.bodySmall,
                           ),
                         ],
@@ -1362,3 +1666,5 @@ class _UpsertAgendaPageState extends State<UpsertAgendaPage> {
     );
   }
 }
+
+enum _RepeatEnd { never, until, count }

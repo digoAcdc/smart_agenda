@@ -2,15 +2,19 @@ import '../../core/result/result.dart';
 import '../../core/utils/date_utils.dart';
 import '../../domain/entities/agenda_enums.dart';
 import '../../domain/entities/agenda_item.dart';
+import '../../domain/entities/recurrence_rule.dart';
 import '../../domain/repositories/i_agenda_repository.dart';
 import '../../domain/repositories/i_family_service.dart';
 import '../../domain/repositories/i_sync_service.dart';
+import '../../domain/services/recurrence_expander.dart';
 import '../../domain/value_objects/search_filters.dart';
 import '../datasources/agenda_local_datasource.dart';
 import '../models/mappers.dart';
 
 /// A UI le sempre do banco local (agenda pessoal + cache da Familia).
 /// Gravacoes vao para o local e a sincronizacao envia para a nuvem.
+typedef RecurrenceRuleUpdate = RecurrenceRule Function(RecurrenceRule rule);
+
 class AgendaRepositoryImpl implements IAgendaRepository {
   AgendaRepositoryImpl(
     this._local,
@@ -112,6 +116,37 @@ class AgendaRepositoryImpl implements IAgendaRepository {
     }
   }
 
+  Future<Result<void>> _updateSeriesRule(
+    String itemId,
+    RecurrenceRuleUpdate update,
+  ) async {
+    final existing = await _local.getById(itemId);
+    if (existing == null) return Result.failure('Item não encontrado.');
+    final master = itemFromDb(existing.item, existing.attachments);
+    final rule = master.recurrence;
+    if (rule == null) return Result.failure('Este evento não se repete.');
+    return updateItem(
+      master.copyWith(recurrence: update(rule), updatedAt: DateTime.now()),
+    );
+  }
+
+  @override
+  Future<Result<void>> setOccurrenceDone(
+    String itemId,
+    DateTime day,
+    bool done,
+  ) => _updateSeriesRule(
+    itemId,
+    (rule) => RecurrenceExpander.withCompleted(rule, day, done),
+  );
+
+  @override
+  Future<Result<void>> removeOccurrence(String itemId, DateTime day) =>
+      _updateSeriesRule(
+        itemId,
+        (rule) => RecurrenceExpander.withException(rule, day),
+      );
+
   @override
   Future<Result<AgendaItem?>> getItemById(String itemId) async {
     try {
@@ -138,10 +173,20 @@ class AgendaRepositoryImpl implements IAgendaRepository {
     DateTime end,
   ) async {
     try {
+      // Eventos simples do periodo + ocorrencias das series que se repetem.
       final rows = await _local.getByRange(start, end);
-      return Result.success(
-        rows.map((e) => itemFromDb(e.item, e.attachments)).toList(),
-      );
+      final items = rows
+          .map((e) => itemFromDb(e.item, e.attachments))
+          .where((i) => !i.isRecurring)
+          .toList();
+      final series = await _local.getRecurring(startingBefore: end);
+      for (final rec in series) {
+        final master = itemFromDb(rec.item, rec.attachments);
+        if (!master.isRecurring) continue;
+        items.addAll(RecurrenceExpander.expand(master, start, end));
+      }
+      items.sort((a, b) => a.startAt.compareTo(b.startAt));
+      return Result.success(items);
     } catch (e) {
       return Result.failure('Erro ao listar itens: $e');
     }

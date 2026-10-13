@@ -7,9 +7,9 @@ class ReminderConfig extends Equatable {
     required this.notificationId,
     this.channelKey,
   }) : assert(
-          enabled || minutesBefore == null,
-          'minutesBefore must be null when reminder disabled',
-        );
+         enabled || minutesBefore == null,
+         'minutesBefore must be null when reminder disabled',
+       );
 
   final bool enabled;
   final int? minutesBefore;
@@ -33,11 +33,11 @@ class ReminderConfig extends Equatable {
   }
 
   Map<String, dynamic> toJson() => {
-        'enabled': enabled,
-        'minutesBefore': minutesBefore,
-        'notificationId': notificationId,
-        'channelKey': channelKey,
-      };
+    'enabled': enabled,
+    'minutesBefore': minutesBefore,
+    'notificationId': notificationId,
+    'channelKey': channelKey,
+  };
 
   factory ReminderConfig.fromJson(Map<String, dynamic> json) {
     return ReminderConfig(
@@ -49,6 +49,10 @@ class ReminderConfig extends Equatable {
   }
 
   @override
-  List<Object?> get props =>
-      [enabled, minutesBefore, notificationId, channelKey];
+  List<Object?> get props => [
+    enabled,
+    minutesBefore,
+    notificationId,
+    channelKey,
+  ];
 }

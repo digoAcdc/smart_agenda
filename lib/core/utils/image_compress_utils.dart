@@ -55,6 +55,24 @@ class ImageCompressUtils {
         return ImagePrepareResult(path: sourcePath, isTemporary: false);
       }
 
+      // Ainda grande (foto muito detalhada): segunda passada mais forte.
+      if (await out.length() > ImageUploadConstants.targetMaxBytes) {
+        final smallerPath =
+            '${tempDir.path}/smart_agenda_img_${_uuid.v4()}.jpg';
+        final smaller = await FlutterImageCompress.compressAndGetFile(
+          xfile.path,
+          smallerPath,
+          minWidth: ImageUploadConstants.fallbackMinSide,
+          minHeight: ImageUploadConstants.fallbackMinSide,
+          quality: ImageUploadConstants.fallbackQuality,
+          format: CompressFormat.jpeg,
+        );
+        if (smaller != null && await File(smaller.path).exists()) {
+          await out.delete();
+          return ImagePrepareResult(path: smaller.path, isTemporary: true);
+        }
+      }
+
       return ImagePrepareResult(path: xfile.path, isTemporary: true);
     } catch (e, st) {
       debugPrint('[ImageCompress] Erro: $e\n$st');

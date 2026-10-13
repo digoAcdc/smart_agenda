@@ -52,8 +52,11 @@ class GroupsController extends GetxController {
     return result.isSuccess ? id : null;
   }
 
-  Future<void> updateGroup(AgendaGroup group, String name,
-      {String? colorHex}) async {
+  Future<void> updateGroup(
+    AgendaGroup group,
+    String name, {
+    String? colorHex,
+  }) async {
     await updateGroupUseCase(
       group.copyWith(name: name, colorHex: colorHex, updatedAt: DateTime.now()),
     );

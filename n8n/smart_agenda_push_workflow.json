@@ -1,0 +1,637 @@
+[
+ {
+  "updatedAt": "2026-03-10T13:17:17.611Z",
+  "createdAt": "2026-03-09T20:16:34.530Z",
+  "id": "Rxkcm6hhsT1vwqFf",
+  "name": "Smarte Agenda",
+  "description": null,
+  "active": true,
+  "isArchived": false,
+  "nodes": [
+   {
+    "parameters": {
+     "rule": {
+      "interval": [
+       {
+        "triggerAtHour": 7
+       }
+      ]
+     }
+    },
+    "type": "n8n-nodes-base.scheduleTrigger",
+    "typeVersion": 1.3,
+    "position": [
+     0,
+     0
+    ],
+    "id": "161064c0-b367-4620-825b-4d91f7c75aa1",
+    "name": "Schedule Trigger"
+   },
+   {
+    "parameters": {
+     "method": "POST",
+     "url": "https://smart-agenda-supabase.vybg0t.easypanel.host/rest/v1/rpc/get_premium_users_for_push_json",
+     "sendHeaders": true,
+     "headerParameters": {
+      "parameters": [
+       {
+        "name": "apikey",
+        "value": "<SERVICE_ROLE_KEY>"
+       },
+       {
+        "name": "Authorization",
+        "value": "Bearer <SERVICE_ROLE_KEY>"
+       },
+       {
+        "name": "Content-Type",
+        "value": "application/json"
+       }
+      ]
+     },
+     "sendBody": true,
+     "bodyParameters": {
+      "parameters": [
+       {
+        "name": "push_type",
+        "value": "daily_summary"
+       },
+       {
+        "name": "date",
+        "value": "={{$now.setZone('America/Sao_Paulo').toFormat('yyyy-MM-dd')}}"
+       }
+      ]
+     },
+     "options": {
+      "lowercaseHeaders": true
+     }
+    },
+    "type": "n8n-nodes-base.httpRequest",
+    "typeVersion": 4.4,
+    "position": [
+     208,
+     0
+    ],
+    "id": "18dc97da-070d-4158-9745-5ab31e05ce4f",
+    "name": "HTTP Request"
+   },
+   {
+    "parameters": {
+     "conditions": {
+      "options": {
+       "caseSensitive": true,
+       "leftValue": "",
+       "typeValidation": "strict",
+       "version": 3
+      },
+      "conditions": [
+       {
+        "id": "6a799434-6124-4739-b59d-8fba88eaa356",
+        "leftValue": "={{$json.event_count}}",
+        "rightValue": 0,
+        "operator": {
+         "type": "number",
+         "operation": "gt"
+        }
+       }
+      ],
+      "combinator": "and"
+     },
+     "options": {}
+    },
+    "type": "n8n-nodes-base.if",
+    "typeVersion": 2.3,
+    "position": [
+     416,
+     0
+    ],
+    "id": "7580a85a-8c6d-444d-949f-15d4cfdec0df",
+    "name": "If"
+   },
+   {
+    "parameters": {
+     "method": "POST",
+     "url": "https://fcm.googleapis.com/v1/projects/smart-agenda-a550b/messages:send",
+     "authentication": "predefinedCredentialType",
+     "nodeCredentialType": "googleApi",
+     "sendHeaders": false,
+     "headerParameters": {
+      "parameters": []
+     },
+     "sendBody": true,
+     "specifyBody": "json",
+     "jsonBody": "={\n  \"message\": {\n    \"token\": \"{{$json.token}}\",\n    \"notification\": {\n      \"title\": \"{{$json.titulo_push}}\",\n      \"body\": \"{{$json.corpo_push}}\"\n    },\n    \"data\": {\n      \"type\": \"{{$json.push_type}}\",\n      \"date\": \"{{$json.reference_date}}\"\n    }\n  }\n}",
+     "options": {}
+    },
+    "type": "n8n-nodes-base.httpRequest",
+    "typeVersion": 4.4,
+    "position": [
+     896,
+     -96
+    ],
+    "id": "afa5241a-0716-4657-acec-274662a5faec",
+    "name": "HTTP Request1",
+    "credentials": {
+     "googleApi": {
+      "id": "nzALAmQSzJV9Hpjs",
+      "name": "Google Service Account account 2"
+     },
+     "googleOAuth2Api": {
+      "id": "1Swb7QZCnYbFYKHE",
+      "name": "Google account"
+     }
+    }
+   },
+   {
+    "parameters": {
+     "rule": {
+      "interval": [
+       {
+        "triggerAtHour": 20
+       }
+      ]
+     }
+    },
+    "type": "n8n-nodes-base.scheduleTrigger",
+    "typeVersion": 1.3,
+    "position": [
+     0,
+     192
+    ],
+    "id": "7caa821b-a4da-4f43-a459-65dcf2b10b25",
+    "name": "Schedule Trigger1"
+   },
+   {
+    "parameters": {
+     "method": "POST",
+     "url": "https://smart-agenda-supabase.vybg0t.easypanel.host/rest/v1/rpc/get_premium_users_for_push_json",
+     "sendHeaders": true,
+     "headerParameters": {
+      "parameters": [
+       {
+        "name": "apikey",
+        "value": "<SERVICE_ROLE_KEY>"
+       },
+       {
+        "name": "Authorization",
+        "value": "Bearer <SERVICE_ROLE_KEY>"
+       },
+       {
+        "name": "Content-Type",
+        "value": "application/json"
+       }
+      ]
+     },
+     "sendBody": true,
+     "bodyParameters": {
+      "parameters": [
+       {
+        "name": "push_type",
+        "value": "tomorrow_summary"
+       },
+       {
+        "name": "date",
+        "value": "={{$now.setZone('America/Sao_Paulo').toFormat('yyyy-MM-dd')}}"
+       }
+      ]
+     },
+     "options": {
+      "lowercaseHeaders": true
+     }
+    },
+    "type": "n8n-nodes-base.httpRequest",
+    "typeVersion": 4.4,
+    "position": [
+     208,
+     192
+    ],
+    "id": "f64d251c-b8cc-448c-beaa-163bad828de9",
+    "name": "HTTP Request2"
+   },
+   {
+    "parameters": {
+     "assignments": {
+      "assignments": [
+       {
+        "id": "94a83c99-2b86-4178-8e82-c0f4469f6c32",
+        "name": "push_type",
+        "value": "daily_summary",
+        "type": "string"
+       },
+       {
+        "id": "e8d754df-467d-40c6-bf54-cbe5fdef4b06",
+        "name": "titulo_push",
+        "value": "Sua agenda de hoje",
+        "type": "string"
+       },
+       {
+        "id": "Edit-Fields-corpo",
+        "name": "corpo_push",
+        "type": "string",
+        "value": "={{ $json.event_count === 1 ? '1 evento hoje' : $json.event_count + ' eventos hoje' }}"
+       }
+      ]
+     },
+     "includeOtherFields": true,
+     "options": {}
+    },
+    "type": "n8n-nodes-base.set",
+    "typeVersion": 3.4,
+    "position": [
+     624,
+     0
+    ],
+    "id": "543292ac-7eb7-4c34-a60f-6ee995f7be2e",
+    "name": "Edit Fields"
+   },
+   {
+    "parameters": {
+     "conditions": {
+      "options": {
+       "caseSensitive": true,
+       "leftValue": "",
+       "typeValidation": "strict",
+       "version": 3
+      },
+      "conditions": [
+       {
+        "id": "6a799434-6124-4739-b59d-8fba88eaa356",
+        "leftValue": "={{$json.event_count}}",
+        "rightValue": 0,
+        "operator": {
+         "type": "number",
+         "operation": "gt"
+        }
+       }
+      ],
+      "combinator": "and"
+     },
+     "options": {}
+    },
+    "type": "n8n-nodes-base.if",
+    "typeVersion": 2.3,
+    "position": [
+     400,
+     192
+    ],
+    "id": "ba78698b-fb6e-4e3b-baba-856422922c53",
+    "name": "If1"
+   },
+   {
+    "parameters": {
+     "assignments": {
+      "assignments": [
+       {
+        "id": "94a83c99-2b86-4178-8e82-c0f4469f6c32",
+        "name": "push_type",
+        "value": "tomorrow_summary",
+        "type": "string"
+       },
+       {
+        "id": "e8d754df-467d-40c6-bf54-cbe5fdef4b06",
+        "name": "titulo_push",
+        "value": "Sua agenda de amanhã",
+        "type": "string"
+       },
+       {
+        "id": "Edit-Fields1-corpo",
+        "name": "corpo_push",
+        "type": "string",
+        "value": "={{ $json.event_count === 1 ? '1 evento amanhã' : $json.event_count + ' eventos amanhã' }}"
+       }
+      ]
+     },
+     "includeOtherFields": true,
+     "options": {}
+    },
+    "type": "n8n-nodes-base.set",
+    "typeVersion": 3.4,
+    "position": [
+     608,
+     192
+    ],
+    "id": "78049338-956b-4b7b-8037-ee73d8512648",
+    "name": "Edit Fields1"
+   },
+   {
+    "parameters": {
+     "rule": {
+      "interval": [
+       {
+        "field": "weeks",
+        "triggerAtDay": [
+         0
+        ],
+        "triggerAtHour": 20
+       }
+      ]
+     }
+    },
+    "type": "n8n-nodes-base.scheduleTrigger",
+    "typeVersion": 1.3,
+    "position": [
+     0,
+     400
+    ],
+    "id": "6e5a0af5-ddb7-441a-9494-9fb4aec1ee17",
+    "name": "Schedule Trigger2"
+   },
+   {
+    "parameters": {
+     "method": "POST",
+     "url": "https://smart-agenda-supabase.vybg0t.easypanel.host/rest/v1/rpc/get_premium_users_for_push_json",
+     "sendHeaders": true,
+     "headerParameters": {
+      "parameters": [
+       {
+        "name": "apikey",
+        "value": "<SERVICE_ROLE_KEY>"
+       },
+       {
+        "name": "Authorization",
+        "value": "Bearer <SERVICE_ROLE_KEY>"
+       },
+       {
+        "name": "Content-Type",
+        "value": "application/json"
+       }
+      ]
+     },
+     "sendBody": true,
+     "bodyParameters": {
+      "parameters": [
+       {
+        "name": "push_type",
+        "value": "weekly_summary"
+       },
+       {
+        "name": "date",
+        "value": "={{$now.setZone('America/Sao_Paulo').toFormat('yyyy-MM-dd')}}"
+       }
+      ]
+     },
+     "options": {
+      "lowercaseHeaders": true
+     }
+    },
+    "type": "n8n-nodes-base.httpRequest",
+    "typeVersion": 4.4,
+    "position": [
+     208,
+     400
+    ],
+    "id": "f7a8726c-8dfa-4789-9907-029e013abb81",
+    "name": "HTTP Request3"
+   },
+   {
+    "parameters": {
+     "conditions": {
+      "options": {
+       "caseSensitive": true,
+       "leftValue": "",
+       "typeValidation": "strict",
+       "version": 3
+      },
+      "conditions": [
+       {
+        "id": "6a799434-6124-4739-b59d-8fba88eaa356",
+        "leftValue": "={{$json.event_count}}",
+        "rightValue": 0,
+        "operator": {
+         "type": "number",
+         "operation": "gt"
+        }
+       }
+      ],
+      "combinator": "and"
+     },
+     "options": {}
+    },
+    "type": "n8n-nodes-base.if",
+    "typeVersion": 2.3,
+    "position": [
+     400,
+     400
+    ],
+    "id": "b397dc85-b227-4f0c-b28a-014b48555c29",
+    "name": "If2"
+   },
+   {
+    "parameters": {
+     "assignments": {
+      "assignments": [
+       {
+        "id": "94a83c99-2b86-4178-8e82-c0f4469f6c32",
+        "name": "push_type",
+        "value": "weekly_summary",
+        "type": "string"
+       },
+       {
+        "id": "e8d754df-467d-40c6-bf54-cbe5fdef4b06",
+        "name": "titulo_push",
+        "value": "Sua agenda da semana",
+        "type": "string"
+       },
+       {
+        "id": "Edit-Fields2-corpo",
+        "name": "corpo_push",
+        "type": "string",
+        "value": "={{ $json.event_count === 1 ? '1 evento nesta semana' : $json.event_count + ' eventos nesta semana' }}"
+       }
+      ]
+     },
+     "includeOtherFields": true,
+     "options": {}
+    },
+    "type": "n8n-nodes-base.set",
+    "typeVersion": 3.4,
+    "position": [
+     608,
+     400
+    ],
+    "id": "d3ae7ca6-2c51-4408-a507-c0c576db8985",
+    "name": "Edit Fields2"
+   }
+  ],
+  "connections": {
+   "Schedule Trigger": {
+    "main": [
+     [
+      {
+       "node": "HTTP Request",
+       "type": "main",
+       "index": 0
+      }
+     ]
+    ]
+   },
+   "HTTP Request": {
+    "main": [
+     [
+      {
+       "node": "If",
+       "type": "main",
+       "index": 0
+      }
+     ]
+    ]
+   },
+   "If": {
+    "main": [
+     [
+      {
+       "node": "Edit Fields",
+       "type": "main",
+       "index": 0
+      }
+     ]
+    ]
+   },
+   "Schedule Trigger1": {
+    "main": [
+     [
+      {
+       "node": "HTTP Request2",
+       "type": "main",
+       "index": 0
+      }
+     ]
+    ]
+   },
+   "Edit Fields": {
+    "main": [
+     [
+      {
+       "node": "HTTP Request1",
+       "type": "main",
+       "index": 0
+      }
+     ]
+    ]
+   },
+   "If1": {
+    "main": [
+     [
+      {
+       "node": "Edit Fields1",
+       "type": "main",
+       "index": 0
+      }
+     ]
+    ]
+   },
+   "HTTP Request2": {
+    "main": [
+     [
+      {
+       "node": "If1",
+       "type": "main",
+       "index": 0
+      }
+     ]
+    ]
+   },
+   "Edit Fields1": {
+    "main": [
+     [
+      {
+       "node": "HTTP Request1",
+       "type": "main",
+       "index": 0
+      }
+     ]
+    ]
+   },
+   "Schedule Trigger2": {
+    "main": [
+     [
+      {
+       "node": "HTTP Request3",
+       "type": "main",
+       "index": 0
+      }
+     ]
+    ]
+   },
+   "HTTP Request3": {
+    "main": [
+     [
+      {
+       "node": "If2",
+       "type": "main",
+       "index": 0
+      }
+     ]
+    ]
+   },
+   "If2": {
+    "main": [
+     [
+      {
+       "node": "Edit Fields2",
+       "type": "main",
+       "index": 0
+      }
+     ]
+    ]
+   },
+   "Edit Fields2": {
+    "main": [
+     [
+      {
+       "node": "HTTP Request1",
+       "type": "main",
+       "index": 0
+      }
+     ]
+    ]
+   }
+  },
+  "settings": {
+   "executionOrder": "v1",
+   "binaryMode": "separate",
+   "availableInMCP": false,
+   "timezone": "America/Sao_Paulo"
+  },
+  "staticData": {
+   "node:Schedule Trigger": {
+    "recurrenceRules": []
+   },
+   "node:Schedule Trigger1": {
+    "recurrenceRules": []
+   },
+   "node:Schedule Trigger2": {
+    "recurrenceRules": []
+   }
+  },
+  "meta": null,
+  "pinData": {},
+  "versionId": "581096e4-d254-4d4a-a180-136c7a1c8e12",
+  "activeVersionId": "581096e4-d254-4d4a-a180-136c7a1c8e12",
+  "versionCounter": 146,
+  "triggerCount": 3,
+  "tags": [],
+  "shared": [
+   {
+    "updatedAt": "2026-03-09T20:16:34.533Z",
+    "createdAt": "2026-03-09T20:16:34.533Z",
+    "role": "workflow:owner",
+    "workflowId": "Rxkcm6hhsT1vwqFf",
+    "projectId": "YVYTt8AXCTY86RVw",
+    "project": {
+     "updatedAt": "2026-03-09T18:47:25.558Z",
+     "createdAt": "2026-03-08T16:42:04.279Z",
+     "id": "YVYTt8AXCTY86RVw",
+     "name": "RODRIGO BARBOSA <rsilverbarbosa80@gmail.com.br>",
+     "type": "personal",
+     "icon": null,
+     "description": null,
+     "creatorId": "7b8748ab-dce7-4b38-b651-4b12bd8063ad"
+    }
+   }
+  ],
+  "versionMetadata": {
+   "name": "smart agenda 1",
+   "description": ""
+  }
+ }
+]

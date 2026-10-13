@@ -19,9 +19,11 @@ import '../widgets/empty_state_widget.dart';
 import '../widgets/loading_placeholder_list.dart';
 import '../widgets/section_header.dart';
 import '../utils/family_item_labels.dart';
+import '../utils/recurring_scope_prompt.dart';
 import '../../domain/repositories/i_sync_service.dart';
 import '../widgets/family_invite_banner.dart';
 import '../widgets/native_ad_card.dart';
+import '../services/backpack_reminder_service.dart';
 
 enum AgendaHomeViewMode { day, week, month }
 
@@ -644,6 +646,20 @@ class _TodayPageState extends State<TodayPage> {
                             : null,
                       ),
                     const SizedBox(height: 12),
+                    // Mochila de amanha: o que levar (cadastrado em Aulas).
+                    if (_backpackTomorrow() case final bring?) ...[
+                      _buildBackpackCard(context, bring),
+                      const SizedBox(height: 12),
+                    ],
+                    if (agendaController.upcomingSchoolWork.isNotEmpty) ...[
+                      _sectionTitle(context, 'Próximas provas e trabalhos'),
+                      const SizedBox(height: 8),
+                      _buildSchoolWorkStrip(
+                        context,
+                        agendaController.upcomingSchoolWork.toList(),
+                      ),
+                      const SizedBox(height: 12),
+                    ],
                     _sectionTitle(context, 'Próximos eventos'),
                     const SizedBox(height: 8),
                     // Filtro por grupo so quando ha grupos.
@@ -803,6 +819,27 @@ class _TodayPageState extends State<TodayPage> {
       ),
     );
   }
+
+  /// Titulo com o icone de repeticao quando o evento se repete.
+  InlineSpan _titleSpan(AgendaItem item) => TextSpan(
+    children: [
+      // Prova/trabalho: "Prova de Matematica · titulo".
+      if (item.kind.isSchoolWork)
+        TextSpan(
+          text:
+              '${item.kind.label}${(item.schoolSubject ?? '').trim().isEmpty ? '' : ' de ${item.schoolSubject!.trim()}'} · ',
+        ),
+      TextSpan(text: item.title),
+      if (item.isRecurring)
+        const WidgetSpan(
+          alignment: PlaceholderAlignment.middle,
+          child: Padding(
+            padding: EdgeInsets.only(left: 4),
+            child: Icon(Icons.repeat_rounded, size: 14),
+          ),
+        ),
+    ],
+  );
 
   Widget _buildWeekStrip(AgendaController controller, Color accentGreen) {
     final start = DateUtilsEx.startOfWeek(DateTime.now());
@@ -994,8 +1031,8 @@ class _TodayPageState extends State<TodayPage> {
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  Text(
-                    item.title,
+                  Text.rich(
+                    _titleSpan(item),
                     maxLines: 1,
                     overflow: TextOverflow.ellipsis,
                     style: Theme.of(context).textTheme.titleSmall?.copyWith(
@@ -1026,6 +1063,122 @@ class _TodayPageState extends State<TodayPage> {
               ),
           ],
         ),
+      ),
+    );
+  }
+
+  String? _backpackTomorrow() => Get.isRegistered<BackpackReminderService>()
+      ? Get.find<BackpackReminderService>().tomorrowSummary()
+      : null;
+
+  Widget _buildBackpackCard(BuildContext context, String bring) {
+    final theme = Theme.of(context);
+    return Container(
+      padding: const EdgeInsets.all(14),
+      decoration: BoxDecoration(
+        color: theme.colorScheme.primaryContainer.withValues(alpha: 0.6),
+        borderRadius: BorderRadius.circular(18),
+      ),
+      child: Row(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          const Text('🎒', style: TextStyle(fontSize: 24)),
+          const SizedBox(width: 10),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  'Mochila de amanhã',
+                  style: theme.textTheme.titleSmall?.copyWith(
+                    fontWeight: FontWeight.w800,
+                  ),
+                ),
+                const SizedBox(height: 2),
+                Text(bring, style: theme.textTheme.bodyMedium),
+              ],
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  /// Provas e trabalhos com contagem regressiva ("em 3 dias").
+  Widget _buildSchoolWorkStrip(BuildContext context, List<AgendaItem> items) {
+    final theme = Theme.of(context);
+    final scheme = theme.colorScheme;
+    final today = DateUtilsEx.startOfDay(DateTime.now());
+    return SizedBox(
+      height: 92,
+      child: ListView.separated(
+        scrollDirection: Axis.horizontal,
+        itemCount: items.length,
+        separatorBuilder: (_, _) => const SizedBox(width: 8),
+        itemBuilder: (context, i) {
+          final item = items[i];
+          final days = DateUtilsEx.startOfDay(
+            item.startAt,
+          ).difference(today).inDays;
+          final when = switch (days) {
+            0 => 'hoje',
+            1 => 'amanhã',
+            _ => 'em $days dias',
+          };
+          final urgent = days <= 2;
+          final color = urgent ? context.semanticColors.danger : scheme.primary;
+          final subject = (item.schoolSubject ?? '').trim();
+          return InkWell(
+            borderRadius: BorderRadius.circular(14),
+            onTap: () => Get.toNamed(AppRoutes.eventDetail, arguments: item),
+            child: Container(
+              width: 150,
+              padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 8),
+              decoration: BoxDecoration(
+                color: scheme.surface,
+                borderRadius: BorderRadius.circular(14),
+                border: Border.all(color: color.withValues(alpha: 0.45)),
+              ),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: [
+                  Text(
+                    '${item.kind.label} · $when',
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
+                    style: theme.textTheme.labelSmall?.copyWith(
+                      color: color,
+                      fontWeight: FontWeight.w800,
+                    ),
+                  ),
+                  const SizedBox(height: 4),
+                  Text(
+                    subject.isNotEmpty ? subject : item.title,
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
+                    style: theme.textTheme.titleSmall?.copyWith(
+                      fontWeight: FontWeight.w700,
+                    ),
+                  ),
+                  Text(
+                    subject.isNotEmpty
+                        ? item.title
+                        : DateFormat(
+                            'EEE, dd/MM',
+                            'pt_BR',
+                          ).format(item.startAt),
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
+                    style: theme.textTheme.bodySmall?.copyWith(
+                      color: scheme.onSurfaceVariant,
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          );
+        },
       ),
     );
   }
@@ -1269,8 +1422,8 @@ class _TodayPageState extends State<TodayPage> {
                     ),
                   ],
                   const SizedBox(height: 4),
-                  Text(
-                    item.title,
+                  Text.rich(
+                    _titleSpan(item),
                     maxLines: 2,
                     overflow: TextOverflow.ellipsis,
                     style: Theme.of(context).textTheme.titleSmall?.copyWith(
@@ -1439,7 +1592,7 @@ class _TodayPageState extends State<TodayPage> {
                 onTap: () =>
                     Get.toNamed(AppRoutes.eventDetail, arguments: item),
                 onToggleStatus: (status) {
-                  agendaController.toggleStatus(item.id, status);
+                  agendaController.toggleItemStatus(item, status);
                   _showSavedFeedback(context, 'Status atualizado');
                 },
               ),
@@ -1599,8 +1752,8 @@ class _TodayPageState extends State<TodayPage> {
                         ),
                       ],
                       const SizedBox(height: 4),
-                      Text(
-                        item.title,
+                      Text.rich(
+                        _titleSpan(item),
                         style: Theme.of(context).textTheme.titleMedium
                             ?.copyWith(fontWeight: FontWeight.w700),
                       ),
@@ -1678,10 +1831,10 @@ class _TodayPageState extends State<TodayPage> {
           groupColor: groupColorById[item.groupId],
           onTap: () => Get.toNamed(AppRoutes.eventDetail, arguments: item),
           onToggleStatus: (status) {
-            controller.toggleStatus(item.id, status);
+            controller.toggleItemStatus(item, status);
             _showSavedFeedback(context, 'Status atualizado');
           },
-          onDelete: () => _confirmDeleteAndExecute(controller, item.id),
+          onDelete: () => _confirmDeleteAndExecute(controller, item),
         );
       },
     );
@@ -1795,13 +1948,11 @@ class _TodayPageState extends State<TodayPage> {
                             arguments: item,
                           ),
                           onToggleStatus: (status) {
-                            agendaController.toggleStatus(item.id, status);
+                            agendaController.toggleItemStatus(item, status);
                             _showSavedFeedback(context, 'Status atualizado');
                           },
-                          onDelete: () => _confirmDeleteAndExecute(
-                            agendaController,
-                            item.id,
-                          ),
+                          onDelete: () =>
+                              _confirmDeleteAndExecute(agendaController, item),
                         ),
                       ),
                       const SizedBox(height: 6),
@@ -1883,7 +2034,10 @@ class _TodayPageState extends State<TodayPage> {
           onPageChanged: (focused) {
             setState(() {
               focusedDay = DateUtilsEx.startOfDay(focused);
-              if (selectedDate.month != focusedDay.month ||
+              if (mode == AgendaHomeViewMode.week) {
+                // Semana: a lista acompanha a semana mostrada no calendario.
+                selectedDate = focusedDay;
+              } else if (selectedDate.month != focusedDay.month ||
                   selectedDate.year != focusedDay.year) {
                 selectedDate = DateTime(focusedDay.year, focusedDay.month, 1);
               }
@@ -1944,8 +2098,19 @@ class _TodayPageState extends State<TodayPage> {
 
   Future<bool?> _confirmDeleteAndExecute(
     AgendaController controller,
-    String itemId,
+    AgendaItem item,
   ) async {
+    final itemId = item.id;
+    // Repeticao: excluir so este dia ou a serie inteira.
+    if (item.isOccurrence) {
+      final scope = await askRecurringScope(context, title: 'Excluir evento');
+      if (scope == null) return false;
+      final ok = scope == RecurringScope.onlyThis
+          ? await controller.deleteOccurrence(item)
+          : await controller.deleteItem(itemId);
+      if (ok && mounted) _showSavedFeedback(context, 'Evento removido');
+      return ok;
+    }
     final confirm = await showDialog<bool>(
       context: context,
       builder: (context) => AlertDialog(

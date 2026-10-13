@@ -51,6 +51,9 @@ class AgendaController extends GetxController {
 
   /// Proximos eventos a partir de agora, mesmo que distantes.
   final RxList<AgendaItem> upcomingItems = <AgendaItem>[].obs;
+
+  /// Provas e trabalhos pendentes dos proximos 45 dias (bloco da Inicio).
+  final RxList<AgendaItem> upcomingSchoolWork = <AgendaItem>[].obs;
   static const _upcomingHorizon = Duration(days: 365);
   static const _upcomingLimit = 15;
   final RxSet<DateTime> monthMarkers = <DateTime>{}.obs;
@@ -59,12 +62,20 @@ class AgendaController extends GetxController {
   int _loadByDayRequestId = 0;
   StreamSubscription<void>? _remoteChangesSub;
 
+  // Periodos que estao na tela: atualizar recarrega estes, nao a semana/mes
+  // atual (antes, concluir algo numa semana futura esvaziava a lista).
+  (DateTime, DateTime)? _shownWeek;
+  (DateTime, DateTime)? _shownMonth;
+  (DateTime, DateTime)? _shownMarkers;
+
   @override
   void onInit() {
     super.onInit();
-    WidgetsBinding.instance.addPostFrameCallback((_) {
+    WidgetsBinding.instance.addPostFrameCallback((_) async {
       loadToday();
-      loadUpcoming();
+      await loadUpcoming();
+      await loadUpcomingSchoolWork();
+      await _scheduleUpcomingOccurrenceReminders();
     });
     // Alteracoes de outros membros/dispositivos chegam pelo sync.
     _remoteChangesSub = syncService?.onDataChanged.listen(
@@ -113,12 +124,27 @@ class AgendaController extends GetxController {
     upcomingItems.assignAll(items.take(_upcomingLimit));
   }
 
+  Future<void> loadUpcomingSchoolWork() async {
+    final today = DateUtilsEx.startOfDay(DateTime.now());
+    final result = await getAgendaItemsByRange(
+      today,
+      today.add(const Duration(days: 45)),
+    );
+    if (!result.isSuccess) return;
+    upcomingSchoolWork.assignAll(
+      (result.data ?? []).where(
+        (e) => e.kind.isSchoolWork && e.status == AgendaStatus.pending,
+      ),
+    );
+  }
+
   Future<void> loadWeek(
     DateTime start,
     DateTime end, {
     bool silent = false,
   }) async {
     if (!silent) loading.value = true;
+    _shownWeek = (start, end);
     final result = await getAgendaItemsByRange(start, end);
     if (result.isSuccess) {
       weekItems.assignAll(result.data ?? []);
@@ -134,6 +160,7 @@ class AgendaController extends GetxController {
     bool silent = false,
   }) async {
     if (!silent) loading.value = true;
+    _shownMonth = (start, end);
     final result = await getAgendaItemsByRange(start, end);
     if (result.isSuccess) {
       monthItems.assignAll(result.data ?? []);
@@ -144,6 +171,7 @@ class AgendaController extends GetxController {
   }
 
   Future<void> loadMonth(DateTime start, DateTime end) async {
+    _shownMarkers = (start, end);
     final result = await getAgendaMarkersByRange(start, end);
     if (result.isSuccess) {
       monthMarkers.assignAll(result.data ?? {});
@@ -234,6 +262,46 @@ class AgendaController extends GetxController {
     return false;
   }
 
+  /// Lembretes das proximas ocorrencias de eventos que se repetem. Rodado ao
+  /// abrir o app para a serie continuar avisando depois das ja agendadas.
+  Future<void> _scheduleUpcomingOccurrenceReminders() async {
+    for (final occ in upcomingItems.where(
+      (e) => e.isOccurrence && (e.reminder?.enabled ?? false),
+    )) {
+      await notificationService.scheduleForItem(occ);
+    }
+  }
+
+  /// Concluir/reabrir/cancelar. Em evento que se repete, vale so para a
+  /// ocorrencia tocada (cancelar = tirar so aquele dia).
+  Future<void> toggleItemStatus(AgendaItem item, AgendaStatus status) async {
+    if (!item.isOccurrence) return toggleStatus(item.id, status);
+    final day = item.occurrenceDate!;
+    final result = status == AgendaStatus.canceled
+        ? await setAgendaStatus.removeOccurrence(item.id, day)
+        : await setAgendaStatus.occurrenceDone(
+            item.id,
+            day,
+            status == AgendaStatus.done,
+          );
+    if (!result.isSuccess) errorMessage.value = result.errorMessage;
+    await refreshCurrentData();
+  }
+
+  /// Excluir so uma ocorrencia de um evento que se repete.
+  Future<bool> deleteOccurrence(AgendaItem occurrence) async {
+    final day = occurrence.occurrenceDate;
+    if (day == null) return deleteItem(occurrence.id);
+    await notificationService.cancelForItem(occurrence);
+    final result = await setAgendaStatus.removeOccurrence(occurrence.id, day);
+    if (!result.isSuccess) {
+      errorMessage.value = result.errorMessage;
+      return false;
+    }
+    await refreshCurrentData();
+    return true;
+  }
+
   Future<void> toggleStatus(String id, AgendaStatus status) async {
     final result = await setAgendaStatus(id, status);
     if (!result.isSuccess) {
@@ -256,18 +324,18 @@ class AgendaController extends GetxController {
     final now = DateTime.now();
     await loadToday(silent: true);
     await loadUpcoming();
+    await loadUpcomingSchoolWork();
     await loadByDay(selectedDate.value);
-    await loadWeek(
-      DateUtilsEx.startOfWeek(now),
-      DateUtilsEx.endOfWeek(now),
-      silent: true,
-    );
-    await loadMonthItems(
-      DateUtilsEx.startOfMonth(now),
-      DateUtilsEx.endOfMonth(now),
-      silent: true,
-    );
-    await loadMonth(DateUtilsEx.startOfMonth(now), DateUtilsEx.endOfMonth(now));
+    final week =
+        _shownWeek ??
+        (DateUtilsEx.startOfWeek(now), DateUtilsEx.endOfWeek(now));
+    await loadWeek(week.$1, week.$2, silent: true);
+    final month =
+        _shownMonth ??
+        (DateUtilsEx.startOfMonth(now), DateUtilsEx.endOfMonth(now));
+    await loadMonthItems(month.$1, month.$2, silent: true);
+    final markers = _shownMarkers ?? month;
+    await loadMonth(markers.$1, markers.$2);
   }
 
   AgendaItem buildNewItem({

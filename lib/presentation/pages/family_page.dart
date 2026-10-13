@@ -1,5 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
+import 'package:share_plus/share_plus.dart';
+import 'package:url_launcher/url_launcher.dart';
 import 'package:uuid/uuid.dart';
 
 import '../../core/result/result.dart';
@@ -423,14 +425,31 @@ class _FamilyPageState extends State<FamilyPage> {
         Padding(
           padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 6),
           child: ctx.availableSlots > 0
-              ? OutlinedButton.icon(
-                  onPressed: _busy
-                      ? null
-                      : () => _showInviteDialog(context, ctx),
-                  icon: const Icon(Icons.person_add_alt_1_outlined),
-                  label: Text(
-                    'Convidar pessoa (${ctx.availableSlots} vaga${ctx.availableSlots == 1 ? '' : 's'})',
-                  ),
+              ? Column(
+                  crossAxisAlignment: CrossAxisAlignment.stretch,
+                  children: [
+                    FilledButton.icon(
+                      onPressed: _busy
+                          ? null
+                          : () => _inviteByLink(context, ctx),
+                      icon: const Icon(Icons.chat_outlined),
+                      label: const Text('Convidar pelo WhatsApp'),
+                    ),
+                    const SizedBox(height: DesignTokens.spaceSm),
+                    OutlinedButton.icon(
+                      onPressed: _busy
+                          ? null
+                          : () => _showInviteDialog(context, ctx),
+                      icon: const Icon(Icons.mail_outline),
+                      label: const Text('Convidar por e-mail'),
+                    ),
+                    const SizedBox(height: 4),
+                    Text(
+                      '${ctx.availableSlots} vaga${ctx.availableSlots == 1 ? '' : 's'} na Família',
+                      textAlign: TextAlign.center,
+                      style: Theme.of(context).textTheme.bodySmall,
+                    ),
+                  ],
                 )
               : Text(
                   'Limite de ${ctx.maxMembers} pessoas atingido.',
@@ -606,8 +625,12 @@ class _FamilyPageState extends State<FamilyPage> {
       padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
       child: ListTile(
         contentPadding: EdgeInsets.zero,
-        leading: const CircleAvatar(child: Icon(Icons.mail_outline)),
-        title: Text(invite.email ?? ''),
+        leading: CircleAvatar(
+          child: Icon(
+            invite.email == null ? Icons.link_rounded : Icons.mail_outline,
+          ),
+        ),
+        title: Text(invite.email ?? 'Convite por link'),
         subtitle: Text('Convite pendente · ${invite.role.label}'),
         trailing: TextButton(
           onPressed: _busy
@@ -669,6 +692,74 @@ class _FamilyPageState extends State<FamilyPage> {
   // ---------------------------------------------------------------------------
   // Dialogos
   // ---------------------------------------------------------------------------
+
+  /// Gera um link de convite (1 pessoa, 7 dias) e abre o WhatsApp com a
+  /// mensagem pronta; sem WhatsApp, abre o compartilhar do Android.
+  Future<void> _inviteByLink(BuildContext context, FamilyContext ctx) async {
+    final role = await showModalBottomSheet<FamilyRole>(
+      context: context,
+      showDragHandle: true,
+      builder: (sheetContext) => SafeArea(
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            const Padding(
+              padding: EdgeInsets.fromLTRB(24, 0, 24, 8),
+              child: Text(
+                'Como a pessoa vai participar?',
+                style: TextStyle(fontWeight: FontWeight.w700, fontSize: 16),
+              ),
+            ),
+            for (final r in const [FamilyRole.editor, FamilyRole.viewer])
+              ListTile(
+                leading: Icon(
+                  r == FamilyRole.editor
+                      ? Icons.edit_calendar_outlined
+                      : Icons.visibility_outlined,
+                ),
+                title: Text(r.label),
+                subtitle: Text(r.description),
+                onTap: () => Navigator.pop(sheetContext, r),
+              ),
+            const SizedBox(height: 8),
+          ],
+        ),
+      ),
+    );
+    if (role == null || !context.mounted) return;
+
+    setState(() => _busy = true);
+    final result = await _family.createInviteLink(role);
+    if (!mounted || !context.mounted) return;
+    setState(() => _busy = false);
+    if (!result.isSuccess || result.data == null) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text(result.errorMessage ?? 'Erro ao criar convite.'),
+        ),
+      );
+      return;
+    }
+    final link = 'https://rbarbosa.tech/convite/${result.data}';
+    final text =
+        'Oi! Te convidei para a Família ${ctx.familyName ?? ''} no Smart Agenda, '
+        'para a gente organizar a agenda junto. Toque no link para entrar: $link';
+    final whatsApp = Uri.parse(
+      'https://wa.me/?text=${Uri.encodeComponent(text)}',
+    );
+    final opened = await launchUrl(
+      whatsApp,
+      mode: LaunchMode.externalApplication,
+    ).catchError((_) => false);
+    if (!opened) await SharePlus.instance.share(ShareParams(text: text));
+    if (!mounted || !context.mounted) return;
+    ScaffoldMessenger.of(context).showSnackBar(
+      const SnackBar(
+        content: Text('Convite criado. O link vale para 1 pessoa por 7 dias.'),
+      ),
+    );
+  }
 
   Future<void> _showInviteDialog(
     BuildContext context,

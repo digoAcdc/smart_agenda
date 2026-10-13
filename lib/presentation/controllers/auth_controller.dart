@@ -15,6 +15,7 @@ import '../../domain/repositories/i_sync_service.dart';
 import '../../domain/repositories/i_plan_service.dart';
 import '../../domain/repositories/i_premium_service.dart';
 import 'billing_controller.dart';
+import '../services/invite_link_handler.dart';
 
 const _keyRememberMe = 'auth_remember_me';
 const _keyRememberEmail = 'auth_remember_email';
@@ -139,6 +140,13 @@ class AuthController extends GetxController with WidgetsBindingObserver {
     }
   }
 
+  /// Convite por link guardado antes do login: mostra agora.
+  void _promptPendingInvite() {
+    if (Get.isRegistered<InviteLinkHandler>()) {
+      unawaited(Get.find<InviteLinkHandler>().promptIfPending());
+    }
+  }
+
   /// Plano mudou (compra, restauracao): atualiza a tela do Pro, anuncios e
   /// a Familia (que fica ativa/somente leitura conforme o Pro do dono).
   Future<void> refreshPlanStatus() async {
@@ -212,6 +220,7 @@ class AuthController extends GetxController with WidgetsBindingObserver {
         _refreshPremiumService();
         unawaited(_revalidateSubscription(reason: 'login', withRestore: true));
         await _loadFamilyAndSync();
+        _promptPendingInvite();
         if (rememberMe.value) {
           rememberedEmail.value = email;
           await _saveRememberMe();
@@ -250,6 +259,7 @@ class AuthController extends GetxController with WidgetsBindingObserver {
         _refreshPremiumService();
         unawaited(_revalidateSubscription(reason: 'signup', withRestore: true));
         await _loadFamilyAndSync();
+        _promptPendingInvite();
         loading.value = false;
         return true;
       }

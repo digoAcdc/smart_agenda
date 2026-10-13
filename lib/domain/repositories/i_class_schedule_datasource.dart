@@ -13,6 +13,9 @@ abstract class IClassScheduleDataSource {
 
   Future<void> renameSchedule(String id, String name);
 
+  /// "O que levar" por materia (vazio remove a materia).
+  Future<void> setBringItems(String scheduleId, Map<String, String> items);
+
   /// Exclui a grade e suas aulas.
   Future<void> deleteSchedule(ClassSchedule schedule);
 

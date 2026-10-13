@@ -179,6 +179,17 @@ class $AgendaItemsTableTable extends AgendaItemsTable
     requiredDuringInsert: false,
     defaultValue: const Constant('event'),
   );
+  static const VerificationMeta _schoolSubjectMeta = const VerificationMeta(
+    'schoolSubject',
+  );
+  @override
+  late final GeneratedColumn<String> schoolSubject = GeneratedColumn<String>(
+    'school_subject',
+    aliasedName,
+    true,
+    type: DriftSqlType.string,
+    requiredDuringInsert: false,
+  );
   static const VerificationMeta _subjectTypeMeta = const VerificationMeta(
     'subjectType',
   );
@@ -320,6 +331,7 @@ class $AgendaItemsTableTable extends AgendaItemsTable
     syncState,
     familyId,
     kind,
+    schoolSubject,
     subjectType,
     subjectChildId,
     subjectUserId,
@@ -453,6 +465,15 @@ class $AgendaItemsTableTable extends AgendaItemsTable
       context.handle(
         _kindMeta,
         kind.isAcceptableOrUnknown(data['kind']!, _kindMeta),
+      );
+    }
+    if (data.containsKey('school_subject')) {
+      context.handle(
+        _schoolSubjectMeta,
+        schoolSubject.isAcceptableOrUnknown(
+          data['school_subject']!,
+          _schoolSubjectMeta,
+        ),
       );
     }
     if (data.containsKey('subject_type')) {
@@ -616,6 +637,10 @@ class $AgendaItemsTableTable extends AgendaItemsTable
         DriftSqlType.string,
         data['${effectivePrefix}kind'],
       )!,
+      schoolSubject: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}school_subject'],
+      ),
       subjectType: attachedDatabase.typeMapping.read(
         DriftSqlType.string,
         data['${effectivePrefix}subject_type'],
@@ -687,6 +712,7 @@ class AgendaItemsTableData extends DataClass
   final String syncState;
   final String? familyId;
   final String kind;
+  final String? schoolSubject;
   final String subjectType;
   final String? subjectChildId;
   final String? subjectUserId;
@@ -715,6 +741,7 @@ class AgendaItemsTableData extends DataClass
     required this.syncState,
     this.familyId,
     required this.kind,
+    this.schoolSubject,
     required this.subjectType,
     this.subjectChildId,
     this.subjectUserId,
@@ -762,6 +789,9 @@ class AgendaItemsTableData extends DataClass
       map['family_id'] = Variable<String>(familyId);
     }
     map['kind'] = Variable<String>(kind);
+    if (!nullToAbsent || schoolSubject != null) {
+      map['school_subject'] = Variable<String>(schoolSubject);
+    }
     map['subject_type'] = Variable<String>(subjectType);
     if (!nullToAbsent || subjectChildId != null) {
       map['subject_child_id'] = Variable<String>(subjectChildId);
@@ -824,6 +854,9 @@ class AgendaItemsTableData extends DataClass
           ? const Value.absent()
           : Value(familyId),
       kind: Value(kind),
+      schoolSubject: schoolSubject == null && nullToAbsent
+          ? const Value.absent()
+          : Value(schoolSubject),
       subjectType: Value(subjectType),
       subjectChildId: subjectChildId == null && nullToAbsent
           ? const Value.absent()
@@ -874,6 +907,7 @@ class AgendaItemsTableData extends DataClass
       syncState: serializer.fromJson<String>(json['syncState']),
       familyId: serializer.fromJson<String?>(json['familyId']),
       kind: serializer.fromJson<String>(json['kind']),
+      schoolSubject: serializer.fromJson<String?>(json['schoolSubject']),
       subjectType: serializer.fromJson<String>(json['subjectType']),
       subjectChildId: serializer.fromJson<String?>(json['subjectChildId']),
       subjectUserId: serializer.fromJson<String?>(json['subjectUserId']),
@@ -907,6 +941,7 @@ class AgendaItemsTableData extends DataClass
       'syncState': serializer.toJson<String>(syncState),
       'familyId': serializer.toJson<String?>(familyId),
       'kind': serializer.toJson<String>(kind),
+      'schoolSubject': serializer.toJson<String?>(schoolSubject),
       'subjectType': serializer.toJson<String>(subjectType),
       'subjectChildId': serializer.toJson<String?>(subjectChildId),
       'subjectUserId': serializer.toJson<String?>(subjectUserId),
@@ -938,6 +973,7 @@ class AgendaItemsTableData extends DataClass
     String? syncState,
     Value<String?> familyId = const Value.absent(),
     String? kind,
+    Value<String?> schoolSubject = const Value.absent(),
     String? subjectType,
     Value<String?> subjectChildId = const Value.absent(),
     Value<String?> subjectUserId = const Value.absent(),
@@ -968,6 +1004,9 @@ class AgendaItemsTableData extends DataClass
     syncState: syncState ?? this.syncState,
     familyId: familyId.present ? familyId.value : this.familyId,
     kind: kind ?? this.kind,
+    schoolSubject: schoolSubject.present
+        ? schoolSubject.value
+        : this.schoolSubject,
     subjectType: subjectType ?? this.subjectType,
     subjectChildId: subjectChildId.present
         ? subjectChildId.value
@@ -1012,6 +1051,9 @@ class AgendaItemsTableData extends DataClass
       syncState: data.syncState.present ? data.syncState.value : this.syncState,
       familyId: data.familyId.present ? data.familyId.value : this.familyId,
       kind: data.kind.present ? data.kind.value : this.kind,
+      schoolSubject: data.schoolSubject.present
+          ? data.schoolSubject.value
+          : this.schoolSubject,
       subjectType: data.subjectType.present
           ? data.subjectType.value
           : this.subjectType,
@@ -1057,6 +1099,7 @@ class AgendaItemsTableData extends DataClass
           ..write('syncState: $syncState, ')
           ..write('familyId: $familyId, ')
           ..write('kind: $kind, ')
+          ..write('schoolSubject: $schoolSubject, ')
           ..write('subjectType: $subjectType, ')
           ..write('subjectChildId: $subjectChildId, ')
           ..write('subjectUserId: $subjectUserId, ')
@@ -1090,6 +1133,7 @@ class AgendaItemsTableData extends DataClass
     syncState,
     familyId,
     kind,
+    schoolSubject,
     subjectType,
     subjectChildId,
     subjectUserId,
@@ -1122,6 +1166,7 @@ class AgendaItemsTableData extends DataClass
           other.syncState == this.syncState &&
           other.familyId == this.familyId &&
           other.kind == this.kind &&
+          other.schoolSubject == this.schoolSubject &&
           other.subjectType == this.subjectType &&
           other.subjectChildId == this.subjectChildId &&
           other.subjectUserId == this.subjectUserId &&
@@ -1152,6 +1197,7 @@ class AgendaItemsTableCompanion extends UpdateCompanion<AgendaItemsTableData> {
   final Value<String> syncState;
   final Value<String?> familyId;
   final Value<String> kind;
+  final Value<String?> schoolSubject;
   final Value<String> subjectType;
   final Value<String?> subjectChildId;
   final Value<String?> subjectUserId;
@@ -1181,6 +1227,7 @@ class AgendaItemsTableCompanion extends UpdateCompanion<AgendaItemsTableData> {
     this.syncState = const Value.absent(),
     this.familyId = const Value.absent(),
     this.kind = const Value.absent(),
+    this.schoolSubject = const Value.absent(),
     this.subjectType = const Value.absent(),
     this.subjectChildId = const Value.absent(),
     this.subjectUserId = const Value.absent(),
@@ -1211,6 +1258,7 @@ class AgendaItemsTableCompanion extends UpdateCompanion<AgendaItemsTableData> {
     this.syncState = const Value.absent(),
     this.familyId = const Value.absent(),
     this.kind = const Value.absent(),
+    this.schoolSubject = const Value.absent(),
     this.subjectType = const Value.absent(),
     this.subjectChildId = const Value.absent(),
     this.subjectUserId = const Value.absent(),
@@ -1245,6 +1293,7 @@ class AgendaItemsTableCompanion extends UpdateCompanion<AgendaItemsTableData> {
     Expression<String>? syncState,
     Expression<String>? familyId,
     Expression<String>? kind,
+    Expression<String>? schoolSubject,
     Expression<String>? subjectType,
     Expression<String>? subjectChildId,
     Expression<String>? subjectUserId,
@@ -1275,6 +1324,7 @@ class AgendaItemsTableCompanion extends UpdateCompanion<AgendaItemsTableData> {
       if (syncState != null) 'sync_state': syncState,
       if (familyId != null) 'family_id': familyId,
       if (kind != null) 'kind': kind,
+      if (schoolSubject != null) 'school_subject': schoolSubject,
       if (subjectType != null) 'subject_type': subjectType,
       if (subjectChildId != null) 'subject_child_id': subjectChildId,
       if (subjectUserId != null) 'subject_user_id': subjectUserId,
@@ -1307,6 +1357,7 @@ class AgendaItemsTableCompanion extends UpdateCompanion<AgendaItemsTableData> {
     Value<String>? syncState,
     Value<String?>? familyId,
     Value<String>? kind,
+    Value<String?>? schoolSubject,
     Value<String>? subjectType,
     Value<String?>? subjectChildId,
     Value<String?>? subjectUserId,
@@ -1337,6 +1388,7 @@ class AgendaItemsTableCompanion extends UpdateCompanion<AgendaItemsTableData> {
       syncState: syncState ?? this.syncState,
       familyId: familyId ?? this.familyId,
       kind: kind ?? this.kind,
+      schoolSubject: schoolSubject ?? this.schoolSubject,
       subjectType: subjectType ?? this.subjectType,
       subjectChildId: subjectChildId ?? this.subjectChildId,
       subjectUserId: subjectUserId ?? this.subjectUserId,
@@ -1403,6 +1455,9 @@ class AgendaItemsTableCompanion extends UpdateCompanion<AgendaItemsTableData> {
     if (kind.present) {
       map['kind'] = Variable<String>(kind.value);
     }
+    if (schoolSubject.present) {
+      map['school_subject'] = Variable<String>(schoolSubject.value);
+    }
     if (subjectType.present) {
       map['subject_type'] = Variable<String>(subjectType.value);
     }
@@ -1461,6 +1516,7 @@ class AgendaItemsTableCompanion extends UpdateCompanion<AgendaItemsTableData> {
           ..write('syncState: $syncState, ')
           ..write('familyId: $familyId, ')
           ..write('kind: $kind, ')
+          ..write('schoolSubject: $schoolSubject, ')
           ..write('subjectType: $subjectType, ')
           ..write('subjectChildId: $subjectChildId, ')
           ..write('subjectUserId: $subjectUserId, ')
@@ -4580,6 +4636,17 @@ class $ClassSchedulesTableTable extends ClassSchedulesTable
     type: DriftSqlType.string,
     requiredDuringInsert: false,
   );
+  static const VerificationMeta _bringJsonMeta = const VerificationMeta(
+    'bringJson',
+  );
+  @override
+  late final GeneratedColumn<String> bringJson = GeneratedColumn<String>(
+    'bring_json',
+    aliasedName,
+    true,
+    type: DriftSqlType.string,
+    requiredDuringInsert: false,
+  );
   static const VerificationMeta _syncStateMeta = const VerificationMeta(
     'syncState',
   );
@@ -4631,6 +4698,7 @@ class $ClassSchedulesTableTable extends ClassSchedulesTable
     name,
     familyId,
     childId,
+    bringJson,
     syncState,
     createdAt,
     updatedAt,
@@ -4671,6 +4739,12 @@ class $ClassSchedulesTableTable extends ClassSchedulesTable
       context.handle(
         _childIdMeta,
         childId.isAcceptableOrUnknown(data['child_id']!, _childIdMeta),
+      );
+    }
+    if (data.containsKey('bring_json')) {
+      context.handle(
+        _bringJsonMeta,
+        bringJson.isAcceptableOrUnknown(data['bring_json']!, _bringJsonMeta),
       );
     }
     if (data.containsKey('sync_state')) {
@@ -4729,6 +4803,10 @@ class $ClassSchedulesTableTable extends ClassSchedulesTable
         DriftSqlType.string,
         data['${effectivePrefix}child_id'],
       ),
+      bringJson: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}bring_json'],
+      ),
       syncState: attachedDatabase.typeMapping.read(
         DriftSqlType.string,
         data['${effectivePrefix}sync_state'],
@@ -4760,6 +4838,7 @@ class ClassSchedulesTableData extends DataClass
   final String name;
   final String? familyId;
   final String? childId;
+  final String? bringJson;
   final String syncState;
   final DateTime createdAt;
   final DateTime updatedAt;
@@ -4769,6 +4848,7 @@ class ClassSchedulesTableData extends DataClass
     required this.name,
     this.familyId,
     this.childId,
+    this.bringJson,
     required this.syncState,
     required this.createdAt,
     required this.updatedAt,
@@ -4784,6 +4864,9 @@ class ClassSchedulesTableData extends DataClass
     }
     if (!nullToAbsent || childId != null) {
       map['child_id'] = Variable<String>(childId);
+    }
+    if (!nullToAbsent || bringJson != null) {
+      map['bring_json'] = Variable<String>(bringJson);
     }
     map['sync_state'] = Variable<String>(syncState);
     map['created_at'] = Variable<DateTime>(createdAt);
@@ -4804,6 +4887,9 @@ class ClassSchedulesTableData extends DataClass
       childId: childId == null && nullToAbsent
           ? const Value.absent()
           : Value(childId),
+      bringJson: bringJson == null && nullToAbsent
+          ? const Value.absent()
+          : Value(bringJson),
       syncState: Value(syncState),
       createdAt: Value(createdAt),
       updatedAt: Value(updatedAt),
@@ -4823,6 +4909,7 @@ class ClassSchedulesTableData extends DataClass
       name: serializer.fromJson<String>(json['name']),
       familyId: serializer.fromJson<String?>(json['familyId']),
       childId: serializer.fromJson<String?>(json['childId']),
+      bringJson: serializer.fromJson<String?>(json['bringJson']),
       syncState: serializer.fromJson<String>(json['syncState']),
       createdAt: serializer.fromJson<DateTime>(json['createdAt']),
       updatedAt: serializer.fromJson<DateTime>(json['updatedAt']),
@@ -4837,6 +4924,7 @@ class ClassSchedulesTableData extends DataClass
       'name': serializer.toJson<String>(name),
       'familyId': serializer.toJson<String?>(familyId),
       'childId': serializer.toJson<String?>(childId),
+      'bringJson': serializer.toJson<String?>(bringJson),
       'syncState': serializer.toJson<String>(syncState),
       'createdAt': serializer.toJson<DateTime>(createdAt),
       'updatedAt': serializer.toJson<DateTime>(updatedAt),
@@ -4849,6 +4937,7 @@ class ClassSchedulesTableData extends DataClass
     String? name,
     Value<String?> familyId = const Value.absent(),
     Value<String?> childId = const Value.absent(),
+    Value<String?> bringJson = const Value.absent(),
     String? syncState,
     DateTime? createdAt,
     DateTime? updatedAt,
@@ -4858,6 +4947,7 @@ class ClassSchedulesTableData extends DataClass
     name: name ?? this.name,
     familyId: familyId.present ? familyId.value : this.familyId,
     childId: childId.present ? childId.value : this.childId,
+    bringJson: bringJson.present ? bringJson.value : this.bringJson,
     syncState: syncState ?? this.syncState,
     createdAt: createdAt ?? this.createdAt,
     updatedAt: updatedAt ?? this.updatedAt,
@@ -4869,6 +4959,7 @@ class ClassSchedulesTableData extends DataClass
       name: data.name.present ? data.name.value : this.name,
       familyId: data.familyId.present ? data.familyId.value : this.familyId,
       childId: data.childId.present ? data.childId.value : this.childId,
+      bringJson: data.bringJson.present ? data.bringJson.value : this.bringJson,
       syncState: data.syncState.present ? data.syncState.value : this.syncState,
       createdAt: data.createdAt.present ? data.createdAt.value : this.createdAt,
       updatedAt: data.updatedAt.present ? data.updatedAt.value : this.updatedAt,
@@ -4883,6 +4974,7 @@ class ClassSchedulesTableData extends DataClass
           ..write('name: $name, ')
           ..write('familyId: $familyId, ')
           ..write('childId: $childId, ')
+          ..write('bringJson: $bringJson, ')
           ..write('syncState: $syncState, ')
           ..write('createdAt: $createdAt, ')
           ..write('updatedAt: $updatedAt, ')
@@ -4897,6 +4989,7 @@ class ClassSchedulesTableData extends DataClass
     name,
     familyId,
     childId,
+    bringJson,
     syncState,
     createdAt,
     updatedAt,
@@ -4910,6 +5003,7 @@ class ClassSchedulesTableData extends DataClass
           other.name == this.name &&
           other.familyId == this.familyId &&
           other.childId == this.childId &&
+          other.bringJson == this.bringJson &&
           other.syncState == this.syncState &&
           other.createdAt == this.createdAt &&
           other.updatedAt == this.updatedAt &&
@@ -4922,6 +5016,7 @@ class ClassSchedulesTableCompanion
   final Value<String> name;
   final Value<String?> familyId;
   final Value<String?> childId;
+  final Value<String?> bringJson;
   final Value<String> syncState;
   final Value<DateTime> createdAt;
   final Value<DateTime> updatedAt;
@@ -4932,6 +5027,7 @@ class ClassSchedulesTableCompanion
     this.name = const Value.absent(),
     this.familyId = const Value.absent(),
     this.childId = const Value.absent(),
+    this.bringJson = const Value.absent(),
     this.syncState = const Value.absent(),
     this.createdAt = const Value.absent(),
     this.updatedAt = const Value.absent(),
@@ -4943,6 +5039,7 @@ class ClassSchedulesTableCompanion
     required String name,
     this.familyId = const Value.absent(),
     this.childId = const Value.absent(),
+    this.bringJson = const Value.absent(),
     this.syncState = const Value.absent(),
     required DateTime createdAt,
     required DateTime updatedAt,
@@ -4957,6 +5054,7 @@ class ClassSchedulesTableCompanion
     Expression<String>? name,
     Expression<String>? familyId,
     Expression<String>? childId,
+    Expression<String>? bringJson,
     Expression<String>? syncState,
     Expression<DateTime>? createdAt,
     Expression<DateTime>? updatedAt,
@@ -4968,6 +5066,7 @@ class ClassSchedulesTableCompanion
       if (name != null) 'name': name,
       if (familyId != null) 'family_id': familyId,
       if (childId != null) 'child_id': childId,
+      if (bringJson != null) 'bring_json': bringJson,
       if (syncState != null) 'sync_state': syncState,
       if (createdAt != null) 'created_at': createdAt,
       if (updatedAt != null) 'updated_at': updatedAt,
@@ -4981,6 +5080,7 @@ class ClassSchedulesTableCompanion
     Value<String>? name,
     Value<String?>? familyId,
     Value<String?>? childId,
+    Value<String?>? bringJson,
     Value<String>? syncState,
     Value<DateTime>? createdAt,
     Value<DateTime>? updatedAt,
@@ -4992,6 +5092,7 @@ class ClassSchedulesTableCompanion
       name: name ?? this.name,
       familyId: familyId ?? this.familyId,
       childId: childId ?? this.childId,
+      bringJson: bringJson ?? this.bringJson,
       syncState: syncState ?? this.syncState,
       createdAt: createdAt ?? this.createdAt,
       updatedAt: updatedAt ?? this.updatedAt,
@@ -5014,6 +5115,9 @@ class ClassSchedulesTableCompanion
     }
     if (childId.present) {
       map['child_id'] = Variable<String>(childId.value);
+    }
+    if (bringJson.present) {
+      map['bring_json'] = Variable<String>(bringJson.value);
     }
     if (syncState.present) {
       map['sync_state'] = Variable<String>(syncState.value);
@@ -5040,6 +5144,7 @@ class ClassSchedulesTableCompanion
           ..write('name: $name, ')
           ..write('familyId: $familyId, ')
           ..write('childId: $childId, ')
+          ..write('bringJson: $bringJson, ')
           ..write('syncState: $syncState, ')
           ..write('createdAt: $createdAt, ')
           ..write('updatedAt: $updatedAt, ')
@@ -6187,6 +6292,7 @@ typedef $$AgendaItemsTableTableCreateCompanionBuilder =
       Value<String> syncState,
       Value<String?> familyId,
       Value<String> kind,
+      Value<String?> schoolSubject,
       Value<String> subjectType,
       Value<String?> subjectChildId,
       Value<String?> subjectUserId,
@@ -6218,6 +6324,7 @@ typedef $$AgendaItemsTableTableUpdateCompanionBuilder =
       Value<String> syncState,
       Value<String?> familyId,
       Value<String> kind,
+      Value<String?> schoolSubject,
       Value<String> subjectType,
       Value<String?> subjectChildId,
       Value<String?> subjectUserId,
@@ -6318,6 +6425,11 @@ class $$AgendaItemsTableTableFilterComposer
 
   ColumnFilters<String> get kind => $composableBuilder(
     column: $table.kind,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get schoolSubject => $composableBuilder(
+    column: $table.schoolSubject,
     builder: (column) => ColumnFilters(column),
   );
 
@@ -6466,6 +6578,11 @@ class $$AgendaItemsTableTableOrderingComposer
     builder: (column) => ColumnOrderings(column),
   );
 
+  ColumnOrderings<String> get schoolSubject => $composableBuilder(
+    column: $table.schoolSubject,
+    builder: (column) => ColumnOrderings(column),
+  );
+
   ColumnOrderings<String> get subjectType => $composableBuilder(
     column: $table.subjectType,
     builder: (column) => ColumnOrderings(column),
@@ -6587,6 +6704,11 @@ class $$AgendaItemsTableTableAnnotationComposer
   GeneratedColumn<String> get kind =>
       $composableBuilder(column: $table.kind, builder: (column) => column);
 
+  GeneratedColumn<String> get schoolSubject => $composableBuilder(
+    column: $table.schoolSubject,
+    builder: (column) => column,
+  );
+
   GeneratedColumn<String> get subjectType => $composableBuilder(
     column: $table.subjectType,
     builder: (column) => column,
@@ -6686,6 +6808,7 @@ class $$AgendaItemsTableTableTableManager
                 Value<String> syncState = const Value.absent(),
                 Value<String?> familyId = const Value.absent(),
                 Value<String> kind = const Value.absent(),
+                Value<String?> schoolSubject = const Value.absent(),
                 Value<String> subjectType = const Value.absent(),
                 Value<String?> subjectChildId = const Value.absent(),
                 Value<String?> subjectUserId = const Value.absent(),
@@ -6715,6 +6838,7 @@ class $$AgendaItemsTableTableTableManager
                 syncState: syncState,
                 familyId: familyId,
                 kind: kind,
+                schoolSubject: schoolSubject,
                 subjectType: subjectType,
                 subjectChildId: subjectChildId,
                 subjectUserId: subjectUserId,
@@ -6746,6 +6870,7 @@ class $$AgendaItemsTableTableTableManager
                 Value<String> syncState = const Value.absent(),
                 Value<String?> familyId = const Value.absent(),
                 Value<String> kind = const Value.absent(),
+                Value<String?> schoolSubject = const Value.absent(),
                 Value<String> subjectType = const Value.absent(),
                 Value<String?> subjectChildId = const Value.absent(),
                 Value<String?> subjectUserId = const Value.absent(),
@@ -6775,6 +6900,7 @@ class $$AgendaItemsTableTableTableManager
                 syncState: syncState,
                 familyId: familyId,
                 kind: kind,
+                schoolSubject: schoolSubject,
                 subjectType: subjectType,
                 subjectChildId: subjectChildId,
                 subjectUserId: subjectUserId,
@@ -8355,6 +8481,7 @@ typedef $$ClassSchedulesTableTableCreateCompanionBuilder =
       required String name,
       Value<String?> familyId,
       Value<String?> childId,
+      Value<String?> bringJson,
       Value<String> syncState,
       required DateTime createdAt,
       required DateTime updatedAt,
@@ -8367,6 +8494,7 @@ typedef $$ClassSchedulesTableTableUpdateCompanionBuilder =
       Value<String> name,
       Value<String?> familyId,
       Value<String?> childId,
+      Value<String?> bringJson,
       Value<String> syncState,
       Value<DateTime> createdAt,
       Value<DateTime> updatedAt,
@@ -8400,6 +8528,11 @@ class $$ClassSchedulesTableTableFilterComposer
 
   ColumnFilters<String> get childId => $composableBuilder(
     column: $table.childId,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get bringJson => $composableBuilder(
+    column: $table.bringJson,
     builder: (column) => ColumnFilters(column),
   );
 
@@ -8453,6 +8586,11 @@ class $$ClassSchedulesTableTableOrderingComposer
     builder: (column) => ColumnOrderings(column),
   );
 
+  ColumnOrderings<String> get bringJson => $composableBuilder(
+    column: $table.bringJson,
+    builder: (column) => ColumnOrderings(column),
+  );
+
   ColumnOrderings<String> get syncState => $composableBuilder(
     column: $table.syncState,
     builder: (column) => ColumnOrderings(column),
@@ -8494,6 +8632,9 @@ class $$ClassSchedulesTableTableAnnotationComposer
 
   GeneratedColumn<String> get childId =>
       $composableBuilder(column: $table.childId, builder: (column) => column);
+
+  GeneratedColumn<String> get bringJson =>
+      $composableBuilder(column: $table.bringJson, builder: (column) => column);
 
   GeneratedColumn<String> get syncState =>
       $composableBuilder(column: $table.syncState, builder: (column) => column);
@@ -8555,6 +8696,7 @@ class $$ClassSchedulesTableTableTableManager
                 Value<String> name = const Value.absent(),
                 Value<String?> familyId = const Value.absent(),
                 Value<String?> childId = const Value.absent(),
+                Value<String?> bringJson = const Value.absent(),
                 Value<String> syncState = const Value.absent(),
                 Value<DateTime> createdAt = const Value.absent(),
                 Value<DateTime> updatedAt = const Value.absent(),
@@ -8565,6 +8707,7 @@ class $$ClassSchedulesTableTableTableManager
                 name: name,
                 familyId: familyId,
                 childId: childId,
+                bringJson: bringJson,
                 syncState: syncState,
                 createdAt: createdAt,
                 updatedAt: updatedAt,
@@ -8577,6 +8720,7 @@ class $$ClassSchedulesTableTableTableManager
                 required String name,
                 Value<String?> familyId = const Value.absent(),
                 Value<String?> childId = const Value.absent(),
+                Value<String?> bringJson = const Value.absent(),
                 Value<String> syncState = const Value.absent(),
                 required DateTime createdAt,
                 required DateTime updatedAt,
@@ -8587,6 +8731,7 @@ class $$ClassSchedulesTableTableTableManager
                 name: name,
                 familyId: familyId,
                 childId: childId,
+                bringJson: bringJson,
                 syncState: syncState,
                 createdAt: createdAt,
                 updatedAt: updatedAt,

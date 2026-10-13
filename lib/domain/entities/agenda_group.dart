@@ -46,6 +46,14 @@ class AgendaGroup extends Equatable {
   }
 
   @override
-  List<Object?> get props =>
-      [id, familyId, name, colorHex, iconCode, createdAt, updatedAt, deletedAt];
+  List<Object?> get props => [
+    id,
+    familyId,
+    name,
+    colorHex,
+    iconCode,
+    createdAt,
+    updatedAt,
+    deletedAt,
+  ];
 }

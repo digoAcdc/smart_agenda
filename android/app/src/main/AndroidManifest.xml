@@ -28,6 +28,23 @@
                 <action android:name="android.intent.action.MAIN"/>
                 <category android:name="android.intent.category.LAUNCHER"/>
             </intent-filter>
+            <!-- Convite da Familia por link: https://rbarbosa.tech/convite/<codigo>
+                 (abre o app direto quando o dominio esta verificado) -->
+            <intent-filter android:autoVerify="true">
+                <action android:name="android.intent.action.VIEW"/>
+                <category android:name="android.intent.category.DEFAULT"/>
+                <category android:name="android.intent.category.BROWSABLE"/>
+                <data android:scheme="https" android:host="rbarbosa.tech" android:pathPrefix="/convite/"/>
+            </intent-filter>
+            <!-- Botao "Abrir no Smart Agenda" da pagina do convite -->
+            <intent-filter>
+                <action android:name="android.intent.action.VIEW"/>
+                <category android:name="android.intent.category.DEFAULT"/>
+                <category android:name="android.intent.category.BROWSABLE"/>
+                <data android:scheme="smartagenda" android:host="convite"/>
+            </intent-filter>
+            <!-- Links tratados pelo app_links, nao pelo Navigator do Flutter -->
+            <meta-data android:name="flutter_deeplinking_enabled" android:value="false"/>
         </activity>
         <!-- Don't delete the meta-data below.
              This is used by the Flutter tool to generate GeneratedPluginRegistrant.java -->

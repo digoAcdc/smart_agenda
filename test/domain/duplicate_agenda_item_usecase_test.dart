@@ -8,6 +8,17 @@ import 'package:smart_agenda/domain/usecases/agenda_usecases.dart';
 import 'package:smart_agenda/domain/value_objects/search_filters.dart';
 
 class FakeAgendaRepository implements IAgendaRepository {
+  @override
+  Future<Result<void>> setOccurrenceDone(
+    String itemId,
+    DateTime day,
+    bool done,
+  ) async => Result.success(null);
+
+  @override
+  Future<Result<void>> removeOccurrence(String itemId, DateTime day) async =>
+      Result.success(null);
+
   final Map<String, AgendaItem> _data = {};
 
   @override
@@ -17,7 +28,8 @@ class FakeAgendaRepository implements IAgendaRepository {
   }
 
   @override
-  Future<Result<void>> deleteItemSoft(String itemId) async => Result.success(null);
+  Future<Result<void>> deleteItemSoft(String itemId) async =>
+      Result.success(null);
 
   @override
   Future<Result<AgendaItem?>> getItemById(String itemId) async =>
@@ -28,23 +40,30 @@ class FakeAgendaRepository implements IAgendaRepository {
       Result.success(const []);
 
   @override
-  Future<Result<List<AgendaItem>>> getItemsByRange(DateTime start, DateTime end) async =>
-      Result.success(const []);
+  Future<Result<List<AgendaItem>>> getItemsByRange(
+    DateTime start,
+    DateTime end,
+  ) async => Result.success(const []);
 
   @override
-  Future<Result<Set<DateTime>>> getMarkersByRange(DateTime start, DateTime end) async =>
-      Result.success({});
+  Future<Result<Set<DateTime>>> getMarkersByRange(
+    DateTime start,
+    DateTime end,
+  ) async => Result.success({});
 
   @override
-  Future<Result<List<AgendaItem>>> searchItems(String query, SearchFilters filters) async =>
-      Result.success(const []);
+  Future<Result<List<AgendaItem>>> searchItems(
+    String query,
+    SearchFilters filters,
+  ) async => Result.success(const []);
 
   @override
   Future<Result<void>> setStatus(String itemId, AgendaStatus status) async =>
       Result.success(null);
 
   @override
-  Future<Result<void>> updateItem(AgendaItem item) async => Result.success(null);
+  Future<Result<void>> updateItem(AgendaItem item) async =>
+      Result.success(null);
 }
 
 void main() {

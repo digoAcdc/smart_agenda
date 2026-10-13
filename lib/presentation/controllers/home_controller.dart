@@ -1,10 +1,21 @@
 import 'package:get/get.dart';
 
+import '../services/invite_link_handler.dart';
+
 class HomeController extends GetxController {
   final RxInt currentIndex = 0.obs;
   final Rxn<DateTime> initialDateForAgenda = Rxn<DateTime>();
   final RxnString initialModeForAgenda = RxnString();
   bool _navigationArgsApplied = false;
+
+  @override
+  void onReady() {
+    super.onReady();
+    // Convite da Familia por link (abriu o app pelo link ou instalou pela pagina).
+    if (Get.isRegistered<InviteLinkHandler>()) {
+      Get.find<InviteLinkHandler>().start();
+    }
+  }
 
   void setIndex(int value) {
     if (value < 0 || value > 4) return;

@@ -6,6 +6,8 @@ import '../../core/config/supabase_config.dart';
 import '../../core/routes/app_routes.dart';
 import '../controllers/auth_controller.dart';
 import '../controllers/notifications_controller.dart';
+import '../../domain/repositories/i_family_service.dart';
+import '../services/backpack_reminder_service.dart';
 import '../widgets/ui_primitives.dart';
 
 class NotificationsPage extends StatefulWidget {
@@ -102,6 +104,8 @@ class _NotificationsPageState extends State<NotificationsPage> {
             children: [
               _buildSystemNotificationSection(),
               _buildPushPreferencesSection(context, controller, isPremium),
+              _buildFamilyAlertsSection(context, controller),
+              _buildBackpackSection(),
             ],
           );
         }),
@@ -341,6 +345,62 @@ void _showPremiumNotificationModal(BuildContext context, String tipo) {
           child: const Text('Assinar o Pro'),
         ),
       ],
+    ),
+  );
+}
+
+/// Avisos na hora das mudancas na Familia. Vale para todos os membros
+/// (nao depende de cada um ser Pro: a Familia ativa ja e do dono Pro).
+Widget _buildFamilyAlertsSection(
+  BuildContext context,
+  NotificationsController controller,
+) {
+  final family = Get.isRegistered<IFamilyService>()
+      ? Get.find<IFamilyService>()
+      : null;
+  return AppSurfaceCard(
+    child: Obx(() {
+      final inFamily = family?.context.hasFamily ?? false;
+      final saving = controller.savingPrefs.value;
+      return SwitchListTile(
+        contentPadding: EdgeInsets.zero,
+        title: const Text('Mudanças na Família'),
+        subtitle: Text(
+          inFamily
+              ? 'Aviso na hora quando alguém cria, altera ou cancela um evento da Família.'
+              : 'Disponível quando você participa de uma Família.',
+        ),
+        value: inFamily && controller.pushFamily.value,
+        onChanged: inFamily && !saving
+            ? (v) => controller.updatePushPreferences(
+                daily: controller.pushDaily.value,
+                tomorrow: controller.pushTomorrow.value,
+                weekly: controller.pushWeekly.value,
+                family: v,
+              )
+            : null,
+      );
+    }),
+  );
+}
+
+/// Mochila de amanha: aviso local (funciona sem conta e no plano Gratis).
+Widget _buildBackpackSection() {
+  if (!Get.isRegistered<BackpackReminderService>()) {
+    return const SizedBox.shrink();
+  }
+  final backpack = Get.find<BackpackReminderService>();
+  return AppSurfaceCard(
+    child: Obx(
+      () => SwitchListTile(
+        contentPadding: EdgeInsets.zero,
+        title: const Text('Mochila de amanhã'),
+        subtitle: const Text(
+          'Às 20h, o que levar no dia seguinte (cadastre em Aulas, em cada matéria).',
+        ),
+        value: backpack.enabled.value,
+        onChanged: backpack.setEnabled,
+      ),
     ),
   );
 }

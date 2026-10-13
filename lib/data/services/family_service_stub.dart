@@ -53,6 +53,17 @@ class FamilyServiceStub implements IFamilyService {
   @override
   Future<Result<void>> declineInvite(String inviteId) async => _unavailable;
   @override
+  Future<Result<String>> createInviteLink(FamilyRole role) async =>
+      Result.failure('Família indisponível neste aparelho.');
+  @override
+  Future<Result<FamilyLinkInvite?>> getInviteByToken(String token) async =>
+      Result.success(null);
+  @override
+  Future<Result<void>> acceptInviteByToken(
+    String token, {
+    String? nickname,
+  }) async => _unavailable;
+  @override
   Future<Result<void>> changeRole(String userId, FamilyRole role) async =>
       _unavailable;
   @override
