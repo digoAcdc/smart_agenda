@@ -23,6 +23,7 @@ import '../datasources/class_schedule_local_datasource.dart';
 import '../datasources/groups_local_datasource.dart';
 import '../datasources/note_local_datasource.dart';
 import '../datasources/note_supabase_datasource.dart';
+import '../datasources/school_record_local_datasource.dart';
 import '../local/app_database.dart';
 import '../models/mappers.dart';
 
@@ -45,6 +46,7 @@ class SyncEngineImpl implements ISyncService {
     this._planService,
     this._familyService,
     this._client,
+    this._localRecords,
   );
 
   final IConnectivityService _connectivity;
@@ -59,6 +61,7 @@ class SyncEngineImpl implements ISyncService {
   final IPlanService _planService;
   final IFamilyService _familyService;
   final SupabaseClient _client;
+  final SchoolRecordLocalDataSource _localRecords;
 
   static const _cursorPrefix = 'sync_cursor_';
 
@@ -66,6 +69,9 @@ class SyncEngineImpl implements ISyncService {
   Future<Result<void>>? _running;
   bool _again = false;
   RealtimeChannel? _channel;
+  // Canal proprio: se a tabela ainda nao existir no servidor, a recusa nao
+  // derruba o tempo real da agenda e da grade.
+  RealtimeChannel? _recordsChannel;
   String? _channelKey;
   Timer? _debounce;
 
@@ -118,10 +124,15 @@ class SyncEngineImpl implements ISyncService {
         changed |= await _pushFamilySchedules(uid, ctx);
         changed |= await _pullItems(uid, SyncScope.family(ctx.familyId!));
         changed |= await _pullFamilySchedules(uid, ctx.familyId!);
+        changed |= await _syncFamilyRecords(uid, ctx);
       }
 
       if (hasPro) {
         await _pushClassSchedule(uid);
+        await _recordsStep('envio pessoal', () async {
+          await _pushPersonalRecords(uid);
+          return false;
+        });
         await _pushClassGroups(uid);
         await _pushNotes(uid);
       }
@@ -450,6 +461,138 @@ class SyncEngineImpl implements ISyncService {
   }
 
   // ---------------------------------------------------------------------------
+  // Notas e faltas
+  // ---------------------------------------------------------------------------
+
+  Map<String, dynamic> _recordRow(SchoolRecordsTableData r) => {
+    'id': r.id,
+    'schedule_id': r.scheduleId,
+    'subject': r.subject,
+    'kind': r.kind,
+    'date': DateTime(
+      r.date.year,
+      r.date.month,
+      r.date.day,
+    ).toIso8601String().split('T').first,
+    'title': r.title,
+    'score': r.score,
+    'max_score': r.maxScore,
+    'term': r.term,
+    'note': r.note,
+    'created_at': r.createdAt.toUtc().toIso8601String(),
+    'deleted_at': r.deletedAt?.toUtc().toIso8601String(),
+  };
+
+  /// Notas e faltas nao podem derrubar o resto do sync (ex.: app publicado
+  /// antes da migration 033 no servidor): falhou, tenta no proximo.
+  Future<bool> _recordsStep(String name, Future<bool> Function() step) async {
+    try {
+      return await step();
+    } catch (e) {
+      debugPrint('[SyncEngine] notas e faltas ($name) falhou: $e');
+      return false;
+    }
+  }
+
+  Future<bool> _syncFamilyRecords(String uid, FamilyContext ctx) async {
+    final pushed = await _recordsStep(
+      'envio Familia',
+      () => _pushFamilyRecords(uid, ctx),
+    );
+    final pulled = await _recordsStep(
+      'recebimento Familia',
+      () => _pullFamilyRecords(uid, ctx.familyId!),
+    );
+    return pushed || pulled;
+  }
+
+  /// Envia notas e faltas da Familia pendentes. Sem permissao, descarta a
+  /// alteracao local e baixa de novo a versao do servidor.
+  Future<bool> _pushFamilyRecords(String uid, FamilyContext ctx) async {
+    var changed = false;
+    var resetCursor = false;
+    for (final r in await _localRecords.getPending(family: true)) {
+      if (r.familyId != ctx.familyId || !ctx.canEditAgenda) {
+        await _localRecords.deleteLocal(r.id);
+        resetCursor = changed = true;
+        continue;
+      }
+      try {
+        await _remoteAgenda.upsertFamilyRow('school_records', {
+          ..._recordRow(r),
+          'family_id': r.familyId,
+          'child_id': r.childId,
+        });
+        await _localRecords.markSynced(r.id);
+      } on PostgrestException catch (e) {
+        debugPrint(
+          '[SyncEngine] nota/falta ${r.id} recusada: ${e.code} ${e.message}',
+        );
+        if (e.code == '42501' || e.code == '23514') {
+          await _localRecords.deleteLocal(r.id);
+          resetCursor = changed = true;
+        }
+      }
+    }
+    if (resetCursor && ctx.familyId != null) {
+      final prefs = await SharedPreferences.getInstance();
+      await prefs.remove(
+        _familyCursorKey(uid, 'school_records', ctx.familyId!),
+      );
+    }
+    return changed;
+  }
+
+  Future<bool> _pullFamilyRecords(String uid, String familyId) async {
+    final prefs = await SharedPreferences.getInstance();
+    final key = _familyCursorKey(uid, 'school_records', familyId);
+    final changes = await _remoteAgenda.fetchFamilyChanges(
+      'school_records',
+      familyId,
+      since: prefs.getString(key),
+    );
+    for (final r in changes.rows) {
+      await _localRecords.applyRemoteFamily(
+        SchoolRecordsTableCompanion(
+          id: Value(r['id'] as String),
+          scheduleId: Value(r['schedule_id'] as String),
+          subject: Value(r['subject'] as String),
+          kind: Value(r['kind'] as String),
+          date: Value(DateTime.parse(r['date'] as String)),
+          title: Value(r['title'] as String?),
+          score: Value((r['score'] as num?)?.toDouble()),
+          maxScore: Value((r['max_score'] as num?)?.toDouble()),
+          term: Value(r['term'] as int?),
+          note: Value(r['note'] as String?),
+          familyId: Value(r['family_id'] as String?),
+          childId: Value(r['child_id'] as String?),
+          createdAt: Value(_parseDate(r['created_at'])!),
+          updatedAt: Value(_parseDate(r['updated_at'])!),
+          deletedAt: Value(_parseDate(r['deleted_at'])),
+        ),
+        deleted: r['deleted_at'] != null,
+      );
+    }
+    if (changes.maxUpdatedAt != null) {
+      await prefs.setString(key, changes.maxUpdatedAt!);
+    }
+    return changes.rows.isNotEmpty;
+  }
+
+  /// Notas e faltas pessoais (Pro): envia so as pendentes (upsert, com
+  /// exclusao logica). A nuvem guarda a copia; o aparelho e a fonte.
+  Future<void> _pushPersonalRecords(String uid) async {
+    final pending = await _localRecords.getPending(family: false);
+    if (pending.isEmpty) return;
+    await _client.from('school_records').upsert([
+      for (final r in pending) {..._recordRow(r), 'owner_user_id': uid},
+    ], onConflict: 'id');
+    for (final r in pending) {
+      await _localRecords.markSynced(r.id);
+    }
+  }
+
+  // ---------------------------------------------------------------------------
   // Categorias (pessoais)
   // ---------------------------------------------------------------------------
 
@@ -528,14 +671,34 @@ class SyncEngineImpl implements ISyncService {
       );
     }
     _channel = channel.subscribe();
+
+    if (familyId != null) {
+      _recordsChannel = _client
+          .channel('records-$uid')
+          .onPostgresChanges(
+            event: PostgresChangeEvent.all,
+            schema: 'public',
+            table: 'school_records',
+            filter: PostgresChangeFilter(
+              type: PostgresChangeFilterType.eq,
+              column: 'family_id',
+              value: familyId,
+            ),
+            callback: onChange,
+          )
+          .subscribe();
+    }
   }
 
   void _unsubscribe() {
     _debounce?.cancel();
     final ch = _channel;
+    final records = _recordsChannel;
     _channel = null;
+    _recordsChannel = null;
     _channelKey = null;
     if (ch != null) unawaited(_client.removeChannel(ch));
+    if (records != null) unawaited(_client.removeChannel(records));
   }
 
   // ---------------------------------------------------------------------------

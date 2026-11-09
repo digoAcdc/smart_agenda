@@ -35,6 +35,9 @@ class ClassScheduleController extends GetxController {
   final RxList<ClassScheduleSlot> allSlots = <ClassScheduleSlot>[].obs;
   final RxBool loading = false.obs;
 
+  /// Aba aberta na tela Aulas: false = Aulas, true = Notas e faltas.
+  final RxBool showingRecords = false.obs;
+
   static const weekdays = [1, 2, 3, 4, 5];
 
   /// Dia mostrado no celular (uma coluna por vez). Abre no dia de hoje;

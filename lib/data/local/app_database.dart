@@ -168,6 +168,31 @@ class ClassSchedulesTable extends Table {
   Set<Column<Object>> get primaryKey => {id};
 }
 
+/// Notas e faltas por materia (v11). Ligado a grade por scheduleId, sem
+/// chave estrangeira: a grade pessoal do Pro sobe por substituicao.
+class SchoolRecordsTable extends Table {
+  TextColumn get id => text()();
+  TextColumn get scheduleId => text()();
+  TextColumn get subject => text()();
+  // 'absence' (falta) ou 'grade' (nota).
+  TextColumn get kind => text()();
+  DateTimeColumn get date => dateTime()();
+  TextColumn get title => text().nullable()();
+  RealColumn get score => real().nullable()();
+  RealColumn get maxScore => real().nullable()();
+  IntColumn get term => integer().nullable()();
+  TextColumn get note => text().nullable()();
+  TextColumn get familyId => text().nullable()();
+  TextColumn get childId => text().nullable()();
+  TextColumn get syncState => text().withDefault(const Constant('pending'))();
+  DateTimeColumn get createdAt => dateTime()();
+  DateTimeColumn get updatedAt => dateTime()();
+  DateTimeColumn get deletedAt => dateTime().nullable()();
+
+  @override
+  Set<Column<Object>> get primaryKey => {id};
+}
+
 @DriftDatabase(
   tables: [
     AgendaItemsTable,
@@ -179,6 +204,7 @@ class ClassSchedulesTable extends Table {
     ClassSchedulesTable,
     NotesTable,
     NoteChecklistItemsTable,
+    SchoolRecordsTable,
   ],
 )
 class AppDatabase extends _$AppDatabase {
@@ -186,7 +212,7 @@ class AppDatabase extends _$AppDatabase {
   AppDatabase([QueryExecutor? executor]) : super(executor ?? _openConnection());
 
   @override
-  int get schemaVersion => 10;
+  int get schemaVersion => 11;
 
   @override
   MigrationStrategy get migration => MigrationStrategy(
@@ -262,6 +288,9 @@ class AppDatabase extends _$AppDatabase {
       if (from < 10) {
         await m.addColumn(agendaItemsTable, agendaItemsTable.schoolSubject);
         await m.addColumn(classSchedulesTable, classSchedulesTable.bringJson);
+      }
+      if (from < 11) {
+        await m.createTable(schoolRecordsTable);
       }
     },
   );

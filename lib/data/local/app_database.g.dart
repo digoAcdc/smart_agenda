@@ -6235,6 +6235,896 @@ class NoteChecklistItemsTableCompanion
   }
 }
 
+class $SchoolRecordsTableTable extends SchoolRecordsTable
+    with TableInfo<$SchoolRecordsTableTable, SchoolRecordsTableData> {
+  @override
+  final GeneratedDatabase attachedDatabase;
+  final String? _alias;
+  $SchoolRecordsTableTable(this.attachedDatabase, [this._alias]);
+  static const VerificationMeta _idMeta = const VerificationMeta('id');
+  @override
+  late final GeneratedColumn<String> id = GeneratedColumn<String>(
+    'id',
+    aliasedName,
+    false,
+    type: DriftSqlType.string,
+    requiredDuringInsert: true,
+  );
+  static const VerificationMeta _scheduleIdMeta = const VerificationMeta(
+    'scheduleId',
+  );
+  @override
+  late final GeneratedColumn<String> scheduleId = GeneratedColumn<String>(
+    'schedule_id',
+    aliasedName,
+    false,
+    type: DriftSqlType.string,
+    requiredDuringInsert: true,
+  );
+  static const VerificationMeta _subjectMeta = const VerificationMeta(
+    'subject',
+  );
+  @override
+  late final GeneratedColumn<String> subject = GeneratedColumn<String>(
+    'subject',
+    aliasedName,
+    false,
+    type: DriftSqlType.string,
+    requiredDuringInsert: true,
+  );
+  static const VerificationMeta _kindMeta = const VerificationMeta('kind');
+  @override
+  late final GeneratedColumn<String> kind = GeneratedColumn<String>(
+    'kind',
+    aliasedName,
+    false,
+    type: DriftSqlType.string,
+    requiredDuringInsert: true,
+  );
+  static const VerificationMeta _dateMeta = const VerificationMeta('date');
+  @override
+  late final GeneratedColumn<DateTime> date = GeneratedColumn<DateTime>(
+    'date',
+    aliasedName,
+    false,
+    type: DriftSqlType.dateTime,
+    requiredDuringInsert: true,
+  );
+  static const VerificationMeta _titleMeta = const VerificationMeta('title');
+  @override
+  late final GeneratedColumn<String> title = GeneratedColumn<String>(
+    'title',
+    aliasedName,
+    true,
+    type: DriftSqlType.string,
+    requiredDuringInsert: false,
+  );
+  static const VerificationMeta _scoreMeta = const VerificationMeta('score');
+  @override
+  late final GeneratedColumn<double> score = GeneratedColumn<double>(
+    'score',
+    aliasedName,
+    true,
+    type: DriftSqlType.double,
+    requiredDuringInsert: false,
+  );
+  static const VerificationMeta _maxScoreMeta = const VerificationMeta(
+    'maxScore',
+  );
+  @override
+  late final GeneratedColumn<double> maxScore = GeneratedColumn<double>(
+    'max_score',
+    aliasedName,
+    true,
+    type: DriftSqlType.double,
+    requiredDuringInsert: false,
+  );
+  static const VerificationMeta _termMeta = const VerificationMeta('term');
+  @override
+  late final GeneratedColumn<int> term = GeneratedColumn<int>(
+    'term',
+    aliasedName,
+    true,
+    type: DriftSqlType.int,
+    requiredDuringInsert: false,
+  );
+  static const VerificationMeta _noteMeta = const VerificationMeta('note');
+  @override
+  late final GeneratedColumn<String> note = GeneratedColumn<String>(
+    'note',
+    aliasedName,
+    true,
+    type: DriftSqlType.string,
+    requiredDuringInsert: false,
+  );
+  static const VerificationMeta _familyIdMeta = const VerificationMeta(
+    'familyId',
+  );
+  @override
+  late final GeneratedColumn<String> familyId = GeneratedColumn<String>(
+    'family_id',
+    aliasedName,
+    true,
+    type: DriftSqlType.string,
+    requiredDuringInsert: false,
+  );
+  static const VerificationMeta _childIdMeta = const VerificationMeta(
+    'childId',
+  );
+  @override
+  late final GeneratedColumn<String> childId = GeneratedColumn<String>(
+    'child_id',
+    aliasedName,
+    true,
+    type: DriftSqlType.string,
+    requiredDuringInsert: false,
+  );
+  static const VerificationMeta _syncStateMeta = const VerificationMeta(
+    'syncState',
+  );
+  @override
+  late final GeneratedColumn<String> syncState = GeneratedColumn<String>(
+    'sync_state',
+    aliasedName,
+    false,
+    type: DriftSqlType.string,
+    requiredDuringInsert: false,
+    defaultValue: const Constant('pending'),
+  );
+  static const VerificationMeta _createdAtMeta = const VerificationMeta(
+    'createdAt',
+  );
+  @override
+  late final GeneratedColumn<DateTime> createdAt = GeneratedColumn<DateTime>(
+    'created_at',
+    aliasedName,
+    false,
+    type: DriftSqlType.dateTime,
+    requiredDuringInsert: true,
+  );
+  static const VerificationMeta _updatedAtMeta = const VerificationMeta(
+    'updatedAt',
+  );
+  @override
+  late final GeneratedColumn<DateTime> updatedAt = GeneratedColumn<DateTime>(
+    'updated_at',
+    aliasedName,
+    false,
+    type: DriftSqlType.dateTime,
+    requiredDuringInsert: true,
+  );
+  static const VerificationMeta _deletedAtMeta = const VerificationMeta(
+    'deletedAt',
+  );
+  @override
+  late final GeneratedColumn<DateTime> deletedAt = GeneratedColumn<DateTime>(
+    'deleted_at',
+    aliasedName,
+    true,
+    type: DriftSqlType.dateTime,
+    requiredDuringInsert: false,
+  );
+  @override
+  List<GeneratedColumn> get $columns => [
+    id,
+    scheduleId,
+    subject,
+    kind,
+    date,
+    title,
+    score,
+    maxScore,
+    term,
+    note,
+    familyId,
+    childId,
+    syncState,
+    createdAt,
+    updatedAt,
+    deletedAt,
+  ];
+  @override
+  String get aliasedName => _alias ?? actualTableName;
+  @override
+  String get actualTableName => $name;
+  static const String $name = 'school_records_table';
+  @override
+  VerificationContext validateIntegrity(
+    Insertable<SchoolRecordsTableData> instance, {
+    bool isInserting = false,
+  }) {
+    final context = VerificationContext();
+    final data = instance.toColumns(true);
+    if (data.containsKey('id')) {
+      context.handle(_idMeta, id.isAcceptableOrUnknown(data['id']!, _idMeta));
+    } else if (isInserting) {
+      context.missing(_idMeta);
+    }
+    if (data.containsKey('schedule_id')) {
+      context.handle(
+        _scheduleIdMeta,
+        scheduleId.isAcceptableOrUnknown(data['schedule_id']!, _scheduleIdMeta),
+      );
+    } else if (isInserting) {
+      context.missing(_scheduleIdMeta);
+    }
+    if (data.containsKey('subject')) {
+      context.handle(
+        _subjectMeta,
+        subject.isAcceptableOrUnknown(data['subject']!, _subjectMeta),
+      );
+    } else if (isInserting) {
+      context.missing(_subjectMeta);
+    }
+    if (data.containsKey('kind')) {
+      context.handle(
+        _kindMeta,
+        kind.isAcceptableOrUnknown(data['kind']!, _kindMeta),
+      );
+    } else if (isInserting) {
+      context.missing(_kindMeta);
+    }
+    if (data.containsKey('date')) {
+      context.handle(
+        _dateMeta,
+        date.isAcceptableOrUnknown(data['date']!, _dateMeta),
+      );
+    } else if (isInserting) {
+      context.missing(_dateMeta);
+    }
+    if (data.containsKey('title')) {
+      context.handle(
+        _titleMeta,
+        title.isAcceptableOrUnknown(data['title']!, _titleMeta),
+      );
+    }
+    if (data.containsKey('score')) {
+      context.handle(
+        _scoreMeta,
+        score.isAcceptableOrUnknown(data['score']!, _scoreMeta),
+      );
+    }
+    if (data.containsKey('max_score')) {
+      context.handle(
+        _maxScoreMeta,
+        maxScore.isAcceptableOrUnknown(data['max_score']!, _maxScoreMeta),
+      );
+    }
+    if (data.containsKey('term')) {
+      context.handle(
+        _termMeta,
+        term.isAcceptableOrUnknown(data['term']!, _termMeta),
+      );
+    }
+    if (data.containsKey('note')) {
+      context.handle(
+        _noteMeta,
+        note.isAcceptableOrUnknown(data['note']!, _noteMeta),
+      );
+    }
+    if (data.containsKey('family_id')) {
+      context.handle(
+        _familyIdMeta,
+        familyId.isAcceptableOrUnknown(data['family_id']!, _familyIdMeta),
+      );
+    }
+    if (data.containsKey('child_id')) {
+      context.handle(
+        _childIdMeta,
+        childId.isAcceptableOrUnknown(data['child_id']!, _childIdMeta),
+      );
+    }
+    if (data.containsKey('sync_state')) {
+      context.handle(
+        _syncStateMeta,
+        syncState.isAcceptableOrUnknown(data['sync_state']!, _syncStateMeta),
+      );
+    }
+    if (data.containsKey('created_at')) {
+      context.handle(
+        _createdAtMeta,
+        createdAt.isAcceptableOrUnknown(data['created_at']!, _createdAtMeta),
+      );
+    } else if (isInserting) {
+      context.missing(_createdAtMeta);
+    }
+    if (data.containsKey('updated_at')) {
+      context.handle(
+        _updatedAtMeta,
+        updatedAt.isAcceptableOrUnknown(data['updated_at']!, _updatedAtMeta),
+      );
+    } else if (isInserting) {
+      context.missing(_updatedAtMeta);
+    }
+    if (data.containsKey('deleted_at')) {
+      context.handle(
+        _deletedAtMeta,
+        deletedAt.isAcceptableOrUnknown(data['deleted_at']!, _deletedAtMeta),
+      );
+    }
+    return context;
+  }
+
+  @override
+  Set<GeneratedColumn> get $primaryKey => {id};
+  @override
+  SchoolRecordsTableData map(Map<String, dynamic> data, {String? tablePrefix}) {
+    final effectivePrefix = tablePrefix != null ? '$tablePrefix.' : '';
+    return SchoolRecordsTableData(
+      id: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}id'],
+      )!,
+      scheduleId: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}schedule_id'],
+      )!,
+      subject: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}subject'],
+      )!,
+      kind: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}kind'],
+      )!,
+      date: attachedDatabase.typeMapping.read(
+        DriftSqlType.dateTime,
+        data['${effectivePrefix}date'],
+      )!,
+      title: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}title'],
+      ),
+      score: attachedDatabase.typeMapping.read(
+        DriftSqlType.double,
+        data['${effectivePrefix}score'],
+      ),
+      maxScore: attachedDatabase.typeMapping.read(
+        DriftSqlType.double,
+        data['${effectivePrefix}max_score'],
+      ),
+      term: attachedDatabase.typeMapping.read(
+        DriftSqlType.int,
+        data['${effectivePrefix}term'],
+      ),
+      note: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}note'],
+      ),
+      familyId: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}family_id'],
+      ),
+      childId: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}child_id'],
+      ),
+      syncState: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}sync_state'],
+      )!,
+      createdAt: attachedDatabase.typeMapping.read(
+        DriftSqlType.dateTime,
+        data['${effectivePrefix}created_at'],
+      )!,
+      updatedAt: attachedDatabase.typeMapping.read(
+        DriftSqlType.dateTime,
+        data['${effectivePrefix}updated_at'],
+      )!,
+      deletedAt: attachedDatabase.typeMapping.read(
+        DriftSqlType.dateTime,
+        data['${effectivePrefix}deleted_at'],
+      ),
+    );
+  }
+
+  @override
+  $SchoolRecordsTableTable createAlias(String alias) {
+    return $SchoolRecordsTableTable(attachedDatabase, alias);
+  }
+}
+
+class SchoolRecordsTableData extends DataClass
+    implements Insertable<SchoolRecordsTableData> {
+  final String id;
+  final String scheduleId;
+  final String subject;
+  final String kind;
+  final DateTime date;
+  final String? title;
+  final double? score;
+  final double? maxScore;
+  final int? term;
+  final String? note;
+  final String? familyId;
+  final String? childId;
+  final String syncState;
+  final DateTime createdAt;
+  final DateTime updatedAt;
+  final DateTime? deletedAt;
+  const SchoolRecordsTableData({
+    required this.id,
+    required this.scheduleId,
+    required this.subject,
+    required this.kind,
+    required this.date,
+    this.title,
+    this.score,
+    this.maxScore,
+    this.term,
+    this.note,
+    this.familyId,
+    this.childId,
+    required this.syncState,
+    required this.createdAt,
+    required this.updatedAt,
+    this.deletedAt,
+  });
+  @override
+  Map<String, Expression> toColumns(bool nullToAbsent) {
+    final map = <String, Expression>{};
+    map['id'] = Variable<String>(id);
+    map['schedule_id'] = Variable<String>(scheduleId);
+    map['subject'] = Variable<String>(subject);
+    map['kind'] = Variable<String>(kind);
+    map['date'] = Variable<DateTime>(date);
+    if (!nullToAbsent || title != null) {
+      map['title'] = Variable<String>(title);
+    }
+    if (!nullToAbsent || score != null) {
+      map['score'] = Variable<double>(score);
+    }
+    if (!nullToAbsent || maxScore != null) {
+      map['max_score'] = Variable<double>(maxScore);
+    }
+    if (!nullToAbsent || term != null) {
+      map['term'] = Variable<int>(term);
+    }
+    if (!nullToAbsent || note != null) {
+      map['note'] = Variable<String>(note);
+    }
+    if (!nullToAbsent || familyId != null) {
+      map['family_id'] = Variable<String>(familyId);
+    }
+    if (!nullToAbsent || childId != null) {
+      map['child_id'] = Variable<String>(childId);
+    }
+    map['sync_state'] = Variable<String>(syncState);
+    map['created_at'] = Variable<DateTime>(createdAt);
+    map['updated_at'] = Variable<DateTime>(updatedAt);
+    if (!nullToAbsent || deletedAt != null) {
+      map['deleted_at'] = Variable<DateTime>(deletedAt);
+    }
+    return map;
+  }
+
+  SchoolRecordsTableCompanion toCompanion(bool nullToAbsent) {
+    return SchoolRecordsTableCompanion(
+      id: Value(id),
+      scheduleId: Value(scheduleId),
+      subject: Value(subject),
+      kind: Value(kind),
+      date: Value(date),
+      title: title == null && nullToAbsent
+          ? const Value.absent()
+          : Value(title),
+      score: score == null && nullToAbsent
+          ? const Value.absent()
+          : Value(score),
+      maxScore: maxScore == null && nullToAbsent
+          ? const Value.absent()
+          : Value(maxScore),
+      term: term == null && nullToAbsent ? const Value.absent() : Value(term),
+      note: note == null && nullToAbsent ? const Value.absent() : Value(note),
+      familyId: familyId == null && nullToAbsent
+          ? const Value.absent()
+          : Value(familyId),
+      childId: childId == null && nullToAbsent
+          ? const Value.absent()
+          : Value(childId),
+      syncState: Value(syncState),
+      createdAt: Value(createdAt),
+      updatedAt: Value(updatedAt),
+      deletedAt: deletedAt == null && nullToAbsent
+          ? const Value.absent()
+          : Value(deletedAt),
+    );
+  }
+
+  factory SchoolRecordsTableData.fromJson(
+    Map<String, dynamic> json, {
+    ValueSerializer? serializer,
+  }) {
+    serializer ??= driftRuntimeOptions.defaultSerializer;
+    return SchoolRecordsTableData(
+      id: serializer.fromJson<String>(json['id']),
+      scheduleId: serializer.fromJson<String>(json['scheduleId']),
+      subject: serializer.fromJson<String>(json['subject']),
+      kind: serializer.fromJson<String>(json['kind']),
+      date: serializer.fromJson<DateTime>(json['date']),
+      title: serializer.fromJson<String?>(json['title']),
+      score: serializer.fromJson<double?>(json['score']),
+      maxScore: serializer.fromJson<double?>(json['maxScore']),
+      term: serializer.fromJson<int?>(json['term']),
+      note: serializer.fromJson<String?>(json['note']),
+      familyId: serializer.fromJson<String?>(json['familyId']),
+      childId: serializer.fromJson<String?>(json['childId']),
+      syncState: serializer.fromJson<String>(json['syncState']),
+      createdAt: serializer.fromJson<DateTime>(json['createdAt']),
+      updatedAt: serializer.fromJson<DateTime>(json['updatedAt']),
+      deletedAt: serializer.fromJson<DateTime?>(json['deletedAt']),
+    );
+  }
+  @override
+  Map<String, dynamic> toJson({ValueSerializer? serializer}) {
+    serializer ??= driftRuntimeOptions.defaultSerializer;
+    return <String, dynamic>{
+      'id': serializer.toJson<String>(id),
+      'scheduleId': serializer.toJson<String>(scheduleId),
+      'subject': serializer.toJson<String>(subject),
+      'kind': serializer.toJson<String>(kind),
+      'date': serializer.toJson<DateTime>(date),
+      'title': serializer.toJson<String?>(title),
+      'score': serializer.toJson<double?>(score),
+      'maxScore': serializer.toJson<double?>(maxScore),
+      'term': serializer.toJson<int?>(term),
+      'note': serializer.toJson<String?>(note),
+      'familyId': serializer.toJson<String?>(familyId),
+      'childId': serializer.toJson<String?>(childId),
+      'syncState': serializer.toJson<String>(syncState),
+      'createdAt': serializer.toJson<DateTime>(createdAt),
+      'updatedAt': serializer.toJson<DateTime>(updatedAt),
+      'deletedAt': serializer.toJson<DateTime?>(deletedAt),
+    };
+  }
+
+  SchoolRecordsTableData copyWith({
+    String? id,
+    String? scheduleId,
+    String? subject,
+    String? kind,
+    DateTime? date,
+    Value<String?> title = const Value.absent(),
+    Value<double?> score = const Value.absent(),
+    Value<double?> maxScore = const Value.absent(),
+    Value<int?> term = const Value.absent(),
+    Value<String?> note = const Value.absent(),
+    Value<String?> familyId = const Value.absent(),
+    Value<String?> childId = const Value.absent(),
+    String? syncState,
+    DateTime? createdAt,
+    DateTime? updatedAt,
+    Value<DateTime?> deletedAt = const Value.absent(),
+  }) => SchoolRecordsTableData(
+    id: id ?? this.id,
+    scheduleId: scheduleId ?? this.scheduleId,
+    subject: subject ?? this.subject,
+    kind: kind ?? this.kind,
+    date: date ?? this.date,
+    title: title.present ? title.value : this.title,
+    score: score.present ? score.value : this.score,
+    maxScore: maxScore.present ? maxScore.value : this.maxScore,
+    term: term.present ? term.value : this.term,
+    note: note.present ? note.value : this.note,
+    familyId: familyId.present ? familyId.value : this.familyId,
+    childId: childId.present ? childId.value : this.childId,
+    syncState: syncState ?? this.syncState,
+    createdAt: createdAt ?? this.createdAt,
+    updatedAt: updatedAt ?? this.updatedAt,
+    deletedAt: deletedAt.present ? deletedAt.value : this.deletedAt,
+  );
+  SchoolRecordsTableData copyWithCompanion(SchoolRecordsTableCompanion data) {
+    return SchoolRecordsTableData(
+      id: data.id.present ? data.id.value : this.id,
+      scheduleId: data.scheduleId.present
+          ? data.scheduleId.value
+          : this.scheduleId,
+      subject: data.subject.present ? data.subject.value : this.subject,
+      kind: data.kind.present ? data.kind.value : this.kind,
+      date: data.date.present ? data.date.value : this.date,
+      title: data.title.present ? data.title.value : this.title,
+      score: data.score.present ? data.score.value : this.score,
+      maxScore: data.maxScore.present ? data.maxScore.value : this.maxScore,
+      term: data.term.present ? data.term.value : this.term,
+      note: data.note.present ? data.note.value : this.note,
+      familyId: data.familyId.present ? data.familyId.value : this.familyId,
+      childId: data.childId.present ? data.childId.value : this.childId,
+      syncState: data.syncState.present ? data.syncState.value : this.syncState,
+      createdAt: data.createdAt.present ? data.createdAt.value : this.createdAt,
+      updatedAt: data.updatedAt.present ? data.updatedAt.value : this.updatedAt,
+      deletedAt: data.deletedAt.present ? data.deletedAt.value : this.deletedAt,
+    );
+  }
+
+  @override
+  String toString() {
+    return (StringBuffer('SchoolRecordsTableData(')
+          ..write('id: $id, ')
+          ..write('scheduleId: $scheduleId, ')
+          ..write('subject: $subject, ')
+          ..write('kind: $kind, ')
+          ..write('date: $date, ')
+          ..write('title: $title, ')
+          ..write('score: $score, ')
+          ..write('maxScore: $maxScore, ')
+          ..write('term: $term, ')
+          ..write('note: $note, ')
+          ..write('familyId: $familyId, ')
+          ..write('childId: $childId, ')
+          ..write('syncState: $syncState, ')
+          ..write('createdAt: $createdAt, ')
+          ..write('updatedAt: $updatedAt, ')
+          ..write('deletedAt: $deletedAt')
+          ..write(')'))
+        .toString();
+  }
+
+  @override
+  int get hashCode => Object.hash(
+    id,
+    scheduleId,
+    subject,
+    kind,
+    date,
+    title,
+    score,
+    maxScore,
+    term,
+    note,
+    familyId,
+    childId,
+    syncState,
+    createdAt,
+    updatedAt,
+    deletedAt,
+  );
+  @override
+  bool operator ==(Object other) =>
+      identical(this, other) ||
+      (other is SchoolRecordsTableData &&
+          other.id == this.id &&
+          other.scheduleId == this.scheduleId &&
+          other.subject == this.subject &&
+          other.kind == this.kind &&
+          other.date == this.date &&
+          other.title == this.title &&
+          other.score == this.score &&
+          other.maxScore == this.maxScore &&
+          other.term == this.term &&
+          other.note == this.note &&
+          other.familyId == this.familyId &&
+          other.childId == this.childId &&
+          other.syncState == this.syncState &&
+          other.createdAt == this.createdAt &&
+          other.updatedAt == this.updatedAt &&
+          other.deletedAt == this.deletedAt);
+}
+
+class SchoolRecordsTableCompanion
+    extends UpdateCompanion<SchoolRecordsTableData> {
+  final Value<String> id;
+  final Value<String> scheduleId;
+  final Value<String> subject;
+  final Value<String> kind;
+  final Value<DateTime> date;
+  final Value<String?> title;
+  final Value<double?> score;
+  final Value<double?> maxScore;
+  final Value<int?> term;
+  final Value<String?> note;
+  final Value<String?> familyId;
+  final Value<String?> childId;
+  final Value<String> syncState;
+  final Value<DateTime> createdAt;
+  final Value<DateTime> updatedAt;
+  final Value<DateTime?> deletedAt;
+  final Value<int> rowid;
+  const SchoolRecordsTableCompanion({
+    this.id = const Value.absent(),
+    this.scheduleId = const Value.absent(),
+    this.subject = const Value.absent(),
+    this.kind = const Value.absent(),
+    this.date = const Value.absent(),
+    this.title = const Value.absent(),
+    this.score = const Value.absent(),
+    this.maxScore = const Value.absent(),
+    this.term = const Value.absent(),
+    this.note = const Value.absent(),
+    this.familyId = const Value.absent(),
+    this.childId = const Value.absent(),
+    this.syncState = const Value.absent(),
+    this.createdAt = const Value.absent(),
+    this.updatedAt = const Value.absent(),
+    this.deletedAt = const Value.absent(),
+    this.rowid = const Value.absent(),
+  });
+  SchoolRecordsTableCompanion.insert({
+    required String id,
+    required String scheduleId,
+    required String subject,
+    required String kind,
+    required DateTime date,
+    this.title = const Value.absent(),
+    this.score = const Value.absent(),
+    this.maxScore = const Value.absent(),
+    this.term = const Value.absent(),
+    this.note = const Value.absent(),
+    this.familyId = const Value.absent(),
+    this.childId = const Value.absent(),
+    this.syncState = const Value.absent(),
+    required DateTime createdAt,
+    required DateTime updatedAt,
+    this.deletedAt = const Value.absent(),
+    this.rowid = const Value.absent(),
+  }) : id = Value(id),
+       scheduleId = Value(scheduleId),
+       subject = Value(subject),
+       kind = Value(kind),
+       date = Value(date),
+       createdAt = Value(createdAt),
+       updatedAt = Value(updatedAt);
+  static Insertable<SchoolRecordsTableData> custom({
+    Expression<String>? id,
+    Expression<String>? scheduleId,
+    Expression<String>? subject,
+    Expression<String>? kind,
+    Expression<DateTime>? date,
+    Expression<String>? title,
+    Expression<double>? score,
+    Expression<double>? maxScore,
+    Expression<int>? term,
+    Expression<String>? note,
+    Expression<String>? familyId,
+    Expression<String>? childId,
+    Expression<String>? syncState,
+    Expression<DateTime>? createdAt,
+    Expression<DateTime>? updatedAt,
+    Expression<DateTime>? deletedAt,
+    Expression<int>? rowid,
+  }) {
+    return RawValuesInsertable({
+      if (id != null) 'id': id,
+      if (scheduleId != null) 'schedule_id': scheduleId,
+      if (subject != null) 'subject': subject,
+      if (kind != null) 'kind': kind,
+      if (date != null) 'date': date,
+      if (title != null) 'title': title,
+      if (score != null) 'score': score,
+      if (maxScore != null) 'max_score': maxScore,
+      if (term != null) 'term': term,
+      if (note != null) 'note': note,
+      if (familyId != null) 'family_id': familyId,
+      if (childId != null) 'child_id': childId,
+      if (syncState != null) 'sync_state': syncState,
+      if (createdAt != null) 'created_at': createdAt,
+      if (updatedAt != null) 'updated_at': updatedAt,
+      if (deletedAt != null) 'deleted_at': deletedAt,
+      if (rowid != null) 'rowid': rowid,
+    });
+  }
+
+  SchoolRecordsTableCompanion copyWith({
+    Value<String>? id,
+    Value<String>? scheduleId,
+    Value<String>? subject,
+    Value<String>? kind,
+    Value<DateTime>? date,
+    Value<String?>? title,
+    Value<double?>? score,
+    Value<double?>? maxScore,
+    Value<int?>? term,
+    Value<String?>? note,
+    Value<String?>? familyId,
+    Value<String?>? childId,
+    Value<String>? syncState,
+    Value<DateTime>? createdAt,
+    Value<DateTime>? updatedAt,
+    Value<DateTime?>? deletedAt,
+    Value<int>? rowid,
+  }) {
+    return SchoolRecordsTableCompanion(
+      id: id ?? this.id,
+      scheduleId: scheduleId ?? this.scheduleId,
+      subject: subject ?? this.subject,
+      kind: kind ?? this.kind,
+      date: date ?? this.date,
+      title: title ?? this.title,
+      score: score ?? this.score,
+      maxScore: maxScore ?? this.maxScore,
+      term: term ?? this.term,
+      note: note ?? this.note,
+      familyId: familyId ?? this.familyId,
+      childId: childId ?? this.childId,
+      syncState: syncState ?? this.syncState,
+      createdAt: createdAt ?? this.createdAt,
+      updatedAt: updatedAt ?? this.updatedAt,
+      deletedAt: deletedAt ?? this.deletedAt,
+      rowid: rowid ?? this.rowid,
+    );
+  }
+
+  @override
+  Map<String, Expression> toColumns(bool nullToAbsent) {
+    final map = <String, Expression>{};
+    if (id.present) {
+      map['id'] = Variable<String>(id.value);
+    }
+    if (scheduleId.present) {
+      map['schedule_id'] = Variable<String>(scheduleId.value);
+    }
+    if (subject.present) {
+      map['subject'] = Variable<String>(subject.value);
+    }
+    if (kind.present) {
+      map['kind'] = Variable<String>(kind.value);
+    }
+    if (date.present) {
+      map['date'] = Variable<DateTime>(date.value);
+    }
+    if (title.present) {
+      map['title'] = Variable<String>(title.value);
+    }
+    if (score.present) {
+      map['score'] = Variable<double>(score.value);
+    }
+    if (maxScore.present) {
+      map['max_score'] = Variable<double>(maxScore.value);
+    }
+    if (term.present) {
+      map['term'] = Variable<int>(term.value);
+    }
+    if (note.present) {
+      map['note'] = Variable<String>(note.value);
+    }
+    if (familyId.present) {
+      map['family_id'] = Variable<String>(familyId.value);
+    }
+    if (childId.present) {
+      map['child_id'] = Variable<String>(childId.value);
+    }
+    if (syncState.present) {
+      map['sync_state'] = Variable<String>(syncState.value);
+    }
+    if (createdAt.present) {
+      map['created_at'] = Variable<DateTime>(createdAt.value);
+    }
+    if (updatedAt.present) {
+      map['updated_at'] = Variable<DateTime>(updatedAt.value);
+    }
+    if (deletedAt.present) {
+      map['deleted_at'] = Variable<DateTime>(deletedAt.value);
+    }
+    if (rowid.present) {
+      map['rowid'] = Variable<int>(rowid.value);
+    }
+    return map;
+  }
+
+  @override
+  String toString() {
+    return (StringBuffer('SchoolRecordsTableCompanion(')
+          ..write('id: $id, ')
+          ..write('scheduleId: $scheduleId, ')
+          ..write('subject: $subject, ')
+          ..write('kind: $kind, ')
+          ..write('date: $date, ')
+          ..write('title: $title, ')
+          ..write('score: $score, ')
+          ..write('maxScore: $maxScore, ')
+          ..write('term: $term, ')
+          ..write('note: $note, ')
+          ..write('familyId: $familyId, ')
+          ..write('childId: $childId, ')
+          ..write('syncState: $syncState, ')
+          ..write('createdAt: $createdAt, ')
+          ..write('updatedAt: $updatedAt, ')
+          ..write('deletedAt: $deletedAt, ')
+          ..write('rowid: $rowid')
+          ..write(')'))
+        .toString();
+  }
+}
+
 abstract class _$AppDatabase extends GeneratedDatabase {
   _$AppDatabase(QueryExecutor e) : super(e);
   $AppDatabaseManager get managers => $AppDatabaseManager(this);
@@ -6257,6 +7147,8 @@ abstract class _$AppDatabase extends GeneratedDatabase {
   late final $NotesTableTable notesTable = $NotesTableTable(this);
   late final $NoteChecklistItemsTableTable noteChecklistItemsTable =
       $NoteChecklistItemsTableTable(this);
+  late final $SchoolRecordsTableTable schoolRecordsTable =
+      $SchoolRecordsTableTable(this);
   @override
   Iterable<TableInfo<Table, Object?>> get allTables =>
       allSchemaEntities.whereType<TableInfo<Table, Object?>>();
@@ -6271,6 +7163,7 @@ abstract class _$AppDatabase extends GeneratedDatabase {
     classSchedulesTable,
     notesTable,
     noteChecklistItemsTable,
+    schoolRecordsTable,
   ];
 }
 
@@ -9323,6 +10216,430 @@ typedef $$NoteChecklistItemsTableTableProcessedTableManager =
       NoteChecklistItemsTableData,
       PrefetchHooks Function()
     >;
+typedef $$SchoolRecordsTableTableCreateCompanionBuilder =
+    SchoolRecordsTableCompanion Function({
+      required String id,
+      required String scheduleId,
+      required String subject,
+      required String kind,
+      required DateTime date,
+      Value<String?> title,
+      Value<double?> score,
+      Value<double?> maxScore,
+      Value<int?> term,
+      Value<String?> note,
+      Value<String?> familyId,
+      Value<String?> childId,
+      Value<String> syncState,
+      required DateTime createdAt,
+      required DateTime updatedAt,
+      Value<DateTime?> deletedAt,
+      Value<int> rowid,
+    });
+typedef $$SchoolRecordsTableTableUpdateCompanionBuilder =
+    SchoolRecordsTableCompanion Function({
+      Value<String> id,
+      Value<String> scheduleId,
+      Value<String> subject,
+      Value<String> kind,
+      Value<DateTime> date,
+      Value<String?> title,
+      Value<double?> score,
+      Value<double?> maxScore,
+      Value<int?> term,
+      Value<String?> note,
+      Value<String?> familyId,
+      Value<String?> childId,
+      Value<String> syncState,
+      Value<DateTime> createdAt,
+      Value<DateTime> updatedAt,
+      Value<DateTime?> deletedAt,
+      Value<int> rowid,
+    });
+
+class $$SchoolRecordsTableTableFilterComposer
+    extends Composer<_$AppDatabase, $SchoolRecordsTableTable> {
+  $$SchoolRecordsTableTableFilterComposer({
+    required super.$db,
+    required super.$table,
+    super.joinBuilder,
+    super.$addJoinBuilderToRootComposer,
+    super.$removeJoinBuilderFromRootComposer,
+  });
+  ColumnFilters<String> get id => $composableBuilder(
+    column: $table.id,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get scheduleId => $composableBuilder(
+    column: $table.scheduleId,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get subject => $composableBuilder(
+    column: $table.subject,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get kind => $composableBuilder(
+    column: $table.kind,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<DateTime> get date => $composableBuilder(
+    column: $table.date,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get title => $composableBuilder(
+    column: $table.title,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<double> get score => $composableBuilder(
+    column: $table.score,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<double> get maxScore => $composableBuilder(
+    column: $table.maxScore,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<int> get term => $composableBuilder(
+    column: $table.term,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get note => $composableBuilder(
+    column: $table.note,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get familyId => $composableBuilder(
+    column: $table.familyId,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get childId => $composableBuilder(
+    column: $table.childId,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get syncState => $composableBuilder(
+    column: $table.syncState,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<DateTime> get createdAt => $composableBuilder(
+    column: $table.createdAt,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<DateTime> get updatedAt => $composableBuilder(
+    column: $table.updatedAt,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<DateTime> get deletedAt => $composableBuilder(
+    column: $table.deletedAt,
+    builder: (column) => ColumnFilters(column),
+  );
+}
+
+class $$SchoolRecordsTableTableOrderingComposer
+    extends Composer<_$AppDatabase, $SchoolRecordsTableTable> {
+  $$SchoolRecordsTableTableOrderingComposer({
+    required super.$db,
+    required super.$table,
+    super.joinBuilder,
+    super.$addJoinBuilderToRootComposer,
+    super.$removeJoinBuilderFromRootComposer,
+  });
+  ColumnOrderings<String> get id => $composableBuilder(
+    column: $table.id,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get scheduleId => $composableBuilder(
+    column: $table.scheduleId,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get subject => $composableBuilder(
+    column: $table.subject,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get kind => $composableBuilder(
+    column: $table.kind,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<DateTime> get date => $composableBuilder(
+    column: $table.date,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get title => $composableBuilder(
+    column: $table.title,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<double> get score => $composableBuilder(
+    column: $table.score,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<double> get maxScore => $composableBuilder(
+    column: $table.maxScore,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<int> get term => $composableBuilder(
+    column: $table.term,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get note => $composableBuilder(
+    column: $table.note,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get familyId => $composableBuilder(
+    column: $table.familyId,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get childId => $composableBuilder(
+    column: $table.childId,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get syncState => $composableBuilder(
+    column: $table.syncState,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<DateTime> get createdAt => $composableBuilder(
+    column: $table.createdAt,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<DateTime> get updatedAt => $composableBuilder(
+    column: $table.updatedAt,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<DateTime> get deletedAt => $composableBuilder(
+    column: $table.deletedAt,
+    builder: (column) => ColumnOrderings(column),
+  );
+}
+
+class $$SchoolRecordsTableTableAnnotationComposer
+    extends Composer<_$AppDatabase, $SchoolRecordsTableTable> {
+  $$SchoolRecordsTableTableAnnotationComposer({
+    required super.$db,
+    required super.$table,
+    super.joinBuilder,
+    super.$addJoinBuilderToRootComposer,
+    super.$removeJoinBuilderFromRootComposer,
+  });
+  GeneratedColumn<String> get id =>
+      $composableBuilder(column: $table.id, builder: (column) => column);
+
+  GeneratedColumn<String> get scheduleId => $composableBuilder(
+    column: $table.scheduleId,
+    builder: (column) => column,
+  );
+
+  GeneratedColumn<String> get subject =>
+      $composableBuilder(column: $table.subject, builder: (column) => column);
+
+  GeneratedColumn<String> get kind =>
+      $composableBuilder(column: $table.kind, builder: (column) => column);
+
+  GeneratedColumn<DateTime> get date =>
+      $composableBuilder(column: $table.date, builder: (column) => column);
+
+  GeneratedColumn<String> get title =>
+      $composableBuilder(column: $table.title, builder: (column) => column);
+
+  GeneratedColumn<double> get score =>
+      $composableBuilder(column: $table.score, builder: (column) => column);
+
+  GeneratedColumn<double> get maxScore =>
+      $composableBuilder(column: $table.maxScore, builder: (column) => column);
+
+  GeneratedColumn<int> get term =>
+      $composableBuilder(column: $table.term, builder: (column) => column);
+
+  GeneratedColumn<String> get note =>
+      $composableBuilder(column: $table.note, builder: (column) => column);
+
+  GeneratedColumn<String> get familyId =>
+      $composableBuilder(column: $table.familyId, builder: (column) => column);
+
+  GeneratedColumn<String> get childId =>
+      $composableBuilder(column: $table.childId, builder: (column) => column);
+
+  GeneratedColumn<String> get syncState =>
+      $composableBuilder(column: $table.syncState, builder: (column) => column);
+
+  GeneratedColumn<DateTime> get createdAt =>
+      $composableBuilder(column: $table.createdAt, builder: (column) => column);
+
+  GeneratedColumn<DateTime> get updatedAt =>
+      $composableBuilder(column: $table.updatedAt, builder: (column) => column);
+
+  GeneratedColumn<DateTime> get deletedAt =>
+      $composableBuilder(column: $table.deletedAt, builder: (column) => column);
+}
+
+class $$SchoolRecordsTableTableTableManager
+    extends
+        RootTableManager<
+          _$AppDatabase,
+          $SchoolRecordsTableTable,
+          SchoolRecordsTableData,
+          $$SchoolRecordsTableTableFilterComposer,
+          $$SchoolRecordsTableTableOrderingComposer,
+          $$SchoolRecordsTableTableAnnotationComposer,
+          $$SchoolRecordsTableTableCreateCompanionBuilder,
+          $$SchoolRecordsTableTableUpdateCompanionBuilder,
+          (
+            SchoolRecordsTableData,
+            BaseReferences<
+              _$AppDatabase,
+              $SchoolRecordsTableTable,
+              SchoolRecordsTableData
+            >,
+          ),
+          SchoolRecordsTableData,
+          PrefetchHooks Function()
+        > {
+  $$SchoolRecordsTableTableTableManager(
+    _$AppDatabase db,
+    $SchoolRecordsTableTable table,
+  ) : super(
+        TableManagerState(
+          db: db,
+          table: table,
+          createFilteringComposer: () =>
+              $$SchoolRecordsTableTableFilterComposer($db: db, $table: table),
+          createOrderingComposer: () =>
+              $$SchoolRecordsTableTableOrderingComposer($db: db, $table: table),
+          createComputedFieldComposer: () =>
+              $$SchoolRecordsTableTableAnnotationComposer(
+                $db: db,
+                $table: table,
+              ),
+          updateCompanionCallback:
+              ({
+                Value<String> id = const Value.absent(),
+                Value<String> scheduleId = const Value.absent(),
+                Value<String> subject = const Value.absent(),
+                Value<String> kind = const Value.absent(),
+                Value<DateTime> date = const Value.absent(),
+                Value<String?> title = const Value.absent(),
+                Value<double?> score = const Value.absent(),
+                Value<double?> maxScore = const Value.absent(),
+                Value<int?> term = const Value.absent(),
+                Value<String?> note = const Value.absent(),
+                Value<String?> familyId = const Value.absent(),
+                Value<String?> childId = const Value.absent(),
+                Value<String> syncState = const Value.absent(),
+                Value<DateTime> createdAt = const Value.absent(),
+                Value<DateTime> updatedAt = const Value.absent(),
+                Value<DateTime?> deletedAt = const Value.absent(),
+                Value<int> rowid = const Value.absent(),
+              }) => SchoolRecordsTableCompanion(
+                id: id,
+                scheduleId: scheduleId,
+                subject: subject,
+                kind: kind,
+                date: date,
+                title: title,
+                score: score,
+                maxScore: maxScore,
+                term: term,
+                note: note,
+                familyId: familyId,
+                childId: childId,
+                syncState: syncState,
+                createdAt: createdAt,
+                updatedAt: updatedAt,
+                deletedAt: deletedAt,
+                rowid: rowid,
+              ),
+          createCompanionCallback:
+              ({
+                required String id,
+                required String scheduleId,
+                required String subject,
+                required String kind,
+                required DateTime date,
+                Value<String?> title = const Value.absent(),
+                Value<double?> score = const Value.absent(),
+                Value<double?> maxScore = const Value.absent(),
+                Value<int?> term = const Value.absent(),
+                Value<String?> note = const Value.absent(),
+                Value<String?> familyId = const Value.absent(),
+                Value<String?> childId = const Value.absent(),
+                Value<String> syncState = const Value.absent(),
+                required DateTime createdAt,
+                required DateTime updatedAt,
+                Value<DateTime?> deletedAt = const Value.absent(),
+                Value<int> rowid = const Value.absent(),
+              }) => SchoolRecordsTableCompanion.insert(
+                id: id,
+                scheduleId: scheduleId,
+                subject: subject,
+                kind: kind,
+                date: date,
+                title: title,
+                score: score,
+                maxScore: maxScore,
+                term: term,
+                note: note,
+                familyId: familyId,
+                childId: childId,
+                syncState: syncState,
+                createdAt: createdAt,
+                updatedAt: updatedAt,
+                deletedAt: deletedAt,
+                rowid: rowid,
+              ),
+          withReferenceMapper: (p0) => p0
+              .map((e) => (e.readTable(table), BaseReferences(db, table, e)))
+              .toList(),
+          prefetchHooksCallback: null,
+        ),
+      );
+}
+
+typedef $$SchoolRecordsTableTableProcessedTableManager =
+    ProcessedTableManager<
+      _$AppDatabase,
+      $SchoolRecordsTableTable,
+      SchoolRecordsTableData,
+      $$SchoolRecordsTableTableFilterComposer,
+      $$SchoolRecordsTableTableOrderingComposer,
+      $$SchoolRecordsTableTableAnnotationComposer,
+      $$SchoolRecordsTableTableCreateCompanionBuilder,
+      $$SchoolRecordsTableTableUpdateCompanionBuilder,
+      (
+        SchoolRecordsTableData,
+        BaseReferences<
+          _$AppDatabase,
+          $SchoolRecordsTableTable,
+          SchoolRecordsTableData
+        >,
+      ),
+      SchoolRecordsTableData,
+      PrefetchHooks Function()
+    >;
 
 class $AppDatabaseManager {
   final _$AppDatabase _db;
@@ -9351,4 +10668,6 @@ class $AppDatabaseManager {
         _db,
         _db.noteChecklistItemsTable,
       );
+  $$SchoolRecordsTableTableTableManager get schoolRecordsTable =>
+      $$SchoolRecordsTableTableTableManager(_db, _db.schoolRecordsTable);
 }

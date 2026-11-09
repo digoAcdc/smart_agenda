@@ -10,6 +10,7 @@ import '../../domain/repositories/i_family_service.dart';
 import '../controllers/class_schedule_controller.dart';
 import '../widgets/empty_state_widget.dart';
 import '../widgets/loading_placeholder_list.dart';
+import '../widgets/school_records_view.dart';
 import '../utils/schedule_permissions.dart';
 import '../widgets/section_header.dart';
 import 'subject_detail_page.dart';
@@ -35,6 +36,38 @@ class ClassSchedulePage extends GetView<ClassScheduleController> {
       canEditClassSchedule(schedule);
 
   bool get _canEdit => _canEditSchedule(controller.selected.value);
+
+  /// Aba Notas e faltas aberta (so existe com materia na grade).
+  bool get _showRecords =>
+      controller.showingRecords.value && controller.existingSubjects.isNotEmpty;
+
+  /// Abas "Aulas | Notas e faltas". Sem materia na grade, nao aparecem.
+  Widget _buildSectionTabs(BuildContext context) {
+    return Obx(() {
+      if (controller.existingSubjects.isEmpty) return const SizedBox.shrink();
+      final records = controller.showingRecords.value;
+      return Padding(
+        padding: const EdgeInsets.fromLTRB(12, 0, 12, 8),
+        child: SegmentedButton<bool>(
+          showSelectedIcon: false,
+          segments: const [
+            ButtonSegment(
+              value: false,
+              icon: Icon(Icons.view_week_outlined),
+              label: Text('Aulas'),
+            ),
+            ButtonSegment(
+              value: true,
+              icon: Icon(Icons.grade_outlined),
+              label: Text('Notas e faltas'),
+            ),
+          ],
+          selected: {records},
+          onSelectionChanged: (v) => controller.showingRecords.value = v.first,
+        ),
+      );
+    });
+  }
 
   /// "Joao · Escola" para grade de filho; o nome para grade pessoal.
   String _scheduleLabel(ClassSchedule schedule) {
@@ -65,11 +98,12 @@ class ClassSchedulePage extends GetView<ClassScheduleController> {
                     : Row(
                         mainAxisSize: MainAxisSize.min,
                         children: [
-                          IconButton(
-                            onPressed: () => _openAddTimeRangeDialog(context),
-                            icon: const Icon(Icons.add),
-                            tooltip: 'Adicionar horário',
-                          ),
+                          if (!_showRecords)
+                            IconButton(
+                              onPressed: () => _openAddTimeRangeDialog(context),
+                              icon: const Icon(Icons.add),
+                              tooltip: 'Adicionar horário',
+                            ),
                           PopupMenuButton<String>(
                             tooltip: 'Opções da grade',
                             onSelected: (v) => v == 'rename'
@@ -91,10 +125,14 @@ class ClassSchedulePage extends GetView<ClassScheduleController> {
               );
             }),
             _buildScheduleSelector(context),
+            _buildSectionTabs(context),
             Expanded(
               child: Obx(() {
                 if (controller.loading.value) {
                   return const LoadingPlaceholderList();
+                }
+                if (_showRecords) {
+                  return SchoolRecordsView(canEdit: _canEdit);
                 }
                 if (controller.schedules.isEmpty) {
                   return EmptyStateWidget(
@@ -246,11 +284,13 @@ class ClassSchedulePage extends GetView<ClassScheduleController> {
               ],
             ),
           ),
-          _backpackTip(context),
           Expanded(
             child: ListView(
               padding: const EdgeInsets.fromLTRB(12, 4, 12, 120),
               children: [
+                // Rola junto com as aulas: fixa no topo, com fonte grande
+                // em tela pequena, nao sobrava espaco para a lista.
+                _backpackTip(context),
                 for (final r in ranges)
                   Padding(
                     padding: const EdgeInsets.only(bottom: 8),
@@ -724,7 +764,7 @@ class ClassSchedulePage extends GetView<ClassScheduleController> {
         !controller.backpackTipDismissed.value;
     if (!showTip) {
       return Padding(
-        padding: const EdgeInsets.fromLTRB(12, 0, 12, 6),
+        padding: const EdgeInsets.only(bottom: 6),
         child: Align(
           alignment: Alignment.centerLeft,
           child: ActionChip(
@@ -738,7 +778,7 @@ class ClassSchedulePage extends GetView<ClassScheduleController> {
     }
     final theme = Theme.of(context);
     return Container(
-      margin: const EdgeInsets.fromLTRB(12, 0, 12, 10),
+      margin: const EdgeInsets.only(bottom: 10),
       padding: const EdgeInsets.fromLTRB(12, 10, 4, 10),
       decoration: BoxDecoration(
         color: theme.colorScheme.primaryContainer.withValues(alpha: 0.6),

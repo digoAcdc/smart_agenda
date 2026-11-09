@@ -101,6 +101,17 @@ class ClassScheduleLocalDataSource implements IClassScheduleDataSource {
   Future<void> deleteSchedule(ClassSchedule schedule) async {
     final now = DateTime.now();
     await _db.transaction(() async {
+      // Notas e faltas da grade saem junto (logico: o sync apaga na nuvem).
+      await (_db.update(_db.schoolRecordsTable)..where(
+            (t) => t.scheduleId.equals(schedule.id) & t.deletedAt.isNull(),
+          ))
+          .write(
+            SchoolRecordsTableCompanion(
+              deletedAt: Value(now),
+              updatedAt: Value(now),
+              syncState: const Value('pending'),
+            ),
+          );
       if (schedule.isFamily) {
         await (_db.update(
           _db.classSchedulesTable,
@@ -165,6 +176,29 @@ class ClassScheduleLocalDataSource implements IClassScheduleDataSource {
             familyId: Value(familyId),
             syncState: const Value('pending'),
           ),
+      ]);
+    });
+    // Mochila e Notas e faltas vao junto para a grade nova da Familia.
+    if (personal.backpackItems.isNotEmpty) {
+      await setBackpackItems(family.id, personal.backpackItems);
+    }
+    final records =
+        await (_db.select(_db.schoolRecordsTable)..where(
+              (t) => t.scheduleId.equals(personal.id) & t.deletedAt.isNull(),
+            ))
+            .get();
+    await _db.batch((batch) {
+      batch.insertAll(_db.schoolRecordsTable, [
+        for (final r in records)
+          r
+              .toCompanion(true)
+              .copyWith(
+                id: Value(const Uuid().v4()),
+                scheduleId: Value(family.id),
+                familyId: Value(familyId),
+                syncState: const Value('pending'),
+                updatedAt: Value(now),
+              ),
       ]);
     });
     await deleteSchedule(personal);
@@ -493,6 +527,9 @@ class ClassScheduleLocalDataSource implements IClassScheduleDataSource {
     )..where((t) => stale(t.familyId))).go();
     await (_db.delete(
       _db.classSchedulesTable,
+    )..where((t) => stale(t.familyId))).go();
+    await (_db.delete(
+      _db.schoolRecordsTable,
     )..where((t) => stale(t.familyId))).go();
   }
 
