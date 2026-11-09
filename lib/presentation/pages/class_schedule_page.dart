@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
-import 'package:url_launcher/url_launcher.dart';
 
+import '../../core/routes/app_routes.dart';
 import '../../core/theme/design_tokens.dart';
 import '../../core/utils/form_validators.dart';
 import '../../domain/entities/class_schedule_slot.dart';
@@ -10,7 +10,9 @@ import '../../domain/repositories/i_family_service.dart';
 import '../controllers/class_schedule_controller.dart';
 import '../widgets/empty_state_widget.dart';
 import '../widgets/loading_placeholder_list.dart';
+import '../utils/schedule_permissions.dart';
 import '../widgets/section_header.dart';
+import 'subject_detail_page.dart';
 
 class ClassSchedulePage extends GetView<ClassScheduleController> {
   const ClassSchedulePage({super.key});
@@ -29,14 +31,8 @@ class ClassSchedulePage extends GetView<ClassScheduleController> {
   IFamilyService? get _family =>
       Get.isRegistered<IFamilyService>() ? Get.find<IFamilyService>() : null;
 
-  /// Grade sem filho (pessoal) sempre editavel; com filho segue o papel na Familia.
-  bool _canEditSchedule(ClassSchedule? schedule) {
-    if (schedule == null || !schedule.isFamily) return true;
-    final ctx = _family?.context;
-    return ctx != null &&
-        ctx.familyId == schedule.familyId &&
-        ctx.canEditAgenda;
-  }
+  bool _canEditSchedule(ClassSchedule? schedule) =>
+      canEditClassSchedule(schedule);
 
   bool get _canEdit => _canEditSchedule(controller.selected.value);
 
@@ -306,8 +302,9 @@ class ClassSchedulePage extends GetView<ClassScheduleController> {
                   ),
                 if (_canEdit)
                   Text(
-                    'Toque na matéria para editar e no horário para mudar ou '
-                    'excluir. O horário vale para todos os dias.',
+                    'Toque na matéria para ver o que levar na mochila ou '
+                    'editar a aula, e no horário para mudar ou excluir. O '
+                    'horário vale para todos os dias.',
                     textAlign: TextAlign.center,
                     style: theme.textTheme.bodySmall?.copyWith(
                       color: scheme.onSurfaceVariant,
@@ -668,16 +665,44 @@ class ClassSchedulePage extends GetView<ClassScheduleController> {
                     : FontWeight.w400,
               ),
             ),
-            // Mochila: o que levar nesta materia, a vista na grade.
-            if (controller.bringFor(subject) case final bring?) ...[
-              const SizedBox(height: 2),
+            // Mochila: quantos itens a materia tem (cinza quando vazia).
+            if (subject?.trim().isNotEmpty == true)
+              _backpackCount(context, controller.backpackFor(subject).length),
+          ],
+        ),
+      ),
+    );
+  }
+
+  /// Icone de mochila com o numero de itens da materia. Sem itens, so o
+  /// icone apagado (um "0" em toda celula poluia a grade).
+  Widget _backpackCount(BuildContext context, int count) {
+    final scheme = Theme.of(context).colorScheme;
+    final color = count == 0
+        ? scheme.outline.withValues(alpha: 0.7)
+        : scheme.primary;
+    return Semantics(
+      label: count == 0
+          ? 'Mochila vazia, toque para adicionar'
+          : '$count ${count == 1 ? 'item' : 'itens'} na mochila',
+      excludeSemantics: true,
+      child: Padding(
+        padding: const EdgeInsets.only(top: 4),
+        child: Row(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Icon(
+              count == 0 ? Icons.backpack_outlined : Icons.backpack,
+              size: 15,
+              color: color,
+            ),
+            if (count > 0) ...[
+              const SizedBox(width: 3),
               Text(
-                '🎒 $bring',
-                textAlign: TextAlign.center,
-                maxLines: 1,
-                overflow: TextOverflow.ellipsis,
+                '$count',
                 style: Theme.of(context).textTheme.labelSmall?.copyWith(
-                  color: Theme.of(context).colorScheme.onSurfaceVariant,
+                  color: color,
+                  fontWeight: FontWeight.w700,
                 ),
               ),
             ],
@@ -687,14 +712,29 @@ class ClassSchedulePage extends GetView<ClassScheduleController> {
     );
   }
 
-  /// Dica na tela Aulas enquanto nenhuma materia tem "o que levar".
+  /// Mochila na tela Aulas: a dica enquanto nenhuma materia tem itens e
+  /// ninguem fechou; depois, o chip "Mochila de amanhã" (abre a checklist
+  /// de amanha), para a funcao nao sumir de vista.
   Widget _backpackTip(BuildContext context) {
     final schedule = controller.selected.value;
-    if (!_canEdit ||
-        schedule == null ||
-        schedule.bringItems.isNotEmpty ||
-        controller.backpackTipDismissed.value) {
-      return const SizedBox.shrink();
+    if (schedule == null) return const SizedBox.shrink();
+    final showTip =
+        _canEdit &&
+        !controller.hasBackpackItems &&
+        !controller.backpackTipDismissed.value;
+    if (!showTip) {
+      return Padding(
+        padding: const EdgeInsets.fromLTRB(12, 0, 12, 6),
+        child: Align(
+          alignment: Alignment.centerLeft,
+          child: ActionChip(
+            avatar: const Text('🎒'),
+            label: const Text('Mochila de amanhã'),
+            tooltip: 'Ver o que levar amanhã',
+            onPressed: () => Get.toNamed(AppRoutes.backpackTomorrow),
+          ),
+        ),
+      );
     }
     final theme = Theme.of(context);
     return Container(
@@ -719,8 +759,9 @@ class ClassSchedulePage extends GetView<ClassScheduleController> {
                   ),
                   TextSpan(
                     text:
-                        'Toque numa matéria e diga o que levar (ex.: tênis na '
-                        'Ed. Física). Às 20h da véspera você recebe o lembrete.',
+                        'Toque numa matéria e em "Adicionar à mochila" (ex.: '
+                        'tênis na Ed. Física). Escolha o dia e se quer '
+                        'lembrete às 20h da véspera.',
                     style: theme.textTheme.bodySmall,
                   ),
                 ],
@@ -736,52 +777,6 @@ class ClassSchedulePage extends GetView<ClassScheduleController> {
         ],
       ),
     );
-  }
-
-  /// Atalho: so o "o que levar" da materia, sem abrir a edicao completa.
-  Future<void> _openBringDialog(BuildContext context, String subject) async {
-    final textController = TextEditingController(
-      text: controller.bringFor(subject) ?? '',
-    );
-    final save = await Get.dialog<bool>(
-      AlertDialog(
-        title: Text('🎒 O que levar em $subject'),
-        content: Column(
-          mainAxisSize: MainAxisSize.min,
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            TextField(
-              controller: textController,
-              autofocus: true,
-              textCapitalization: TextCapitalization.sentences,
-              decoration: const InputDecoration(
-                hintText: 'Ex.: tênis e uniforme',
-              ),
-            ),
-            const SizedBox(height: 8),
-            Text(
-              'Vale para todas as aulas de $subject. Às 20h da véspera você '
-              'recebe o lembrete do que colocar na mochila.',
-              style: Theme.of(context).textTheme.bodySmall,
-            ),
-          ],
-        ),
-        actions: [
-          TextButton(
-            onPressed: () => Get.back(result: false),
-            child: const Text('Cancelar'),
-          ),
-          FilledButton(
-            style: FilledButton.styleFrom(minimumSize: const Size(0, 44)),
-            onPressed: () => Get.back(result: true),
-            child: const Text('Salvar'),
-          ),
-        ],
-      ),
-    );
-    if (save == true) {
-      await controller.setBringFor(subject, textController.text);
-    }
   }
 
   /// Troca o horario de uma linha (todos os dias).
@@ -964,95 +959,27 @@ class ClassSchedulePage extends GetView<ClassScheduleController> {
     ClassScheduleSlot? cell,
   ) {
     if (cell == null) return;
-    final hasContent =
-        (cell.subject?.isNotEmpty ?? false) ||
-        (cell.professorName?.isNotEmpty ?? false) ||
-        (cell.professorEmail?.isNotEmpty ?? false) ||
-        (cell.professorPhone?.isNotEmpty ?? false);
-    WidgetsBinding.instance.addPostFrameCallback((_) {
+    final subject = cell.subject?.trim() ?? '';
+    WidgetsBinding.instance.addPostFrameCallback((_) async {
       if (!context.mounted) return;
-      if (hasContent) {
-        _openSubjectViewDialog(context, day, cell);
+      if (subject.isNotEmpty) {
+        // Detalhe da materia (Mochila); volta com true
+        // quando o usuario pede para editar a aula.
+        final edit = await Get.toNamed(
+          AppRoutes.subjectDetail,
+          arguments: SubjectDetailArgs(
+            slot: cell,
+            dayLabel: dayLabels[day] ?? 'Dia',
+            canEdit: _canEdit,
+          ),
+        );
+        if (edit == true && context.mounted) {
+          _openSubjectEditDialog(context, day, cell);
+        }
       } else if (_canEdit) {
         _openSubjectEditDialog(context, day, cell);
       }
     });
-  }
-
-  Future<void> _openSubjectViewDialog(
-    BuildContext context,
-    int day,
-    ClassScheduleSlot cell,
-  ) async {
-    final items = <Widget>[];
-    if (cell.subject?.isNotEmpty == true) {
-      items.add(_detailRow(label: 'Matéria', value: cell.subject!));
-      final bring = controller.bringFor(cell.subject);
-      if (bring != null) {
-        items.add(_detailRow(label: '🎒 O que levar', value: bring));
-      }
-    }
-    if (cell.professorName?.isNotEmpty == true) {
-      items.add(_detailRow(label: 'Professor', value: cell.professorName!));
-    }
-    if (cell.professorEmail?.isNotEmpty == true) {
-      items.add(_emailRow(context, cell.professorEmail!));
-    }
-    if (cell.professorPhone?.isNotEmpty == true) {
-      items.add(
-        _phoneRow(
-          context,
-          cell.professorPhone!,
-          formatPhoneForDisplay(cell.professorPhone),
-        ),
-      );
-    }
-    if (items.isEmpty) {
-      items.add(const Text('Nenhum detalhe cadastrado.'));
-    }
-
-    await Get.dialog(
-      AlertDialog(
-        title: Text(
-          '${dayLabels[day] ?? 'Dia'} - ${controller.formatMinutes(cell.startMinutes)}',
-        ),
-        content: Column(
-          mainAxisSize: MainAxisSize.min,
-          crossAxisAlignment: CrossAxisAlignment.stretch,
-          children: [
-            ...items,
-            // Atalho da Mochila de amanha.
-            if (_canEdit && cell.subject?.isNotEmpty == true) ...[
-              const SizedBox(height: 8),
-              OutlinedButton(
-                style: OutlinedButton.styleFrom(minimumSize: const Size(0, 44)),
-                onPressed: () {
-                  Get.back();
-                  _openBringDialog(context, cell.subject!);
-                },
-                child: Text(
-                  controller.bringFor(cell.subject) == null
-                      ? '🎒 Dizer o que levar na mochila'
-                      : '🎒 Mudar o que levar',
-                ),
-              ),
-            ],
-          ],
-        ),
-        actions: [
-          TextButton(onPressed: Get.back, child: const Text('Fechar')),
-          if (_canEdit)
-            FilledButton(
-              style: FilledButton.styleFrom(minimumSize: const Size(0, 44)),
-              onPressed: () {
-                Get.back();
-                _openSubjectEditDialog(context, day, cell);
-              },
-              child: const Text('Editar'),
-            ),
-        ],
-      ),
-    );
   }
 
   static const String _novaMateriaValue = '__nova__';
@@ -1087,9 +1014,6 @@ class ClassSchedulePage extends GetView<ClassScheduleController> {
     final phoneController = TextEditingController(
       text: formatPhoneForDisplay(cell.professorPhone),
     );
-    final bringController = TextEditingController(
-      text: controller.bringFor(cell.subject) ?? '',
-    );
 
     void onDropdownChanged(String? value) {
       dropdownValue = value;
@@ -1110,10 +1034,6 @@ class ClassSchedulePage extends GetView<ClassScheduleController> {
         emailController.text = slot?.professorEmail ?? '';
         phoneController.text = formatPhoneForDisplay(slot?.professorPhone);
       }
-      // "O que levar" e da materia: acompanha a escolha.
-      bringController.text = value == null || value == _novaMateriaValue
-          ? ''
-          : (controller.bringFor(value) ?? '');
     }
 
     final formKey = GlobalKey<FormState>();
@@ -1220,23 +1140,6 @@ class ClassSchedulePage extends GetView<ClassScheduleController> {
                       inputFormatters: phoneInputFormatters,
                       validator: (v) => phoneValidator(v),
                     ),
-                    const SizedBox(height: 8),
-                    TextFormField(
-                      controller: bringController,
-                      textCapitalization: TextCapitalization.sentences,
-                      decoration: const InputDecoration(
-                        labelText: '🎒 O que levar (opcional)',
-                        hintText: 'Ex.: tênis e uniforme',
-                        helperText:
-                            'Vale para todas as aulas desta matéria. Aviso às 20h da véspera.',
-                        helperMaxLines: 2,
-                        isDense: true,
-                        contentPadding: EdgeInsets.symmetric(
-                          horizontal: 12,
-                          vertical: 8,
-                        ),
-                      ),
-                    ),
                   ],
                 );
               },
@@ -1267,9 +1170,6 @@ class ClassSchedulePage extends GetView<ClassScheduleController> {
                 professorEmail: emailController.text,
                 professorPhone: phone.isEmpty ? null : phone,
               );
-              if (subject.trim().isNotEmpty) {
-                await controller.setBringFor(subject, bringController.text);
-              }
               Get.back();
             },
             child: const Text('Salvar'),
@@ -1277,146 +1177,6 @@ class ClassSchedulePage extends GetView<ClassScheduleController> {
         ],
       ),
     );
-  }
-
-  Widget _detailRow({required String label, required String value}) {
-    return Padding(
-      padding: const EdgeInsets.only(bottom: 8),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Text(
-            label,
-            style: const TextStyle(fontWeight: FontWeight.w600, fontSize: 12),
-          ),
-          const SizedBox(height: 2),
-          Text(value),
-        ],
-      ),
-    );
-  }
-
-  Widget _emailRow(BuildContext context, String email) {
-    return Padding(
-      padding: const EdgeInsets.only(bottom: 8),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Text(
-            'Email',
-            style: const TextStyle(fontWeight: FontWeight.w600, fontSize: 12),
-          ),
-          const SizedBox(height: 2),
-          MenuAnchor(
-            builder: (context, controller, child) => InkWell(
-              onTap: () =>
-                  controller.isOpen ? controller.close() : controller.open(),
-              child: Row(
-                mainAxisSize: MainAxisSize.min,
-                children: [
-                  Text(
-                    email,
-                    style: TextStyle(
-                      color: Theme.of(context).colorScheme.primary,
-                      decoration: TextDecoration.underline,
-                    ),
-                  ),
-                  const SizedBox(width: 4),
-                  Icon(
-                    Icons.arrow_drop_down,
-                    size: 18,
-                    color: Theme.of(context).colorScheme.primary,
-                  ),
-                ],
-              ),
-            ),
-            menuChildren: [
-              MenuItemButton(
-                onPressed: () => _launchMailto(email),
-                leadingIcon: const Icon(Icons.email_outlined),
-                child: const Text('Enviar email'),
-              ),
-            ],
-          ),
-        ],
-      ),
-    );
-  }
-
-  Widget _phoneRow(BuildContext context, String phoneRaw, String phoneDisplay) {
-    return Padding(
-      padding: const EdgeInsets.only(bottom: 8),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Text(
-            'Telefone',
-            style: const TextStyle(fontWeight: FontWeight.w600, fontSize: 12),
-          ),
-          const SizedBox(height: 2),
-          MenuAnchor(
-            builder: (context, controller, child) => InkWell(
-              onTap: () =>
-                  controller.isOpen ? controller.close() : controller.open(),
-              child: Row(
-                mainAxisSize: MainAxisSize.min,
-                children: [
-                  Text(
-                    phoneDisplay,
-                    style: TextStyle(
-                      color: Theme.of(context).colorScheme.primary,
-                      decoration: TextDecoration.underline,
-                    ),
-                  ),
-                  const SizedBox(width: 4),
-                  Icon(
-                    Icons.arrow_drop_down,
-                    size: 18,
-                    color: Theme.of(context).colorScheme.primary,
-                  ),
-                ],
-              ),
-            ),
-            menuChildren: [
-              MenuItemButton(
-                onPressed: () => _launchTel(phoneRaw),
-                leadingIcon: const Icon(Icons.phone_outlined),
-                child: const Text('Ligar'),
-              ),
-              MenuItemButton(
-                onPressed: () => _launchWhatsApp(phoneRaw),
-                leadingIcon: const Icon(Icons.chat_outlined),
-                child: const Text('WhatsApp'),
-              ),
-            ],
-          ),
-        ],
-      ),
-    );
-  }
-
-  Future<void> _launchMailto(String email) async {
-    final uri = Uri.parse('mailto:$email');
-    if (await canLaunchUrl(uri)) {
-      await launchUrl(uri);
-    }
-  }
-
-  Future<void> _launchTel(String phone) async {
-    final digits = phone.replaceAll(RegExp(r'\D'), '');
-    final uri = Uri.parse('tel:$digits');
-    if (await canLaunchUrl(uri)) {
-      await launchUrl(uri);
-    }
-  }
-
-  Future<void> _launchWhatsApp(String phone) async {
-    final digits = phone.replaceAll(RegExp(r'\D'), '');
-    final number = digits.length >= 12 ? digits : '55$digits';
-    final uri = Uri.parse('https://wa.me/$number');
-    if (await canLaunchUrl(uri)) {
-      await launchUrl(uri, mode: LaunchMode.externalApplication);
-    }
   }
 
   int? _parseTime(String raw) {

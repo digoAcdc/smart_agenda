@@ -9,6 +9,7 @@ import '../../core/utils/date_utils.dart';
 import '../../domain/entities/agenda_enums.dart';
 import '../../domain/entities/agenda_item.dart';
 import '../../domain/entities/class_schedule_slot.dart';
+import '../../domain/services/backpack_planner.dart';
 import '../controllers/agenda_controller.dart';
 import '../controllers/auth_controller.dart';
 import '../controllers/class_schedule_controller.dart';
@@ -24,6 +25,7 @@ import '../../domain/repositories/i_sync_service.dart';
 import '../widgets/family_invite_banner.dart';
 import '../widgets/native_ad_card.dart';
 import '../services/backpack_reminder_service.dart';
+import '../widgets/backpack_checklist.dart';
 
 enum AgendaHomeViewMode { day, week, month }
 
@@ -646,9 +648,11 @@ class _TodayPageState extends State<TodayPage> {
                             : null,
                       ),
                     const SizedBox(height: 12),
-                    // Mochila de amanha: o que levar (cadastrado em Aulas).
-                    if (_backpackTomorrow() case final bring?) ...[
-                      _buildBackpackCard(context, bring),
+                    // "Amanhã leve:": checklist dos itens das aulas de
+                    // amanha (cadastrados em Aulas). So com itens.
+                    if (_backpackTomorrow() case final groups
+                        when groups.isNotEmpty) ...[
+                      _buildBackpackCard(context, groups),
                       const SizedBox(height: 12),
                     ],
                     if (agendaController.upcomingSchoolWork.isNotEmpty) ...[
@@ -1067,38 +1071,55 @@ class _TodayPageState extends State<TodayPage> {
     );
   }
 
-  String? _backpackTomorrow() => Get.isRegistered<BackpackReminderService>()
-      ? Get.find<BackpackReminderService>().tomorrowSummary()
-      : null;
+  List<BackpackSubjectGroup> _backpackTomorrow() =>
+      Get.isRegistered<BackpackReminderService>()
+      ? Get.find<BackpackReminderService>().tomorrowGroups()
+      : const [];
 
-  Widget _buildBackpackCard(BuildContext context, String bring) {
+  Widget _buildBackpackCard(
+    BuildContext context,
+    List<BackpackSubjectGroup> groups,
+  ) {
     final theme = Theme.of(context);
+    final service = Get.find<BackpackReminderService>();
     return Container(
-      padding: const EdgeInsets.all(14),
+      padding: const EdgeInsets.fromLTRB(14, 14, 8, 6),
       decoration: BoxDecoration(
         color: theme.colorScheme.primaryContainer.withValues(alpha: 0.6),
         borderRadius: BorderRadius.circular(18),
       ),
-      child: Row(
+      child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          const Text('🎒', style: TextStyle(fontSize: 24)),
-          const SizedBox(width: 10),
-          Expanded(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
+          Obx(() {
+            service.checked.length;
+            final (done, total) = BackpackChecklist.progress(service, groups);
+            return Row(
               children: [
-                Text(
-                  'Mochila de amanhã',
-                  style: theme.textTheme.titleSmall?.copyWith(
-                    fontWeight: FontWeight.w800,
+                const Text('🎒', style: TextStyle(fontSize: 24)),
+                const SizedBox(width: 10),
+                Expanded(
+                  child: Text(
+                    'Amanhã leve:',
+                    style: theme.textTheme.titleSmall?.copyWith(
+                      fontWeight: FontWeight.w800,
+                    ),
                   ),
                 ),
-                const SizedBox(height: 2),
-                Text(bring, style: theme.textTheme.bodyMedium),
+                Padding(
+                  padding: const EdgeInsets.only(right: 6),
+                  child: Text(
+                    done == total ? 'tudo pronto ✓' : '$done de $total',
+                    style: theme.textTheme.labelMedium?.copyWith(
+                      color: theme.colorScheme.primary,
+                      fontWeight: FontWeight.w700,
+                    ),
+                  ),
+                ),
               ],
-            ),
-          ),
+            );
+          }),
+          BackpackChecklist(groups: groups),
         ],
       ),
     );

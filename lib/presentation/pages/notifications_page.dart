@@ -396,7 +396,8 @@ Widget _buildBackpackSection() {
         contentPadding: EdgeInsets.zero,
         title: const Text('Mochila de amanhã'),
         subtitle: const Text(
-          'Às 20h, o que levar no dia seguinte (cadastre em Aulas, em cada matéria).',
+          'Às 20h, o que levar no dia seguinte. Os itens são cadastrados em '
+          'Aulas (toque na matéria) e cada um pode ter ou não lembrete.',
         ),
         value: backpack.enabled.value,
         onChanged: backpack.setEnabled,

@@ -1,14 +1,15 @@
 import 'dart:async';
 
-import 'package:flutter/foundation.dart';
-
 import 'package:flutter/widgets.dart';
 import 'package:get/get.dart';
 import 'package:shared_preferences/shared_preferences.dart';
+import 'package:uuid/uuid.dart';
 
+import '../../domain/entities/backpack_item.dart';
 import '../../domain/entities/class_schedule_slot.dart';
 import '../../domain/repositories/i_class_schedule_datasource.dart';
 import '../../domain/repositories/i_sync_service.dart';
+import '../../domain/services/backpack_planner.dart';
 import '../services/backpack_reminder_service.dart';
 
 class TimeRange {
@@ -103,7 +104,7 @@ class ClassScheduleController extends GetxController {
 
   static const _backpackTipKey = 'backpack_tip_dismissed';
 
-  /// Dica da Mochila na tela Aulas (some depois de fechada).
+  /// Dica da Mochila na tela Aulas (fechada, vira o chip "🎒 Mochila").
   final RxBool backpackTipDismissed = false.obs;
 
   Future<void> _loadBackpackTip() async {
@@ -121,25 +122,108 @@ class ClassScheduleController extends GetxController {
     } catch (_) {}
   }
 
-  /// "O que levar" de [subject] na grade aberta.
-  String? bringFor(String? subject) {
+  /// Itens da Mochila de [subject] na grade aberta (sem os "so na proxima
+  /// aula" cuja aula ja passou).
+  List<BackpackItem> backpackFor(String? subject) {
     final key = subject?.trim();
-    if (key == null || key.isEmpty) return null;
-    return selected.value?.bringItems[key];
+    final schedule = selected.value;
+    if (key == null || key.isEmpty || schedule == null) return const [];
+    final now = DateTime.now();
+    return [
+      for (final i in schedule.backpackItems)
+        if (i.subject == key && !isBackpackItemExpired(i, slots, now)) i,
+    ];
   }
 
-  Future<void> setBringFor(String subject, String text) async {
+  /// Algum item na grade aberta (a dica da Mochila some quando ha).
+  bool get hasBackpackItems => (selected.value?.backpackItems ?? const []).any(
+    (i) => !isBackpackItemExpired(i, slots, DateTime.now()),
+  );
+
+  /// Proximos dias com aula de [subject] na grade aberta (para escolher
+  /// "so neste dia" ao adicionar a mochila).
+  List<DateTime> upcomingClassDatesFor(String subject, {int count = 4}) =>
+      upcomingClassDates(subject, slots, DateTime.now(), count: count);
+
+  /// Dias da semana com aula de [subject] na grade aberta.
+  List<int> classWeekdaysFor(String subject) => classWeekdays(subject, slots);
+
+  /// Adiciona varios itens a [subject] de uma vez. Sem [onDay], vao em toda
+  /// aula da materia; com [onDay], so naquele dia. [remind] liga o aviso das
+  /// 20h da vespera. Itens repetidos sao ignorados. Retorna erro ou nulo.
+  Future<String?> addBackpackItems(
+    String subject,
+    List<String> labels, {
+    DateTime? onDay,
+    bool remind = true,
+  }) async {
     final current = selected.value;
     final key = subject.trim();
-    if (current == null || key.isEmpty) return;
-    final items = {...current.bringItems};
-    if (text.trim().isEmpty) {
-      items.remove(key);
-    } else {
-      items[key] = text.trim();
+    if (current == null || key.isEmpty) return null;
+    final due = onDay == null
+        ? null
+        : DateTime(onDay.year, onDay.month, onDay.day);
+    final frequency = due == null
+        ? BackpackFrequency.weekly
+        : BackpackFrequency.nextClass;
+    final existing = backpackFor(key);
+    final seen = <String>{
+      for (final i in existing)
+        if (i.frequency == frequency && i.dueDate == due) i.label.toLowerCase(),
+    };
+    final added = <BackpackItem>[];
+    for (final label in labels) {
+      final text = label.trim();
+      if (text.isEmpty || !seen.add(text.toLowerCase())) continue;
+      added.add(
+        BackpackItem(
+          id: const Uuid().v4(),
+          subject: key,
+          label: text,
+          frequency: frequency,
+          dueDate: due,
+          remind: remind,
+        ),
+      );
     }
-    if (mapEquals(items, current.bringItems)) return;
-    await _dataSource.setBringItems(current.id, items);
+    if (added.isEmpty) {
+      return labels.any((l) => l.trim().isNotEmpty)
+          ? 'Esses itens já estão na mochila.'
+          : null;
+    }
+    await _saveBackpack(current, [...current.backpackItems, ...added]);
+    return null;
+  }
+
+  /// Liga/desliga o aviso das 20h de um item.
+  Future<void> setBackpackItemRemind(String id, bool remind) async {
+    final current = selected.value;
+    if (current == null) return;
+    await _saveBackpack(current, [
+      for (final i in current.backpackItems)
+        i.id == id ? i.copyWith(remind: remind) : i,
+    ]);
+  }
+
+  Future<void> removeBackpackItem(String id) async {
+    final current = selected.value;
+    if (current == null) return;
+    await _saveBackpack(current, [
+      for (final i in current.backpackItems)
+        if (i.id != id) i,
+    ]);
+  }
+
+  /// Grava a lista ja sem os itens "so na proxima aula" vencidos.
+  Future<void> _saveBackpack(
+    ClassSchedule schedule,
+    List<BackpackItem> items,
+  ) async {
+    final now = DateTime.now();
+    await _dataSource.setBackpackItems(schedule.id, [
+      for (final i in items)
+        if (!isBackpackItemExpired(i, slots, now)) i,
+    ]);
     await load(silent: true);
   }
 

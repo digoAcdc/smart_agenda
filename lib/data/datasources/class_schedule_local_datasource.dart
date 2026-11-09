@@ -1,12 +1,12 @@
-import 'dart:convert';
-
 import 'package:drift/drift.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:uuid/uuid.dart';
 
+import '../../domain/entities/backpack_item.dart';
 import '../../domain/entities/class_schedule_slot.dart';
 import '../../domain/repositories/i_class_schedule_datasource.dart';
 import '../local/app_database.dart';
+import 'backpack_json_codec.dart';
 
 /// Grades e aulas no banco local (Drift).
 /// Pessoais: sem familyId (sincronizadas por substituicao no Pro).
@@ -69,20 +69,15 @@ class ClassScheduleLocalDataSource implements IClassScheduleDataSource {
   }
 
   @override
-  Future<void> setBringItems(
+  Future<void> setBackpackItems(
     String scheduleId,
-    Map<String, String> items,
+    List<BackpackItem> items,
   ) async {
-    final clean = {
-      for (final e in items.entries)
-        if (e.key.trim().isNotEmpty && e.value.trim().isNotEmpty)
-          e.key.trim(): e.value.trim(),
-    };
     await (_db.update(
       _db.classSchedulesTable,
     )..where((t) => t.id.equals(scheduleId))).write(
       ClassSchedulesTableCompanion(
-        bringJson: Value(clean.isEmpty ? null : jsonEncode(clean)),
+        bringJson: Value(encodeBackpackItems(items)),
         updatedAt: Value(DateTime.now()),
         syncState: const Value('pending'),
       ),
@@ -506,7 +501,7 @@ class ClassScheduleLocalDataSource implements IClassScheduleDataSource {
     name: row.name,
     familyId: row.familyId,
     childId: row.childId,
-    bringItems: decodeBringItems(row.bringJson),
+    backpackItems: decodeBackpackItems(row.bringJson),
     createdAt: row.createdAt,
     updatedAt: row.updatedAt,
   );
@@ -527,20 +522,5 @@ class ClassScheduleLocalDataSource implements IClassScheduleDataSource {
       createdAt: row.createdAt,
       updatedAt: row.updatedAt,
     );
-  }
-}
-
-/// bring_json -> mapa materia -> o que levar (ignora JSON invalido).
-Map<String, String> decodeBringItems(String? json) {
-  if (json == null || json.isEmpty) return const {};
-  try {
-    final raw = jsonDecode(json);
-    if (raw is! Map) return const {};
-    return {
-      for (final e in raw.entries)
-        if (e.value is String) e.key.toString(): e.value as String,
-    };
-  } catch (_) {
-    return const {};
   }
 }

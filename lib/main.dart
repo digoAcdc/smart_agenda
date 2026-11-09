@@ -21,6 +21,7 @@ import 'domain/entities/agenda_item.dart';
 import 'domain/repositories/i_agenda_repository.dart';
 import 'domain/repositories/i_notification_service.dart';
 import 'presentation/controllers/home_controller.dart';
+import 'presentation/services/backpack_reminder_service.dart';
 
 /// Limite pra cada etapa da abertura. Se uma delas travar (aparelho sem
 /// rede, Play Services desatualizado), o app abre sem aquele recurso em
@@ -143,6 +144,11 @@ void _onPushMessageOpened(RemoteMessage message) {
 
 Future<void> _handleNotificationTap(String? payload) async {
   if (payload == null || payload.isEmpty) return;
+  // Aviso das 20h da Mochila: abre a checklist de amanha.
+  if (payload == BackpackReminderService.notificationPayload) {
+    Get.toNamed(AppRoutes.backpackTomorrow);
+    return;
+  }
   if (payload.startsWith('date:')) {
     final parts = payload.substring(5).split(';mode:');
     final date = DateTime.tryParse(parts.first);

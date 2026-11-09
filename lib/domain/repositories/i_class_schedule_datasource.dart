@@ -1,3 +1,4 @@
+import '../entities/backpack_item.dart';
 import '../entities/class_schedule_slot.dart';
 
 /// Grades horarias com nome ([ClassSchedule]) e suas aulas.
@@ -13,8 +14,8 @@ abstract class IClassScheduleDataSource {
 
   Future<void> renameSchedule(String id, String name);
 
-  /// "O que levar" por materia (vazio remove a materia).
-  Future<void> setBringItems(String scheduleId, Map<String, String> items);
+  /// Itens da Mochila da grade (substitui a lista inteira).
+  Future<void> setBackpackItems(String scheduleId, List<BackpackItem> items);
 
   /// Exclui a grade e suas aulas.
   Future<void> deleteSchedule(ClassSchedule schedule);

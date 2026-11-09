@@ -1,5 +1,7 @@
 import 'package:equatable/equatable.dart';
 
+import 'backpack_item.dart';
+
 /// Grade com nome. Com filho = da Familia (compartilhada); sem filho = pessoal.
 class ClassSchedule extends Equatable {
   const ClassSchedule({
@@ -7,7 +9,7 @@ class ClassSchedule extends Equatable {
     required this.name,
     this.familyId,
     this.childId,
-    this.bringItems = const {},
+    this.backpackItems = const [],
     required this.createdAt,
     required this.updatedAt,
   });
@@ -17,8 +19,8 @@ class ClassSchedule extends Equatable {
   final String? familyId;
   final String? childId;
 
-  /// "O que levar" por materia (Mochila de amanha).
-  final Map<String, String> bringItems;
+  /// Itens da Mochila de cada materia (Mochila de amanha).
+  final List<BackpackItem> backpackItems;
   final DateTime createdAt;
   final DateTime updatedAt;
 
@@ -30,7 +32,7 @@ class ClassSchedule extends Equatable {
     name,
     familyId,
     childId,
-    bringItems,
+    backpackItems,
     createdAt,
     updatedAt,
   ];
