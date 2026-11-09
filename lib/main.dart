@@ -11,13 +11,16 @@ import 'package:supabase_flutter/supabase_flutter.dart';
 import 'core/config/supabase_config.dart';
 import 'core/constants/app_constants.dart';
 import 'core/di/app_binding.dart';
+import 'data/datasources/agenda_supabase_datasource.dart';
 import 'data/datasources/fcm_token_supabase_datasource.dart';
 import 'core/routes/app_pages.dart';
 import 'core/routes/app_routes.dart';
 import 'core/services/firebase_service.dart';
 import 'core/theme/app_theme.dart';
+import 'domain/entities/agenda_item.dart';
 import 'domain/repositories/i_agenda_repository.dart';
 import 'domain/repositories/i_notification_service.dart';
+import 'presentation/controllers/home_controller.dart';
 
 /// Limite pra cada etapa da abertura. Se uma delas travar (aparelho sem
 /// rede, Play Services desatualizado), o app abre sem aquele recurso em
@@ -100,75 +103,72 @@ Future<void> _setupPush() async {
   }
 }
 
+const _summaryPushTypes = {
+  'daily_summary',
+  'tomorrow_summary',
+  'weekly_summary',
+};
+
+/// Payload da notificacao local a partir dos dados do push: resumo vira
+/// 'date:...' (abre a Agenda no dia/semana); aviso da Familia vira o id do
+/// evento (abre o detalhe).
+String? _payloadFromPush(Map<String, dynamic> data) {
+  final type = data['type']?.toString();
+  final date = data['date']?.toString();
+  if (_summaryPushTypes.contains(type) && date != null) {
+    return type == 'weekly_summary' ? 'date:$date;mode:week' : 'date:$date';
+  }
+  final id = data['item_id'] ?? data['payload'] ?? data['id'];
+  final value = id?.toString();
+  return value == null || value.isEmpty ? null : value;
+}
+
 void _onPushMessage(RemoteMessage message) {
   final title =
       message.notification?.title ?? message.data['title'] ?? 'Smart Agenda';
   final body = message.notification?.body ?? message.data['body'] ?? '';
   if (body.isEmpty) return;
-  final type = message.data['type']?.toString();
-  final date = message.data['date']?.toString();
-  String? payload;
-  if ((type == 'daily_summary' ||
-          type == 'tomorrow_summary' ||
-          type == 'weekly_summary') &&
-      date != null) {
-    payload = type == 'weekly_summary' ? 'date:$date;mode:week' : 'date:$date';
-  }
   try {
-    Get.find<INotificationService>().showPush(title, body, payload: payload);
+    Get.find<INotificationService>().showPush(
+      title,
+      body,
+      payload: _payloadFromPush(message.data),
+    );
   } catch (_) {}
 }
 
 void _onPushMessageOpened(RemoteMessage message) {
-  final type = message.data['type']?.toString();
-  final date = message.data['date']?.toString();
-  if ((type == 'daily_summary' ||
-          type == 'tomorrow_summary' ||
-          type == 'weekly_summary') &&
-      date != null) {
-    _navigateToAgendaFromNotification(
-      tab: 1,
-      date: date,
-      mode: type == 'weekly_summary' ? 'week' : null,
-    );
-    return;
-  }
-  final payload = message.data['payload'] ?? message.data['id'];
-  if (payload != null && payload.toString().isNotEmpty) {
-    _handleNotificationTap(payload.toString());
-  }
-}
-
-void _navigateToAgendaFromNotification({
-  required int tab,
-  required String date,
-  String? mode,
-}) {
-  final args = <String, dynamic>{'tab': tab, 'date': date};
-  if (mode != null) args['mode'] = mode;
-  Get.offAllNamed(AppRoutes.home, arguments: args);
+  _handleNotificationTap(_payloadFromPush(message.data));
 }
 
 Future<void> _handleNotificationTap(String? payload) async {
   if (payload == null || payload.isEmpty) return;
   if (payload.startsWith('date:')) {
-    String date = payload.substring(5);
-    String? mode;
-    if (payload.contains(';mode:')) {
-      final parts = payload.split(';mode:');
-      date = parts.first.substring(5);
-      mode = parts.length > 1 ? parts[1] : null;
-    }
-    _navigateToAgendaFromNotification(tab: 1, date: date, mode: mode);
+    final parts = payload.substring(5).split(';mode:');
+    final date = DateTime.tryParse(parts.first);
+    if (date == null) return;
+    Get.find<HomeController>().openAgendaAt(
+      date,
+      mode: parts.length > 1 ? parts[1] : null,
+    );
     return;
   }
   try {
-    final repo = Get.find<IAgendaRepository>();
-    final result = await repo.getItemById(payload);
-    if (result.isSuccess && result.data != null) {
-      Get.toNamed(AppRoutes.eventDetail, arguments: result.data);
-    }
+    final item = await _findItemForNotification(payload);
+    if (item != null) Get.toNamed(AppRoutes.eventDetail, arguments: item);
   } catch (_) {}
+}
+
+/// Evento do aviso: primeiro no aparelho; se ainda nao sincronizou (aviso
+/// da Familia chega antes do sync), busca na nuvem.
+Future<AgendaItem?> _findItemForNotification(String id) async {
+  final local = await Get.find<IAgendaRepository>().getItemById(id);
+  if (local.isSuccess && local.data != null) return local.data;
+  if (!SupabaseConfig.isConfigured ||
+      !Get.isRegistered<AgendaSupabaseDataSource>()) {
+    return null;
+  }
+  return Get.find<AgendaSupabaseDataSource>().fetchItem(id);
 }
 
 class SmartAgendaApp extends StatelessWidget {

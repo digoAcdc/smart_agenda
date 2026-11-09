@@ -18,23 +18,6 @@ class HomePage extends StatelessWidget {
   Widget build(BuildContext context) {
     final homeController = Get.find<HomeController>();
     return Obx(() {
-      final args = Get.arguments;
-      if (!homeController.navigationArgsApplied &&
-          args is Map &&
-          args['tab'] != null &&
-          args['date'] != null) {
-        homeController.markNavigationArgsApplied();
-        try {
-          homeController.setInitialDate(DateTime.parse(args['date'] as String));
-        } catch (_) {}
-        if (args['mode'] != null) {
-          homeController.setInitialMode(args['mode'] as String);
-        }
-        WidgetsBinding.instance.addPostFrameCallback((_) {
-          homeController.setIndex(args['tab'] as int);
-        });
-      }
-
       const navHeight = 74.0;
       final showAddButton = homeController.currentIndex.value <= 1;
       // Espaco extra acima da barra so quando o "+" aparece.
@@ -87,7 +70,13 @@ class HomePage extends StatelessWidget {
             ),
           ),
           child: KeyedSubtree(
-            key: ValueKey(homeController.currentIndex.value),
+            // Agenda aberta por notificacao ganha chave nova: recria a aba
+            // no dia pedido mesmo se ela ja estava na tela.
+            key: ValueKey(
+              homeController.currentIndex.value == 1
+                  ? '1-${homeController.agendaNavigationId.value}'
+                  : '${homeController.currentIndex.value}',
+            ),
             child: pages[homeController.currentIndex.value],
           ),
         ),

@@ -2,11 +2,11 @@ import 'package:get/get.dart';
 import 'package:intl/intl.dart';
 
 import '../../core/config/supabase_config.dart';
-import '../../core/routes/app_routes.dart';
 import '../../core/utils/date_utils.dart';
 import '../../data/datasources/notifications_supabase_datasource.dart';
 import '../../data/datasources/push_preferences_supabase_datasource.dart';
 import '../../domain/entities/user_notification.dart';
+import 'home_controller.dart';
 
 class NotificationsController extends GetxController {
   NotificationsController(this._datasource, this._prefsDatasource);
@@ -80,13 +80,9 @@ class NotificationsController extends GetxController {
         await load();
       } catch (_) {}
     }
-    Get.offAllNamed(
-      AppRoutes.home,
-      arguments: {
-        'tab': 1,
-        'date': n.referenceDate.toIso8601String().split('T').first,
-        if (n.type == 'weekly_summary') 'mode': 'week',
-      },
+    Get.find<HomeController>().openAgendaAt(
+      n.referenceDate,
+      mode: n.type == 'weekly_summary' ? 'week' : null,
     );
   }
 

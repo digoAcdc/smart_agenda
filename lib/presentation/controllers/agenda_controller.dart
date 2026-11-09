@@ -60,6 +60,11 @@ class AgendaController extends GetxController {
   final RxBool loading = false.obs;
   final RxnString errorMessage = RxnString();
   int _loadByDayRequestId = 0;
+  // A Inicio e a Agenda carregam semana/mes ao mesmo tempo (ex.: ao abrir
+  // pela notificacao). So a ultima chamada vale; a outra seria sobrescrita
+  // fora de ordem e a tela mostraria a semana errada.
+  int _loadWeekRequestId = 0;
+  int _loadMonthItemsRequestId = 0;
   StreamSubscription<void>? _remoteChangesSub;
 
   // Periodos que estao na tela: atualizar recarrega estes, nao a semana/mes
@@ -143,9 +148,11 @@ class AgendaController extends GetxController {
     DateTime end, {
     bool silent = false,
   }) async {
+    final requestId = ++_loadWeekRequestId;
     if (!silent) loading.value = true;
     _shownWeek = (start, end);
     final result = await getAgendaItemsByRange(start, end);
+    if (requestId != _loadWeekRequestId) return;
     if (result.isSuccess) {
       weekItems.assignAll(result.data ?? []);
     } else {
@@ -159,9 +166,11 @@ class AgendaController extends GetxController {
     DateTime end, {
     bool silent = false,
   }) async {
+    final requestId = ++_loadMonthItemsRequestId;
     if (!silent) loading.value = true;
     _shownMonth = (start, end);
     final result = await getAgendaItemsByRange(start, end);
+    if (requestId != _loadMonthItemsRequestId) return;
     if (result.isSuccess) {
       monthItems.assignAll(result.data ?? []);
     } else {

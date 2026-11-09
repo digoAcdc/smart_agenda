@@ -31,6 +31,20 @@ class _RangeRepo implements IAgendaRepository {
   dynamic noSuchMethod(Invocation invocation) => super.noSuchMethod(invocation);
 }
 
+/// Responde o periodo que comeca em [slowStart] depois dos outros.
+class _SlowRangeRepo extends _RangeRepo {
+  _SlowRangeRepo(super.items, this.slowStart);
+  final DateTime slowStart;
+
+  @override
+  Future<Result<List<AgendaItem>>> getItemsByRange(DateTime start, DateTime end) async {
+    if (start == slowStart) {
+      await Future<void>.delayed(const Duration(milliseconds: 20));
+    }
+    return super.getItemsByRange(start, end);
+  }
+}
+
 class _NoopNotifications implements INotificationService {
   @override
   dynamic noSuchMethod(Invocation invocation) => super.noSuchMethod(invocation);
@@ -106,5 +120,36 @@ void main() {
 
     expect(loadingStates, isNot(contains(true)));
     expect(controller.upcomingItems.map((e) => e.id), ['amanha']);
+  });
+
+  test('semana da notificacao nao e sobrescrita pela semana atual que responde depois',
+      () async {
+    // Aberto pela notificacao semanal: a Inicio pede a semana atual e a
+    // Agenda pede a proxima logo em seguida.
+    final thisWeek = DateTime(2026, 11, 2);
+    final nextWeek = DateTime(2026, 11, 9);
+    final repo = _SlowRangeRepo([
+      _item('esta-semana', DateTime(2026, 11, 3, 10)),
+      _item('proxima-semana', DateTime(2026, 11, 10, 10)),
+    ], thisWeek);
+    final controller = AgendaController(
+      createAgendaItem: CreateAgendaItem(repo),
+      updateAgendaItem: UpdateAgendaItem(repo),
+      deleteAgendaItem: DeleteAgendaItem(repo),
+      duplicateAgendaItem: DuplicateAgendaItem(repo, () => 'x'),
+      setAgendaStatus: SetAgendaStatus(repo),
+      getAgendaItemsByDay: GetAgendaItemsByDay(repo),
+      getAgendaItemsByRange: GetAgendaItemsByRange(repo),
+      getAgendaMarkersByRange: GetAgendaMarkersByRange(repo),
+      searchAgendaItems: SearchAgendaItems(repo),
+      notificationService: _NoopNotifications(),
+    );
+
+    final first = controller.loadWeek(thisWeek, DateTime(2026, 11, 8, 23, 59));
+    final second = controller.loadWeek(nextWeek, DateTime(2026, 11, 15, 23, 59));
+    await Future.wait([first, second]);
+
+    expect(controller.weekItems.map((e) => e.id), ['proxima-semana']);
+    expect(controller.loading.value, isFalse);
   });
 }
