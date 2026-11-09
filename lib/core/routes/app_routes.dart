@@ -15,4 +15,6 @@ class AppRoutes {
   static const notifications = '/notifications';
   static const notes = '/notes';
   static const upsertNote = '/upsert-note';
+  static const subjectDetail = '/subject-detail';
+  static const backpackTomorrow = '/backpack-tomorrow';
 }

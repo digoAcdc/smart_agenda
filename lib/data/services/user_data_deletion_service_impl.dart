@@ -132,6 +132,7 @@ class UserDataDeletionServiceImpl implements IUserDataDeletionService {
 
     await client.from('class_schedules').delete().eq('owner_user_id', uid);
     await client.from('class_schedule_slots').delete().eq('user_id', uid);
+    await client.from('school_records').delete().eq('owner_user_id', uid);
 
     // Membro sai da Familia; o dono precisa excluir a Familia antes (tela Familia).
     final family = await client
@@ -192,6 +193,7 @@ class UserDataDeletionServiceImpl implements IUserDataDeletionService {
 
       await _db.delete(_db.classScheduleSlotsTable).go();
       await _db.delete(_db.classSchedulesTable).go();
+      await _db.delete(_db.schoolRecordsTable).go();
     });
     debugPrint('[UserDataDeletion] Drift limpo');
   }

@@ -15,8 +15,9 @@ abstract class INotificationService {
     int id,
     String title,
     String body,
-    DateTime at,
-  );
+    DateTime at, {
+    String? payload,
+  });
   Future<Result<void>> cancelById(int id);
 
   /// Exibe notificação push imediata (ex: FCM em foreground).

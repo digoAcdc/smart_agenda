@@ -1,3 +1,4 @@
+import '../../domain/entities/backpack_item.dart';
 import '../../domain/entities/class_schedule_slot.dart';
 import '../../domain/repositories/i_class_schedule_datasource.dart';
 import '../../domain/repositories/i_sync_service.dart';
@@ -35,8 +36,8 @@ class ClassScheduleDataSourceOrchestrator implements IClassScheduleDataSource {
       _thenSync(_local.renameSchedule(id, name));
 
   @override
-  Future<void> setBringItems(String scheduleId, Map<String, String> items) =>
-      _thenSync(_local.setBringItems(scheduleId, items));
+  Future<void> setBackpackItems(String scheduleId, List<BackpackItem> items) =>
+      _thenSync(_local.setBackpackItems(scheduleId, items));
 
   @override
   Future<void> deleteSchedule(ClassSchedule schedule) =>

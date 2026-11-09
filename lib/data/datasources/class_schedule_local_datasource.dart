@@ -1,12 +1,12 @@
-import 'dart:convert';
-
 import 'package:drift/drift.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:uuid/uuid.dart';
 
+import '../../domain/entities/backpack_item.dart';
 import '../../domain/entities/class_schedule_slot.dart';
 import '../../domain/repositories/i_class_schedule_datasource.dart';
 import '../local/app_database.dart';
+import 'backpack_json_codec.dart';
 
 /// Grades e aulas no banco local (Drift).
 /// Pessoais: sem familyId (sincronizadas por substituicao no Pro).
@@ -69,20 +69,15 @@ class ClassScheduleLocalDataSource implements IClassScheduleDataSource {
   }
 
   @override
-  Future<void> setBringItems(
+  Future<void> setBackpackItems(
     String scheduleId,
-    Map<String, String> items,
+    List<BackpackItem> items,
   ) async {
-    final clean = {
-      for (final e in items.entries)
-        if (e.key.trim().isNotEmpty && e.value.trim().isNotEmpty)
-          e.key.trim(): e.value.trim(),
-    };
     await (_db.update(
       _db.classSchedulesTable,
     )..where((t) => t.id.equals(scheduleId))).write(
       ClassSchedulesTableCompanion(
-        bringJson: Value(clean.isEmpty ? null : jsonEncode(clean)),
+        bringJson: Value(encodeBackpackItems(items)),
         updatedAt: Value(DateTime.now()),
         syncState: const Value('pending'),
       ),
@@ -106,6 +101,17 @@ class ClassScheduleLocalDataSource implements IClassScheduleDataSource {
   Future<void> deleteSchedule(ClassSchedule schedule) async {
     final now = DateTime.now();
     await _db.transaction(() async {
+      // Notas e faltas da grade saem junto (logico: o sync apaga na nuvem).
+      await (_db.update(_db.schoolRecordsTable)..where(
+            (t) => t.scheduleId.equals(schedule.id) & t.deletedAt.isNull(),
+          ))
+          .write(
+            SchoolRecordsTableCompanion(
+              deletedAt: Value(now),
+              updatedAt: Value(now),
+              syncState: const Value('pending'),
+            ),
+          );
       if (schedule.isFamily) {
         await (_db.update(
           _db.classSchedulesTable,
@@ -170,6 +176,29 @@ class ClassScheduleLocalDataSource implements IClassScheduleDataSource {
             familyId: Value(familyId),
             syncState: const Value('pending'),
           ),
+      ]);
+    });
+    // Mochila e Notas e faltas vao junto para a grade nova da Familia.
+    if (personal.backpackItems.isNotEmpty) {
+      await setBackpackItems(family.id, personal.backpackItems);
+    }
+    final records =
+        await (_db.select(_db.schoolRecordsTable)..where(
+              (t) => t.scheduleId.equals(personal.id) & t.deletedAt.isNull(),
+            ))
+            .get();
+    await _db.batch((batch) {
+      batch.insertAll(_db.schoolRecordsTable, [
+        for (final r in records)
+          r
+              .toCompanion(true)
+              .copyWith(
+                id: Value(const Uuid().v4()),
+                scheduleId: Value(family.id),
+                familyId: Value(familyId),
+                syncState: const Value('pending'),
+                updatedAt: Value(now),
+              ),
       ]);
     });
     await deleteSchedule(personal);
@@ -499,6 +528,9 @@ class ClassScheduleLocalDataSource implements IClassScheduleDataSource {
     await (_db.delete(
       _db.classSchedulesTable,
     )..where((t) => stale(t.familyId))).go();
+    await (_db.delete(
+      _db.schoolRecordsTable,
+    )..where((t) => stale(t.familyId))).go();
   }
 
   ClassSchedule _toSchedule(ClassSchedulesTableData row) => ClassSchedule(
@@ -506,7 +538,7 @@ class ClassScheduleLocalDataSource implements IClassScheduleDataSource {
     name: row.name,
     familyId: row.familyId,
     childId: row.childId,
-    bringItems: decodeBringItems(row.bringJson),
+    backpackItems: decodeBackpackItems(row.bringJson),
     createdAt: row.createdAt,
     updatedAt: row.updatedAt,
   );
@@ -527,20 +559,5 @@ class ClassScheduleLocalDataSource implements IClassScheduleDataSource {
       createdAt: row.createdAt,
       updatedAt: row.updatedAt,
     );
-  }
-}
-
-/// bring_json -> mapa materia -> o que levar (ignora JSON invalido).
-Map<String, String> decodeBringItems(String? json) {
-  if (json == null || json.isEmpty) return const {};
-  try {
-    final raw = jsonDecode(json);
-    if (raw is! Map) return const {};
-    return {
-      for (final e in raw.entries)
-        if (e.value is String) e.key.toString(): e.value as String,
-    };
-  } catch (_) {
-    return const {};
   }
 }

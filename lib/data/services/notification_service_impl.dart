@@ -259,8 +259,9 @@ class NotificationServiceImpl implements INotificationService {
     int id,
     String title,
     String body,
-    DateTime at,
-  ) async {
+    DateTime at, {
+    String? payload,
+  }) async {
     try {
       if (!at.isAfter(DateTime.now())) return Result.success(null);
       final details = const NotificationDetails(
@@ -278,6 +279,7 @@ class NotificationServiceImpl implements INotificationService {
         body,
         tz.TZDateTime.from(at, tz.local),
         details,
+        payload: payload,
         androidScheduleMode: AndroidScheduleMode.inexactAllowWhileIdle,
       );
       return Result.success(null);

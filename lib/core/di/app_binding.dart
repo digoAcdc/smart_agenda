@@ -13,6 +13,8 @@ import '../../data/datasources/family_supabase_datasource.dart';
 import '../../data/datasources/class_group_local_datasource.dart';
 import '../../data/datasources/class_schedule_datasource_orchestrator.dart';
 import '../../data/datasources/class_schedule_local_datasource.dart';
+import '../../data/datasources/school_record_datasource_orchestrator.dart';
+import '../../data/datasources/school_record_local_datasource.dart';
 import '../../data/datasources/groups_local_datasource.dart';
 import '../../data/datasources/fcm_token_supabase_datasource.dart';
 import '../../data/datasources/notifications_supabase_datasource.dart';
@@ -52,6 +54,7 @@ import '../../domain/repositories/i_notification_service.dart';
 import '../../domain/repositories/i_class_group_repository.dart';
 import '../../domain/repositories/i_note_repository.dart';
 import '../../domain/repositories/i_class_schedule_datasource.dart';
+import '../../domain/repositories/i_school_record_datasource.dart';
 import '../../domain/repositories/i_connectivity_service.dart';
 import '../../domain/repositories/i_billing_service.dart';
 import '../../domain/repositories/i_personal_to_family_service.dart';
@@ -67,6 +70,7 @@ import '../../presentation/controllers/agenda_controller.dart';
 import '../../presentation/controllers/auth_controller.dart';
 import '../../presentation/controllers/class_group_controller.dart';
 import '../../presentation/controllers/class_schedule_controller.dart';
+import '../../presentation/controllers/school_records_controller.dart';
 import '../../presentation/controllers/note_controller.dart';
 import '../../presentation/controllers/notifications_controller.dart';
 import '../../presentation/controllers/sync_controller.dart';
@@ -206,6 +210,7 @@ class AppBinding extends Bindings {
               Get.find<IPlanService>(),
               Get.find<IFamilyService>(),
               Supabase.instance.client,
+              Get.find<SchoolRecordLocalDataSource>(),
             )
           : SyncServiceStub(),
       fenix: true,
@@ -216,6 +221,14 @@ class AppBinding extends Bindings {
     );
 
     Get.lazyPut(() => ClassScheduleLocalDataSource(Get.find()), fenix: true);
+    Get.lazyPut(() => SchoolRecordLocalDataSource(Get.find()), fenix: true);
+    Get.lazyPut<ISchoolRecordDataSource>(
+      () => SchoolRecordDataSourceOrchestrator(
+        Get.find<SchoolRecordLocalDataSource>(),
+        Get.find<ISyncService>(),
+      ),
+      fenix: true,
+    );
     Get.lazyPut<IClassScheduleDataSource>(
       () => ClassScheduleDataSourceOrchestrator(
         Get.find<ClassScheduleLocalDataSource>(),
@@ -314,6 +327,14 @@ class AppBinding extends Bindings {
     Get.put(
       ClassScheduleController(
         Get.find<IClassScheduleDataSource>(),
+        syncService: Get.find<ISyncService>(),
+      ),
+      permanent: true,
+    );
+    Get.put(
+      SchoolRecordsController(
+        Get.find<ISchoolRecordDataSource>(),
+        Get.find<ClassScheduleController>(),
         syncService: Get.find<ISyncService>(),
       ),
       permanent: true,

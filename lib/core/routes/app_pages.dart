@@ -4,6 +4,7 @@ import '../../presentation/pages/auth/login_page.dart';
 import '../../presentation/pages/auth/register_page.dart';
 import '../../presentation/pages/auth/reset_password_page.dart';
 import '../../presentation/pages/auth/upgrade_page.dart';
+import '../../presentation/pages/backpack_tomorrow_page.dart';
 import '../../presentation/pages/event_detail_page.dart';
 import '../../presentation/pages/class_group_detail_page.dart';
 import '../../presentation/pages/class_group_list_page.dart';
@@ -14,6 +15,7 @@ import '../../presentation/pages/privacy_policy_page.dart';
 import '../../presentation/pages/notifications_page.dart';
 import '../../presentation/pages/note_list_page.dart';
 import '../../presentation/pages/family_page.dart';
+import '../../presentation/pages/subject_detail_page.dart';
 import '../../presentation/pages/upsert_agenda_page.dart';
 import '../../presentation/pages/upsert_note_page.dart';
 import 'app_routes.dart';
@@ -36,5 +38,7 @@ class AppPages {
     GetPage(name: AppRoutes.notifications, page: NotificationsPage.new),
     GetPage(name: AppRoutes.notes, page: NoteListPage.new),
     GetPage(name: AppRoutes.upsertNote, page: UpsertNotePage.new),
+    GetPage(name: AppRoutes.subjectDetail, page: SubjectDetailPage.new),
+    GetPage(name: AppRoutes.backpackTomorrow, page: BackpackTomorrowPage.new),
   ];
 }
